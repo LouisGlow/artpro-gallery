@@ -225,6 +225,7 @@
 
   function flash(html){ if(note){ note.innerHTML = html; note.style.color = 'var(--gold-deep)'; note.style.fontWeight = '600'; } }
 
+  var saving = false;
   function savePiece(photoUrl){
     var statuses = [];
     Array.prototype.forEach.call(document.querySelectorAll('input[name="apc_status"]:checked'), function(cb){
@@ -242,28 +243,24 @@
       status: statuses.join(' '),
       archived: false
     };
-    // Seed the sample catalog on a fresh device so we append rather than clobber it.
-    var list = (window.ArtProStore && ArtProStore.load()) || (window.ARTPRO_SEED || []).slice();
-    list.push(piece);
-    var ok = window.ArtProStore && ArtProStore.saveAll(list);
-    if(ok === false){ flash('Could not save — this device’s storage is full. Remove some pieces or connect the database.'); return; }
-    flash('Saved &ldquo;' + piece.desc.replace(/</g,'&lt;') + '&rdquo; to the catalog. <a class="tlink" href="catalog.html">View catalog &rarr;</a>');
-    resetForm();
+    var descSafe = piece.desc.replace(/</g,'&lt;');
+    flash('Saving…');
+    ArtProStore.create(piece).then(function(){
+      flash('Saved &ldquo;' + descSafe + '&rdquo; to the catalog. <a class="tlink" href="catalog.html">View catalog &rarr;</a>');
+      resetForm();
+    }).catch(function(){
+      flash('Could not save — check your connection and try again.');
+    }).then(function(){ saving = false; });
   }
 
   if(form){
     form.addEventListener('submit', function(){
+      if(saving){ return; }
       var desc = g('apc_desc').value.trim();
       if(!desc){ flash('Add a short description before saving.'); g('apc_desc').focus(); return; }
+      saving = true;
       var file = f && f.files[0];
-      if(file){
-        var rd = new FileReader();
-        rd.onload = function(){ savePiece(rd.result); };
-        rd.onerror = function(){ savePiece(''); };
-        rd.readAsDataURL(file);
-      } else {
-        savePiece('');
-      }
+      ArtProStore.readPhoto(file).then(savePiece).catch(function(){ savePiece(''); });
     });
   }
 })();

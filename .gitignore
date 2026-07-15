@@ -10,3 +10,8 @@ desktop.ini
 
 # Logs / temp
 *.log
+
+# Node / Wrangler
+node_modules/
+.wrangler/
+.dev.vars

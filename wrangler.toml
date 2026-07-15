@@ -1,8 +1,19 @@
-# Cloudflare Workers — static assets only.
-# Serves the ./public folder as the site root, so wordpress-plugin/ and the
-# internal notes at the repo root are NOT published.
+# Cloudflare Worker — serves the static ./public site AND a small JSON API
+# backed by a D1 database. wordpress-plugin/ and the repo-root notes are NOT
+# published (only ./public is served).
 name = "artpro-gallery"
+main = "worker/index.js"
 compatibility_date = "2026-07-01"
 
+# Static site. `binding = "ASSETS"` lets the Worker fall through to the files
+# for any non-/api request (see worker/index.js).
 [assets]
 directory = "./public"
+binding = "ASSETS"
+
+# D1 database. Create it with:  npx wrangler d1 create artpro-catalog
+# then paste the printed database_id below (replacing REPLACE_WITH_DATABASE_ID).
+[[d1_databases]]
+binding = "DB"
+database_name = "artpro-catalog"
+database_id = "REPLACE_WITH_DATABASE_ID"

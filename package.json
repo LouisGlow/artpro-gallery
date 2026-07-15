@@ -1,0 +1,12 @@
+{
+  "name": "artpro-gallery",
+  "private": true,
+  "version": "0.1.0",
+  "description": "ArtPro Gallery — static site + Cloudflare Worker/D1 catalog API",
+  "scripts": {
+    "deploy": "npx wrangler deploy",
+    "db:init": "npx wrangler d1 execute artpro-catalog --remote --file=migrations/0001_init.sql",
+    "db:seed": "npx wrangler d1 execute artpro-catalog --remote --file=migrations/seed.sql"
+  },
+  "comment": "wrangler runs via npx (no local install — the workerd dependency has no win32-arm64 build, so `wrangler dev` can't run on this machine; deploy + d1 commands work fine over npx)."
+}

@@ -257,11 +257,12 @@
   function cells(tr){ return tr.querySelectorAll('td'); }
 
   // ---- data layer (see assets/store.js) ----
-  // Read one table row back into a plain piece object.
+  // Read one table row back into a plain piece object (keeps its server pid).
   function rowToPiece(tr){
     var c = cells(tr), img = c[0].querySelector('img');
     var fr = c[6].textContent.trim();
     return {
+      pid:     tr.getAttribute('data-pid') || '',
       photo:   img ? img.getAttribute('src') : '',
       id:      c[1].textContent.trim(),
       desc:    c[2].textContent.trim(),
@@ -274,8 +275,17 @@
       archived: tr.getAttribute('data-archived') === '1'
     };
   }
-  function serialize(){ return Array.prototype.slice.call(tbody.querySelectorAll('tr')).map(rowToPiece); }
-  function persist(){ if(window.ArtProStore){ ArtProStore.saveAll(serialize()); } }
+  // Re-render the whole table from the store (the source of truth).
+  function render(pieces){ tbody.innerHTML = ''; (pieces || []).forEach(addRow); refresh(); }
+  function reload(){ return ArtProStore.list().then(render).catch(function(){ render([]); }); }
+  // Status checkboxes -> plain status text (statusPills() renders it back to pills).
+  function statusText(){
+    var s = [];
+    if(g('e_sold').checked)    s.push('Sold');
+    if(g('e_display').checked) s.push('On display');
+    if(g('e_stock').checked)   s.push('In stockroom');
+    return s.join(' ');
+  }
 
   function setSelect(sel, val){
     val = val || '';
@@ -313,47 +323,48 @@
 
   function save(){
     if(!current){ return; }
-    // If a new photo was picked, store it as a data URL so it survives a reload
-    // (blob: URLs from createObjectURL don't). Text fields save immediately.
+    // If a new photo was picked, downscale it to a data URL for upload; text
+    // fields save regardless. No new photo -> keep the existing image.
     var f = g('e_photo').files[0];
     if(f){
-      var rd = new FileReader();
-      rd.onload = function(){ applySave(rd.result); };
-      rd.readAsDataURL(f);
+      ArtProStore.readPhoto(f).then(applySave).catch(function(){ applySave(null); });
     } else {
       applySave(null);
     }
   }
   function applySave(photoDataUrl){
-    if(!current){ return; } var c = cells(current);
-    c[1].textContent = g('e_id').value.trim();
-    c[2].textContent = g('e_desc').value.trim();
-    c[3].textContent = g('e_artist').value.trim();
-    c[4].textContent = g('e_medium').value.trim();
-    c[5].textContent = g('e_art').value.trim();
-    c[6].textContent = g('e_frame').value.trim() || '—';
-    c[7].textContent = g('e_location').value.trim() || '—';
-    var pills = '';
-    if(g('e_sold').checked)    pills += pill('sold');
-    if(g('e_display').checked) pills += pill('display');
-    if(g('e_stock').checked)   pills += pill('stock');
-    c[8].innerHTML = pills || '<span style="color:var(--muted);opacity:.7;">—</span>';
-    var img = c[0].querySelector('img');
-    if(photoDataUrl && img){ img.src = photoDataUrl; }
-    persist();
+    if(!current){ return; }
+    var existing = cells(current)[0].querySelector('img');
+    var piece = {
+      pid:    current.getAttribute('data-pid') || '',
+      photo:  photoDataUrl || (existing ? existing.getAttribute('src') : ''),
+      id:     g('e_id').value.trim(),
+      desc:   g('e_desc').value.trim(),
+      artist: g('e_artist').value.trim(),
+      medium: g('e_medium').value.trim(),
+      art:    g('e_art').value.trim(),
+      frame:  g('e_frame').value.trim(),
+      loc:    g('e_location').value.trim(),
+      status: statusText(),
+      archived: current.getAttribute('data-archived') === '1'
+    };
     close();
+    ArtProStore.update(piece.pid, piece).then(reload);
   }
 
   function del(){
     if(!current){ return; }
-    current.remove(); current = null; persist(); refresh(); close();
+    var pid = current.getAttribute('data-pid') || '';
+    close();
+    ArtProStore.remove(pid).then(reload);
   }
 
   function archiveToggle(){
     if(!current){ return; }
-    if(current.getAttribute('data-archived') === '1'){ current.removeAttribute('data-archived'); }
-    else { current.setAttribute('data-archived', '1'); }
-    persist(); refresh(); close();
+    var piece = rowToPiece(current);
+    piece.archived = !piece.archived;
+    close();
+    ArtProStore.update(piece.pid, piece).then(reload);
   }
 
   var view = 'active';
@@ -452,6 +463,7 @@
       '<td class="apc-id">' + esc(d.id) + '</td><td>' + esc(d.desc) + '</td><td>' + esc(d.artist) + '</td><td>' + esc(d.medium) + '</td>' +
       '<td>' + esc(d.art) + '</td><td>' + (esc(d.frame) || '—') + '</td><td>' + esc(d.loc) + '</td>' +
       '<td>' + statusPills(d.status) + '</td>';
+    if(d.pid){ tr.setAttribute('data-pid', d.pid); }
     if(d.archived){ tr.setAttribute('data-archived', '1'); }
     tbody.appendChild(tr); return tr;
   }
@@ -466,16 +478,19 @@
     if(!rows.length){ showImport('That CSV looks empty.'); return; }
     var idx = mapHeaders(rows[0]), start = 1;
     if(idx.id == null && idx.desc == null){ idx = { id:0, desc:1, artist:2, medium:3, art:4, frame:5, loc:6, status:7, photo:8 }; start = 0; }
-    var n = 0;
+    var pieces = [];
     for(var r = start; r < rows.length; r++){
       var row = rows[r]; if(!row || row.join('').trim() === ''){ continue; }
-      var get = function(k){ return idx[k] != null ? (row[idx[k]] || '') : ''; };
-      addRow({ id:get('id'), desc:get('desc'), artist:get('artist'), medium:get('medium'), art:get('art'), frame:get('frame'), loc:get('loc'), status:get('status'), photo:get('photo') });
-      n++;
+      var get = (function(rw){ return function(k){ return idx[k] != null ? (rw[idx[k]] || '') : ''; }; })(row);
+      pieces.push({ id:get('id'), desc:get('desc'), artist:get('artist'), medium:get('medium'), art:get('art'), frame:get('frame'), loc:get('loc'), status:get('status'), photo:get('photo') });
     }
-    persist();
-    refresh();
-    showImport(n ? ('Imported ' + n + ' piece' + (n === 1 ? '' : 's') + ' into the catalog.') : 'No rows found in that CSV.');
+    if(!pieces.length){ showImport('No rows found in that CSV.'); return; }
+    showImport('Importing ' + pieces.length + ' piece' + (pieces.length === 1 ? '' : 's') + '…');
+    Promise.all(pieces.map(function(p){ return ArtProStore.create(p); })).then(function(){
+      return reload();
+    }).then(function(){
+      showImport('Imported ' + pieces.length + ' piece' + (pieces.length === 1 ? '' : 's') + ' into the catalog.');
+    }).catch(function(){ showImport('Import failed — please try again.'); });
   }
 
   g('apc-export-btn').addEventListener('click', function(e){ e.preventDefault(); exportCSV(); });
@@ -494,20 +509,7 @@
       .forEach(function(n){ var o = document.createElement('option'); o.textContent = n; sel.appendChild(o); });
   })();
 
-  // Render the table from the store. On a fresh device (never seeded) fall back
-  // to the sample pieces in assets/catalog-seed.js and persist them once.
-  function hydrate(){
-    var pieces = window.ArtProStore ? ArtProStore.load() : null;
-    if(!pieces){
-      pieces = (window.ARTPRO_SEED || []).slice();
-      if(window.ArtProStore){ ArtProStore.saveAll(pieces); }
-    }
-    tbody.innerHTML = '';
-    pieces.forEach(addRow);
-  }
-
-  hydrate();
-  refresh();
+  reload();
 })();
 </script>
 </body>
