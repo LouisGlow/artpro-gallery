@@ -21,6 +21,12 @@
 .apc-search{display:flex;gap:8px;}
 .apc-search input{min-height:48px;padding:10px 14px;border:1px solid var(--border);background:#fbfaf7;font:inherit;font-size:16px;min-width:220px;border-radius:3px;}
 .apc-count{font-family:'Barlow Condensed','Oswald',sans-serif;text-transform:uppercase;letter-spacing:.14em;font-size:12px;color:var(--muted);}
+.apc-viewtabs{display:inline-flex;border:1px solid var(--border);border-radius:4px;overflow:hidden;}
+.apc-viewtab{background:var(--surface);border:0;border-right:1px solid var(--border);padding:12px 16px;min-height:48px;font-family:'Barlow Condensed','Oswald',sans-serif;text-transform:uppercase;letter-spacing:.1em;font-size:12px;color:var(--muted);cursor:pointer;-webkit-tap-highlight-color:transparent;}
+.apc-viewtab:last-child{border-right:0;}
+.apc-viewtab:hover{color:var(--ink);}
+.apc-viewtab.is-active{background:var(--ink);color:var(--paper);}
+.apc-viewtab span{font-variant-numeric:tabular-nums;}
 .apc-table-wrap{overflow-x:auto;border:1px solid var(--border);}
 .apc-table{width:100%;border-collapse:collapse;background:var(--surface);font-size:14px;min-width:940px;}
 .apc-table th{background:var(--paper);text-align:left;font-family:'Barlow Condensed','Oswald',sans-serif;text-transform:uppercase;letter-spacing:.1em;font-size:12px;color:var(--ink);padding:12px 14px;border-bottom:1px solid var(--border);}
@@ -127,7 +133,10 @@
           <button class="apc-btn apc-btn--ghost" type="submit">Search</button>
         </form>
         <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;">
-          <span class="apc-count">6 pieces</span>
+          <div class="apc-viewtabs">
+            <button class="apc-viewtab is-active" type="button" data-view="active">Active · <span id="n-active">6</span></button>
+            <button class="apc-viewtab" type="button" data-view="archived">Archived · <span id="n-archived">0</span></button>
+          </div>
           <a class="apc-btn apc-btn--ghost" href="add-a-piece.html">+ Add a piece</a>
           <a class="apc-btn" href="#" onclick="return false;">Export BOM (CSV)</a>
         </div>
@@ -165,7 +174,8 @@
         </table>
       </div>
 
-      <p class="apc-note">Preview with sample data — <b>click any row to edit its fields</b>. The live catalog fills automatically as staff capture pieces, and "Export BOM (CSV)" downloads the full list.</p>
+      <p class="apc-note" id="apc-empty-msg" style="display:none;">No pieces to show in this view.</p>
+      <p class="apc-note">Preview with sample data — <b>click any row to edit its fields</b>, or open a piece and <b>Archive</b> it to move it out of the active list. The live catalog fills automatically as staff capture pieces, and "Export BOM (CSV)" downloads the full list.</p>
     </div>
   </section>
 </main>
@@ -247,6 +257,7 @@
     <div class="apc-modal__foot">
       <button class="apc-btn" type="button" id="e_save">Save changes</button>
       <button class="apc-btn apc-btn--ghost" type="button" data-close>Cancel</button>
+      <button class="apc-btn apc-btn--ghost" type="button" id="e_archive">Archive</button>
       <button class="apc-modal__del" type="button" id="e_del">Delete piece</button>
     </div>
   </div>
@@ -280,6 +291,7 @@
     var img = c[0].querySelector('img'), eimg = g('e_photo_img');
     if(img){ eimg.src = img.src; eimg.classList.add('has'); } else { eimg.classList.remove('has'); }
     g('e_photo').value = ''; g('e_photo_text').textContent = 'Change photo';
+    g('e_archive').textContent = current.getAttribute('data-archived') === '1' ? 'Restore' : 'Archive';
     modal.classList.add('is-open'); document.body.style.overflow = 'hidden';
   }
 
@@ -305,13 +317,29 @@
 
   function del(){
     if(!current){ return; }
-    current.remove(); current = null; updateCount(); close();
+    current.remove(); current = null; refresh(); close();
   }
 
-  function updateCount(){
-    var n = tbody.querySelectorAll('tr').length;
-    var el = document.querySelector('.apc-count');
-    if(el){ el.textContent = n + (n === 1 ? ' piece' : ' pieces'); }
+  function archiveToggle(){
+    if(!current){ return; }
+    if(current.getAttribute('data-archived') === '1'){ current.removeAttribute('data-archived'); }
+    else { current.setAttribute('data-archived', '1'); }
+    refresh(); close();
+  }
+
+  var view = 'active';
+  function refresh(){
+    var rows = Array.prototype.slice.call(tbody.querySelectorAll('tr'));
+    var nA = 0, nAr = 0;
+    rows.forEach(function(tr){
+      var arch = tr.getAttribute('data-archived') === '1';
+      if(arch){ nAr++; } else { nA++; }
+      tr.style.display = ((view === 'archived') === arch) ? '' : 'none';
+    });
+    g('n-active').textContent = nA;
+    g('n-archived').textContent = nAr;
+    var em = g('apc-empty-msg');
+    if(em){ em.style.display = ((view === 'archived' ? nAr : nA) === 0) ? '' : 'none'; }
   }
 
   function close(){ modal.classList.remove('is-open'); document.body.style.overflow = ''; }
@@ -323,12 +351,22 @@
   });
   g('e_save').addEventListener('click', save);
   g('e_del').addEventListener('click', del);
+  g('e_archive').addEventListener('click', archiveToggle);
+  Array.prototype.forEach.call(document.querySelectorAll('.apc-viewtab'), function(b){
+    b.addEventListener('click', function(){
+      view = b.getAttribute('data-view');
+      Array.prototype.forEach.call(document.querySelectorAll('.apc-viewtab'), function(x){ x.classList.toggle('is-active', x === b); });
+      refresh();
+    });
+  });
   Array.prototype.forEach.call(modal.querySelectorAll('[data-close]'), function(el){ el.addEventListener('click', close); });
   document.addEventListener('keydown', function(e){ if(e.key === 'Escape' && modal.classList.contains('is-open')){ close(); } });
   g('e_photo').addEventListener('change', function(){
     var f = this.files[0], img = g('e_photo_img'), t = g('e_photo_text');
     if(f){ img.src = URL.createObjectURL(f); img.classList.add('has'); t.textContent = 'New photo selected'; }
   });
+
+  refresh();
 })();
 </script>
 </body>
