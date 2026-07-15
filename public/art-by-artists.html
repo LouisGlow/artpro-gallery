@@ -105,6 +105,7 @@
 </footer>
 
 <script src="assets/artists-data.js"></script>
+<script src="assets/lightbox.js"></script>
 <script src="site.js"></script>
 <script>
 (function(){
@@ -148,6 +149,18 @@
         byArtist[key].items.push(p);
       });
       host.innerHTML = groups.map(renderGroup).join('');
+
+      // Wire each artwork to open the shared lightbox (same order as the DOM).
+      var LBITEMS = [];
+      groups.forEach(function(g){ g.items.forEach(function(p){
+        LBITEMS.push({ url: p.photo, title: p.desc, meta: p.medium, artist: p.artist });
+      }); });
+      Array.prototype.forEach.call(host.querySelectorAll('.artwork'), function(el, i){
+        el.addEventListener('click', function(e){
+          e.preventDefault();
+          if(window.ArtProLightbox){ ArtProLightbox.open(LBITEMS, i); }
+        });
+      });
     })
     .catch(function(){
       host.innerHTML = '<p class="aba-note">Couldn’t load the collection right now — please refresh the page.</p>';
@@ -177,7 +190,7 @@
     var src = p.photo ? esc(p.photo) : 'assets/images/artists/_placeholder.jpg';
     var sold = /sold/i.test(p.status || '') ? '<span class="artwork__sold">Sold</span>' : '';
     var metaLine = p.medium ? '<span class="artwork__meta">' + esc(p.medium) + '</span>' : '';
-    return '<a class="artwork" href="art-for-sale.html">' +
+    return '<a class="artwork" href="#" role="button">' +
       '<span class="artwork__img"><img src="' + src + '" alt="' + esc(p.desc) + '" loading="lazy">' + sold + '</span>' +
       '<span class="artwork__title">' + esc(p.desc || 'Untitled') + '</span>' + metaLine +
     '</a>';

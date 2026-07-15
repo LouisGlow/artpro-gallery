@@ -80,6 +80,7 @@
   </div>
 </footer>
 
+<script src="assets/lightbox.js"></script>
 <script src="site.js"></script>
 <script>
 (function(){
@@ -110,13 +111,23 @@
       var img = p.photo ? esc(p.photo) : 'assets/images/artists/_placeholder.jpg';
       var tag = p.medium ? '<span class="card__tag">' + esc(p.medium) + '</span>' : '';
       return '<article class="card" data-medium="' + esc(cat(p.medium)) + '">' +
-        '<a class="card__media" href="' + esc(enquire) + '">' + tag +
+        '<a class="card__media" href="#" role="button">' + tag +
           '<img src="' + img + '" alt="' + esc(p.desc) + '" loading="lazy"></a>' +
         '<div class="card__body"><span class="card__title">' + esc(p.desc || 'Untitled') + '</span>' +
         '<span class="card__artist">' + esc(p.artist || 'ArtPro Gallery') + '</span>' +
         '<div class="card__foot"><span class="card__price">POA</span>' +
         '<a class="tlink" href="' + esc(enquire) + '" style="font-size:11px;">Enquire</a></div></div></article>';
     }).join('');
+
+    // Open the shared lightbox instead of navigating away.
+    var LBITEMS = pieces.map(function(p){ return { url: p.photo, title: p.desc, meta: p.medium, artist: p.artist }; });
+    Array.prototype.forEach.call(grid.querySelectorAll('.card__media'), function(el, i){
+      el.addEventListener('click', function(e){
+        e.preventDefault();
+        if(window.ArtProLightbox){ ArtProLightbox.open(LBITEMS, i); }
+      });
+    });
+
     wireChips();
   }).catch(function(){
     grid.innerHTML = '<p class="muted" style="grid-column:1/-1;">Couldn’t load available works right now — please refresh.</p>';

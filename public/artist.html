@@ -101,6 +101,7 @@
 </footer>
 
 <script src="assets/artists-data.js"></script>
+<script src="assets/lightbox.js"></script>
 <script src="site.js"></script>
 <script>
 (function(){
@@ -173,8 +174,10 @@
       var wrap = document.getElementById('bio-works-wrap');
       var grid = document.getElementById('bio-works');
       wrap.hidden = false;
-      works.forEach(function(w){
-        var a = document.createElement('a'); a.className='artwork'; a.href='art-for-sale.html';
+      var LBITEMS = works.map(function(w){ return { url:w.img, title:w.title, meta:w.medium, artist:artist.name }; });
+      works.forEach(function(w, i){
+        var a = document.createElement('a'); a.className='artwork'; a.href='#'; a.setAttribute('role','button');
+        a.addEventListener('click', function(e){ e.preventDefault(); if(window.ArtProLightbox){ ArtProLightbox.open(LBITEMS, i); } });
         var fig = document.createElement('span'); fig.className='artwork__img';
         var im = document.createElement('img'); im.src=w.img||'assets/images/artists/_placeholder.jpg'; im.alt=w.title||artist.name; im.loading='lazy'; im.decoding='async';
         fig.appendChild(im);
