@@ -79,6 +79,30 @@ function pieceColumns(body, pid, now) {
   };
 }
 
+// Create the table on first use so no CLI migration step is needed. Idempotent
+// (CREATE ... IF NOT EXISTS); runs once per Worker instance.
+let schemaReady = false;
+async function ensureSchema(db) {
+  if (schemaReady) return;
+  await db.batch([
+    db.prepare(
+      `CREATE TABLE IF NOT EXISTS pieces (
+         pid TEXT PRIMARY KEY,
+         photo TEXT NOT NULL DEFAULT '', photo_blob BLOB, photo_type TEXT,
+         art_id TEXT NOT NULL DEFAULT '', descr TEXT NOT NULL DEFAULT '',
+         artist TEXT NOT NULL DEFAULT '', medium TEXT NOT NULL DEFAULT '',
+         art_size TEXT NOT NULL DEFAULT '', frame TEXT NOT NULL DEFAULT '',
+         loc TEXT NOT NULL DEFAULT '', status TEXT NOT NULL DEFAULT '',
+         archived INTEGER NOT NULL DEFAULT 0,
+         created INTEGER NOT NULL DEFAULT 0, updated INTEGER NOT NULL DEFAULT 0
+       )`
+    ),
+    db.prepare(`CREATE INDEX IF NOT EXISTS idx_pieces_archived ON pieces(archived)`),
+    db.prepare(`CREATE INDEX IF NOT EXISTS idx_pieces_created ON pieces(created)`)
+  ]);
+  schemaReady = true;
+}
+
 async function handleApi(request, env, url) {
   const { pathname } = url;
   const method = request.method.toUpperCase();
@@ -86,6 +110,7 @@ async function handleApi(request, env, url) {
   if (pathname === '/api/health') return json({ ok: true });
 
   if (!env.DB) return json({ error: 'Database not configured' }, 500);
+  await ensureSchema(env.DB);
 
   // /api/pieces
   if (pathname === '/api/pieces') {

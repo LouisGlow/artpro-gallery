@@ -1,69 +1,46 @@
 # Going live — ArtPro catalog database
 
-The site already deploys to Cloudflare. These steps add the **D1 database** and the
-**API Worker** so staff can capture pieces into a real, shared database instead of
-just this browser.
+The site already deploys to Cloudflare when you `git push` (Cloudflare builds it on
+their own servers). We add a **D1 database** and switch on the **API Worker** so staff
+capture into a real, shared database.
 
-You run these (they need *your* Cloudflare login — Claude can't do that part). Each
-uses `npx wrangler`, so nothing needs to be installed first.
+> **Why no command line:** the `wrangler` CLI can't run on this Windows-on-ARM machine
+> (its `workerd` component has no ARM build). So we create the database in the Cloudflare
+> **dashboard**, and let the normal `git push` deploy do the rest. The Worker creates its
+> own table automatically on first use — no migration command needed.
 
-> **Windows tip:** this repo lives in OneDrive, which sometimes locks files mid-sync
-> and makes `wrangler` fail with `EBUSY`. If a command errors that way, **pause
-> OneDrive sync** (system tray → OneDrive → Pause) and re-run it.
+## 1. Create the database (dashboard)
+1. Go to **https://dash.cloudflare.com** and sign in.
+2. Left sidebar → **Storage & Databases** → **D1 SQL Database** (older accounts: under
+   **Workers & Pages**).
+3. Click **Create** (or **Create database**). Name it exactly: `artpro-catalog`. Create it.
+4. Open the new database. On its overview page copy the **Database ID** (a long id like
+   `a1b2c3d4-...`). **Paste that id to Claude** — it goes into `wrangler.toml`.
 
-## 1. Sign in to Cloudflare
-```
-npx wrangler login
-```
-A browser opens — approve access. One time only.
+## 2. Claude wires it up + you push
+Claude puts the id into `wrangler.toml`, commits, and you (or Claude) `git push`. That push
+triggers Cloudflare to redeploy — this time with the Worker + database bound.
 
-## 2. Create the database
-```
-npx wrangler d1 create artpro-catalog
-```
-It prints a block ending with a `database_id = "..."`. **Copy that id** and paste it
-into `wrangler.toml`, replacing `REPLACE_WITH_DATABASE_ID`.
-
-## 3. Create the table (in the live database)
-```
-npx wrangler d1 execute artpro-catalog --remote --file=migrations/0001_init.sql
-```
-
-## 4. (Optional) Load the six sample pieces
-Skip this to start with an empty catalog.
-```
-npx wrangler d1 execute artpro-catalog --remote --file=migrations/seed.sql
-```
-
-## 5. Deploy
-```
-npx wrangler deploy
-```
-
-## 6. Check it
+## 3. Check it
 - Visit `https://artpro-gallery.louisvent.workers.dev/api/health` → should show `{"ok":true}`.
-- Open `/catalog.html` — the pieces now come from the database.
-- Open `/add-a-piece.html`, capture a piece — it appears in the catalog on any device.
+- Open `/add-a-piece.html`, capture a piece, then open `/catalog.html` — it's there, and
+  it shows up on any device (it's in the shared database now).
 
-(After this, a `git push` still redeploys the static pages automatically. The Worker/DB
-changes above only need to be run when they change — normally just this once.)
+## (Optional) sample rows
+To pre-fill the six demo pieces: open the database in the dashboard → **Console** tab →
+paste the contents of `migrations/seed.sql` → **Execute**. Or just skip it and start
+capturing real pieces.
 
 ---
 
 ## Important: lock it down before sharing the links
-
-Right now the `/api/*` endpoints are **open** — anyone with the URL could add or edit
-pieces. Before you rely on it, gate the staff pages with **Cloudflare Access** (free,
-no code):
-
-1. Cloudflare dashboard → **Zero Trust** → **Access** → **Applications** → *Add self-hosted*.
-2. Cover these paths: `/catalog.html`, `/add-a-piece.html`, and `/api/*`.
-3. Add a policy allowing only staff emails (e.g. Lee's, Jaline's).
-
-Then only signed-in staff can reach the catalog or the API. This is the "staff login"
-made real, and it's the recommended next step.
+Right now `/api/*` is **open** — anyone with the URL could add or edit pieces. Before you
+rely on it, gate the staff pages with **Cloudflare Access** (free, no code):
+1. Dashboard → **Zero Trust** → **Access** → **Applications** → *Add self-hosted*.
+2. Cover `/catalog.html`, `/add-a-piece.html`, and `/api/*`.
+3. Policy: allow only staff emails (Lee, Jaline).
 
 ## Custom domain (when ready)
-When the client wants it on their own domain: Cloudflare dashboard → this Worker →
-**Settings → Domains & Routes → Add Custom Domain** → enter the domain (its DNS must be
-on Cloudflare). Everything keeps working — all links and the API are relative.
+Dashboard → this Worker → **Settings → Domains & Routes → Add Custom Domain** → enter the
+client's domain (its DNS must be on Cloudflare). Everything keeps working — links and the
+API are all relative.
