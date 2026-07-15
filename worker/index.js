@@ -117,9 +117,54 @@ async function ensureSchema(db) {
        )`
     ),
     db.prepare(`CREATE INDEX IF NOT EXISTS idx_pieces_archived ON pieces(archived)`),
-    db.prepare(`CREATE INDEX IF NOT EXISTS idx_pieces_created ON pieces(created)`)
+    db.prepare(`CREATE INDEX IF NOT EXISTS idx_pieces_created ON pieces(created)`),
+    db.prepare(
+      `CREATE TABLE IF NOT EXISTS artists (
+         slug TEXT PRIMARY KEY,
+         name TEXT NOT NULL DEFAULT '',
+         photo TEXT NOT NULL DEFAULT '', photo_blob BLOB, photo_type TEXT,
+         bio TEXT NOT NULL DEFAULT '',
+         represented INTEGER NOT NULL DEFAULT 1,
+         sort_order INTEGER NOT NULL DEFAULT 0,
+         created INTEGER NOT NULL DEFAULT 0, updated INTEGER NOT NULL DEFAULT 0
+       )`
+    ),
+    db.prepare(`CREATE INDEX IF NOT EXISTS idx_artists_sort ON artists(sort_order, name)`)
   ]);
   schemaReady = true;
+}
+
+// slugify a name into a url-safe id
+function slugify(s) {
+  return String(s || '').toLowerCase().trim()
+    .replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '') || 'artist';
+}
+
+// artists DB row -> API artist (with versioned photo url)
+function rowToArtist(r) {
+  let photo = r.photo || '';
+  if (photo.startsWith('/api/artists/')) {
+    photo += (photo.indexOf('?') < 0 ? '?' : '&') + 'v=' + (r.updated || 0);
+  }
+  return {
+    slug: r.slug, name: r.name || '', photo: photo, bio: r.bio || '',
+    represented: !!r.represented, sortOrder: r.sort_order || 0
+  };
+}
+
+// Build artist column values from a request body. If photo is a data: URL, store
+// the bytes and point photo at the /api/artists/:slug/photo endpoint.
+function artistColumns(body, slug, now) {
+  const img = decodeDataUrl(body.photo);
+  const photo = img ? `/api/artists/${slug}/photo` : (typeof body.photo === 'string' ? body.photo : '');
+  return {
+    photo, photo_blob: img ? img.bytes : null, photo_type: img ? img.type : null, hasImage: !!img,
+    name: (body.name || '').toString(),
+    bio: (body.bio || '').toString(),
+    represented: body.represented === false ? 0 : 1,
+    sort_order: Number.isFinite(body.sortOrder) ? body.sortOrder : 0,
+    now
+  };
 }
 
 async function handleApi(request, env, url) {
@@ -138,6 +183,81 @@ async function handleApi(request, env, url) {
          FROM pieces WHERE archived = 0 ORDER BY artist ASC, created ASC, rowid ASC`
     ).all();
     return json({ pieces: (results || []).map(publicPiece) });
+  }
+
+  // Public read — artist profiles for the website's pages.
+  if (pathname === '/api/public/artists') {
+    const { results } = await env.DB.prepare(
+      `SELECT slug, name, photo, bio, represented, sort_order, updated FROM artists ORDER BY sort_order ASC, name ASC`
+    ).all();
+    return json({ artists: (results || []).map(rowToArtist) });
+  }
+
+  // /api/artists (staff list + create)
+  if (pathname === '/api/artists') {
+    if (method === 'GET') {
+      const { results } = await env.DB.prepare(
+        `SELECT slug, name, photo, bio, represented, sort_order, updated FROM artists ORDER BY sort_order ASC, name ASC`
+      ).all();
+      return json({ artists: (results || []).map(rowToArtist) });
+    }
+    if (method === 'POST') {
+      const body = await request.json().catch(() => ({}));
+      const now = Date.now();
+      const base = slugify(body.slug || body.name);
+      let slug = base, n = 2;
+      while (true) {
+        const { results } = await env.DB.prepare(`SELECT slug FROM artists WHERE slug = ?`).bind(slug).all();
+        if (!results || !results.length) break;
+        slug = base + '-' + (n++);
+      }
+      const c = artistColumns(body, slug, now);
+      await env.DB.prepare(
+        `INSERT INTO artists (slug, name, photo, photo_blob, photo_type, bio, represented, sort_order, created, updated)
+         VALUES (?,?,?,?,?,?,?,?,?,?)`
+      ).bind(slug, c.name, c.photo, c.photo_blob, c.photo_type, c.bio, c.represented, c.sort_order, now, now).run();
+      const { results } = await env.DB.prepare(`SELECT slug, name, photo, bio, represented, sort_order, updated FROM artists WHERE slug = ?`).bind(slug).all();
+      return json({ artist: rowToArtist(results[0]) }, 201);
+    }
+    return json({ error: 'Method not allowed' }, 405);
+  }
+
+  // /api/artists/:slug  and  /api/artists/:slug/photo
+  const am = pathname.match(/^\/api\/artists\/([^/]+)(\/photo)?$/);
+  if (am) {
+    const slug = decodeURIComponent(am[1]);
+    const isPhoto = !!am[2];
+
+    if (isPhoto) {
+      if (method !== 'GET') return json({ error: 'Method not allowed' }, 405);
+      const { results } = await env.DB.prepare(`SELECT photo_blob, photo_type FROM artists WHERE slug = ?`).bind(slug).all();
+      const row = results && results[0];
+      if (!row || !row.photo_blob) return new Response('Not found', { status: 404 });
+      const bytes = row.photo_blob instanceof ArrayBuffer ? new Uint8Array(row.photo_blob) : Uint8Array.from(row.photo_blob);
+      return new Response(bytes, { status: 200, headers: { 'content-type': row.photo_type || 'application/octet-stream', 'cache-control': 'public, max-age=31536000' } });
+    }
+
+    if (method === 'PUT') {
+      const body = await request.json().catch(() => ({}));
+      const now = Date.now();
+      const c = artistColumns(body, slug, now);
+      if (c.hasImage) {
+        await env.DB.prepare(`UPDATE artists SET name=?, photo=?, photo_blob=?, photo_type=?, bio=?, represented=?, sort_order=?, updated=? WHERE slug=?`)
+          .bind(c.name, c.photo, c.photo_blob, c.photo_type, c.bio, c.represented, c.sort_order, now, slug).run();
+      } else {
+        await env.DB.prepare(`UPDATE artists SET name=?, photo=?, bio=?, represented=?, sort_order=?, updated=? WHERE slug=?`)
+          .bind(c.name, c.photo, c.bio, c.represented, c.sort_order, now, slug).run();
+      }
+      const { results } = await env.DB.prepare(`SELECT slug, name, photo, bio, represented, sort_order, updated FROM artists WHERE slug = ?`).bind(slug).all();
+      if (!results || !results.length) return json({ error: 'Not found' }, 404);
+      return json({ artist: rowToArtist(results[0]) });
+    }
+
+    if (method === 'DELETE') {
+      await env.DB.prepare(`DELETE FROM artists WHERE slug = ?`).bind(slug).run();
+      return json({ ok: true });
+    }
+    return json({ error: 'Method not allowed' }, 405);
   }
 
   // /api/pieces
@@ -225,8 +345,8 @@ function isGatedPage(pathname) {
 }
 function needsAuth(pathname, method) {
   if (pathname === '/api/health') return false;
-  if (pathname === '/api/public/pieces') return false;                          // public read (curated)
-  if (method === 'GET' && /^\/api\/pieces\/[^/]+\/photo$/.test(pathname)) return false; // public images
+  if (pathname === '/api/public/pieces' || pathname === '/api/public/artists') return false; // public reads
+  if (method === 'GET' && /^\/api\/(pieces|artists)\/[^/]+\/photo$/.test(pathname)) return false; // public images
   if (pathname.startsWith('/api/')) return true;                                // staff reads + all writes
   return isGatedPage(pathname);                                                 // staff HTML pages
 }
