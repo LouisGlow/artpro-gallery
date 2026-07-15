@@ -502,12 +502,17 @@
     this.value = '';
   });
 
-  // populate the Artist dropdown from the site's represented roster
+  // populate the Artist dropdown from the artists DB (fallback: bundled file)
   (function(){
-    var sel = g('e_artist'); if(!sel || !window.ARTPRO_ARTISTS){ return; }
-    window.ARTPRO_ARTISTS.map(function(a){ return a.name; })
-      .sort(function(x,y){ return x.localeCompare(y); })
-      .forEach(function(n){ var o = document.createElement('option'); o.textContent = n; sel.appendChild(o); });
+    var sel = g('e_artist'); if(!sel){ return; }
+    function fill(names){
+      names.sort(function(x, y){ return x.localeCompare(y); })
+        .forEach(function(n){ var o = document.createElement('option'); o.textContent = n; sel.appendChild(o); });
+    }
+    function fallback(){ if(window.ARTPRO_ARTISTS){ fill(window.ARTPRO_ARTISTS.map(function(a){ return a.name; })); } }
+    fetch('/api/public/artists').then(function(r){ return r.ok ? r.json() : null; }).then(function(d){
+      if(d && d.artists && d.artists.length){ fill(d.artists.map(function(a){ return a.name; })); } else { fallback(); }
+    }).catch(fallback);
   })();
 
   reload();

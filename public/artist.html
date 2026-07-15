@@ -106,68 +106,84 @@
 (function(){
   var params = new URLSearchParams(location.search);
   var slug = (params.get('a') || '').toLowerCase();
-  var list = (window.ARTPRO_ARTISTS || []);
-  var artist = list.filter(function(a){ return a.slug === slug; })[0];
 
-  var nameEl = document.getElementById('bio-name');
-  var bcEl   = document.getElementById('bc-name');
+  function pieceToWork(p){ return { title: p.desc || 'Untitled', img: p.photo || '', medium: p.medium || '' }; }
 
-  if (!artist) {
-    nameEl.textContent = 'Artist not found';
-    bcEl.textContent = 'Not found';
-    document.getElementById('bio-text').innerHTML =
-      '<p class="bio-empty">We couldn’t find that artist. Browse the full roster on the <a class="tlink" href="artists.html">Artists page →</a></p>';
-    document.getElementById('bio-photo').closest('.bio-side').style.display = 'none';
-    return;
-  }
+  // Profile from the live artists DB; available works from the catalogue.
+  // Falls back to the bundled artists-data.js if the API is unreachable.
+  Promise.all([
+    fetch('/api/public/artists').then(function(r){ return r.ok ? r.json() : null; }).catch(function(){ return null; }),
+    fetch('/api/public/pieces').then(function(r){ return r.ok ? r.json() : null; }).catch(function(){ return null; })
+  ]).then(function(res){
+    var artistsData = res[0] && res[0].artists;
+    var piecesData  = res[1] && res[1].pieces;
+    var artist = null, works = [];
+    if(artistsData){
+      artist = artistsData.filter(function(a){ return a.slug === slug; })[0] || null;
+      if(artist && piecesData){
+        works = piecesData.filter(function(p){ return (p.artist || '').toLowerCase() === (artist.name || '').toLowerCase(); }).map(pieceToWork);
+      }
+    }
+    if(!artist){                                   // fall back to the static file
+      var fb = (window.ARTPRO_ARTISTS || []).filter(function(a){ return a.slug === slug; })[0];
+      if(fb){ artist = fb; works = fb.works || []; }
+    }
+    render(artist, works);
+  });
 
-  // Head / title
-  document.title = artist.name + ' — ArtPro Gallery';
-  nameEl.textContent = artist.name;
-  bcEl.textContent = artist.name;
+  function render(artist, works){
+    var nameEl = document.getElementById('bio-name');
+    var bcEl   = document.getElementById('bc-name');
 
-  // Photo
-  var photo = document.getElementById('bio-photo');
-  photo.src = artist.photo;
-  photo.alt = artist.name;
+    if (!artist) {
+      nameEl.textContent = 'Artist not found';
+      bcEl.textContent = 'Not found';
+      document.getElementById('bio-text').innerHTML =
+        '<p class="bio-empty">We couldn’t find that artist. Browse the full roster on the <a class="tlink" href="artists.html">Artists page →</a></p>';
+      document.getElementById('bio-photo').closest('.bio-side').style.display = 'none';
+      return;
+    }
 
-  // Enquire link carries the artist name
-  document.getElementById('bio-enquire').href = 'contact.html?artist=' + encodeURIComponent(artist.name);
+    document.title = artist.name + ' — ArtPro Gallery';
+    nameEl.textContent = artist.name;
+    bcEl.textContent = artist.name;
 
-  // Born line (if the bio starts with "b. YYYY")
-  var bio = (artist.bio || '').trim();
-  var bornEl = document.getElementById('bio-born');
-  var m = bio.match(/^\s*(b\.\s*\d{4}|\d{4}\s*[–\-]\s*\d{4})/i);
-  if (m) { bornEl.textContent = m[1].replace(/\s+/g,' ').trim(); bornEl.hidden = false; bio = bio.slice(m[0].length).replace(/^[\s–\-]+/,'').trim(); }
+    var photo = document.getElementById('bio-photo');
+    photo.src = artist.photo || 'assets/images/artists/_placeholder.jpg';
+    photo.alt = artist.name;
 
-  // Bio paragraphs
-  var textEl = document.getElementById('bio-text');
-  if (bio) {
-    bio.split(/\n{2,}|(?<=[.!?])\s{2,}/).filter(Boolean).forEach(function(p){
-      var el = document.createElement('p'); el.textContent = p.trim(); textEl.appendChild(el);
-    });
-    // fallback: if it produced a single blob, just show it
-    if (!textEl.children.length) { var el=document.createElement('p'); el.textContent=bio; textEl.appendChild(el); }
-  } else {
-    textEl.innerHTML = '<p class="bio-empty">A biography for this artist is on the way. In the meantime, ask us for available works and details.</p>';
-  }
+    document.getElementById('bio-enquire').href = 'contact.html?artist=' + encodeURIComponent(artist.name);
 
-  // Works
-  var works = artist.works || [];
-  if (works.length) {
-    var wrap = document.getElementById('bio-works-wrap');
-    var grid = document.getElementById('bio-works');
-    wrap.hidden = false;
-    works.forEach(function(w){
-      var a = document.createElement('a'); a.className='artwork'; a.href='art-for-sale.html';
-      var fig = document.createElement('span'); fig.className='artwork__img';
-      var im = document.createElement('img'); im.src=w.img; im.alt=w.title||artist.name; im.loading='lazy'; im.decoding='async';
-      fig.appendChild(im);
-      var t = document.createElement('span'); t.className='artwork__title'; t.textContent=w.title||'Untitled';
-      var mt = document.createElement('span'); mt.className='artwork__meta'; mt.textContent=w.medium||'Original work';
-      a.appendChild(fig); a.appendChild(t); a.appendChild(mt);
-      grid.appendChild(a);
-    });
+    var bio = (artist.bio || '').trim();
+    var bornEl = document.getElementById('bio-born');
+    var m = bio.match(/^\s*(b\.\s*\d{4}|\d{4}\s*[–\-]\s*\d{4})/i);
+    if (m) { bornEl.textContent = m[1].replace(/\s+/g,' ').trim(); bornEl.hidden = false; bio = bio.slice(m[0].length).replace(/^[\s–\-]+/,'').trim(); }
+
+    var textEl = document.getElementById('bio-text');
+    if (bio) {
+      bio.split(/\n{2,}|(?<=[.!?])\s{2,}/).filter(Boolean).forEach(function(p){
+        var el = document.createElement('p'); el.textContent = p.trim(); textEl.appendChild(el);
+      });
+      if (!textEl.children.length) { var el=document.createElement('p'); el.textContent=bio; textEl.appendChild(el); }
+    } else {
+      textEl.innerHTML = '<p class="bio-empty">A biography for this artist is on the way. In the meantime, ask us for available works and details.</p>';
+    }
+
+    if (works && works.length) {
+      var wrap = document.getElementById('bio-works-wrap');
+      var grid = document.getElementById('bio-works');
+      wrap.hidden = false;
+      works.forEach(function(w){
+        var a = document.createElement('a'); a.className='artwork'; a.href='art-for-sale.html';
+        var fig = document.createElement('span'); fig.className='artwork__img';
+        var im = document.createElement('img'); im.src=w.img||'assets/images/artists/_placeholder.jpg'; im.alt=w.title||artist.name; im.loading='lazy'; im.decoding='async';
+        fig.appendChild(im);
+        var t = document.createElement('span'); t.className='artwork__title'; t.textContent=w.title||'Untitled';
+        var mt = document.createElement('span'); mt.className='artwork__meta'; mt.textContent=w.medium||'Original work';
+        a.appendChild(fig); a.appendChild(t); a.appendChild(mt);
+        grid.appendChild(a);
+      });
+    }
   }
 })();
 </script>

@@ -112,75 +112,101 @@
   var input = document.getElementById('artist-filter');
   var count = document.getElementById('visible-count');
   var empty = document.getElementById('artist-empty');
-  var list  = (window.ARTPRO_ARTISTS || []).filter(function(a){ return a.slug !== 'gaynor'; }); // represented roster only
 
-  list.forEach(function(a){
-    var card = document.createElement('a');
-    card.className = 'artist-card';
-    card.href = 'artist.html?a=' + encodeURIComponent(a.slug);
-    card.setAttribute('data-name', a.name);
-
-    var photo = document.createElement('span');
-    photo.className = 'artist-card__photo' + (/_placeholder\.jpg$/.test(a.photo) ? ' artist-card__photo--placeholder' : '');
-    var pimg = document.createElement('img');
-    pimg.src = a.photo; pimg.alt = a.name; pimg.loading = 'lazy'; pimg.decoding = 'async';
-    photo.appendChild(pimg);
-    card.appendChild(photo);
-
-    var body = document.createElement('span');
-    body.className = 'artist-card__body';
-
-    var eyebrow = document.createElement('span');
-    eyebrow.className = 'artist-card__eyebrow';
-    eyebrow.textContent = 'Represented artist';
-    body.appendChild(eyebrow);
-
-    var name = document.createElement('span');
-    name.className = 'artist-card__name'; name.textContent = a.name;
-    body.appendChild(name);
-
-    var works = a.works || [];
-    if (works.length) {
-      var strip = document.createElement('span');
-      strip.className = 'artist-card__works';
-      works.slice(0, 3).forEach(function (w) {
-        var cell = document.createElement('span');
-        var im = document.createElement('img');
-        im.src = w.img; im.alt = w.title || ''; im.loading = 'lazy'; im.decoding = 'async';
-        cell.appendChild(im); strip.appendChild(cell);
+  // Represented roster + each artist's works, from the live DB; the bundled
+  // artists-data.js is the fallback if the API is unreachable.
+  Promise.all([
+    fetch('/api/public/artists').then(function(r){ return r.ok ? r.json() : null; }).catch(function(){ return null; }),
+    fetch('/api/public/pieces').then(function(r){ return r.ok ? r.json() : null; }).catch(function(){ return null; })
+  ]).then(function(res){
+    var list, worksByArtist = {};
+    if(res[0] && res[0].artists){
+      list = res[0].artists.filter(function(a){ return a.represented; });
+      ((res[1] && res[1].pieces) || []).forEach(function(p){
+        var k = (p.artist || '').toLowerCase();
+        (worksByArtist[k] = worksByArtist[k] || []).push({ img: p.photo, title: p.desc });
       });
-      body.appendChild(strip);
+    } else {
+      list = (window.ARTPRO_ARTISTS || []).filter(function(a){ return a.slug !== 'gaynor'; });
+      list.forEach(function(a){ worksByArtist[(a.name||'').toLowerCase()] = (a.works || []).map(function(w){ return { img: w.img, title: w.title }; }); });
     }
-
-    var cta = document.createElement('span');
-    cta.className = 'artist-card__cta';
-    cta.innerHTML = 'View profile <span class="arw" aria-hidden="true">&#8594;</span>';
-    if (works.length) {
-      var cnt = document.createElement('span');
-      cnt.className = 'count';
-      cnt.textContent = works.length + (works.length === 1 ? ' work' : ' works');
-      cta.appendChild(cnt);
-    }
-    body.appendChild(cta);
-
-    card.appendChild(body);
-    grid.appendChild(card);
+    build(list, worksByArtist);
+    setupSearch();
   });
 
-  // search filter
-  var cards = Array.prototype.slice.call(grid.querySelectorAll('.artist-card'));
-  count.textContent = cards.length;
-  input.addEventListener('input', function(){
-    var q = input.value.trim().toLowerCase();
-    var shown = 0;
-    cards.forEach(function(c){
-      var match = (c.getAttribute('data-name') || '').toLowerCase().indexOf(q) !== -1;
-      c.style.display = match ? '' : 'none';
-      if (match) shown++;
+  function build(list, worksByArtist){
+    grid.innerHTML = '';
+    list.forEach(function(a){
+      var card = document.createElement('a');
+      card.className = 'artist-card';
+      card.href = 'artist.html?a=' + encodeURIComponent(a.slug);
+      card.setAttribute('data-name', a.name);
+
+      var photoUrl = a.photo || 'assets/images/artists/_placeholder.jpg';
+      var isPlaceholder = !a.photo || /_placeholder\.jpg$/.test(a.photo);
+      var photo = document.createElement('span');
+      photo.className = 'artist-card__photo' + (isPlaceholder ? ' artist-card__photo--placeholder' : '');
+      var pimg = document.createElement('img');
+      pimg.src = photoUrl; pimg.alt = a.name; pimg.loading = 'lazy'; pimg.decoding = 'async';
+      photo.appendChild(pimg);
+      card.appendChild(photo);
+
+      var body = document.createElement('span');
+      body.className = 'artist-card__body';
+
+      var eyebrow = document.createElement('span');
+      eyebrow.className = 'artist-card__eyebrow';
+      eyebrow.textContent = 'Represented artist';
+      body.appendChild(eyebrow);
+
+      var name = document.createElement('span');
+      name.className = 'artist-card__name'; name.textContent = a.name;
+      body.appendChild(name);
+
+      var works = worksByArtist[(a.name || '').toLowerCase()] || [];
+      if (works.length) {
+        var strip = document.createElement('span');
+        strip.className = 'artist-card__works';
+        works.slice(0, 3).forEach(function (w) {
+          var cell = document.createElement('span');
+          var im = document.createElement('img');
+          im.src = w.img || 'assets/images/artists/_placeholder.jpg'; im.alt = w.title || ''; im.loading = 'lazy'; im.decoding = 'async';
+          cell.appendChild(im); strip.appendChild(cell);
+        });
+        body.appendChild(strip);
+      }
+
+      var cta = document.createElement('span');
+      cta.className = 'artist-card__cta';
+      cta.innerHTML = 'View profile <span class="arw" aria-hidden="true">&#8594;</span>';
+      if (works.length) {
+        var cnt = document.createElement('span');
+        cnt.className = 'count';
+        cnt.textContent = works.length + (works.length === 1 ? ' work' : ' works');
+        cta.appendChild(cnt);
+      }
+      body.appendChild(cta);
+
+      card.appendChild(body);
+      grid.appendChild(card);
     });
-    count.textContent = shown;
-    empty.style.display = shown === 0 ? 'block' : 'none';
-  });
+  }
+
+  function setupSearch(){
+    var cards = Array.prototype.slice.call(grid.querySelectorAll('.artist-card'));
+    count.textContent = cards.length;
+    input.addEventListener('input', function(){
+      var q = input.value.trim().toLowerCase();
+      var shown = 0;
+      cards.forEach(function(c){
+        var match = (c.getAttribute('data-name') || '').toLowerCase().indexOf(q) !== -1;
+        c.style.display = match ? '' : 'none';
+        if (match) shown++;
+      });
+      count.textContent = shown;
+      empty.style.display = shown === 0 ? 'block' : 'none';
+    });
+  }
 })();
 </script>
 </body>

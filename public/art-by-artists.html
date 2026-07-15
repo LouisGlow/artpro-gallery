@@ -111,7 +111,8 @@
   var host = document.getElementById('aba-list');
   if(!host){ return; }
 
-  // Look up a represented artist by name → { slug, photo } for the round photo + link.
+  // Look up an artist by name → { slug, photo } for the round photo + link.
+  // Populated from the live artists DB below, with the static file as fallback.
   var ARTISTS = {};
   (window.ARTPRO_ARTISTS || []).forEach(function(a){ ARTISTS[a.name.toLowerCase()] = a; });
 
@@ -129,10 +130,14 @@
 
   function esc(s){ var d = document.createElement('div'); d.textContent = String(s == null ? '' : s); return d.innerHTML; }
 
-  fetch('/api/public/pieces')
-    .then(function(r){ if(!r.ok){ throw new Error('http ' + r.status); } return r.json(); })
-    .then(function(data){
-      var pieces = (data && data.pieces) || [];
+  // Load artist profiles (photo + link) and pieces together, then render.
+  Promise.all([
+    fetch('/api/public/artists').then(function(r){ return r.ok ? r.json() : null; }).catch(function(){ return null; }),
+    fetch('/api/public/pieces').then(function(r){ if(!r.ok){ throw new Error('http ' + r.status); } return r.json(); })
+  ])
+    .then(function(res){
+      if(res[0] && res[0].artists){ res[0].artists.forEach(function(a){ ARTISTS[(a.name || '').toLowerCase()] = a; }); }
+      var pieces = (res[1] && res[1].pieces) || [];
       if(!pieces.length){ host.innerHTML = '<p class="aba-note">The collection is being updated — please check back soon.</p>'; return; }
 
       // group by artist, preserving first-seen order (server sorts by artist)
