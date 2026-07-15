@@ -39,6 +39,11 @@
   .artwork:focus-visible { outline:2px solid var(--gold); outline-offset:3px; }
   .artwork__title { font-family:var(--font-display); text-transform:uppercase; letter-spacing:.04em; font-size:15px; font-weight:500; color:var(--ink); line-height:1.15; }
   .artwork__meta { font-size:12px; color:var(--muted); margin-top:-4px; }
+  .artwork__sold {
+    position:absolute; top:8px; left:8px; background:var(--ink); color:var(--paper);
+    font-family:var(--font-display); text-transform:uppercase; letter-spacing:.1em;
+    font-size:10px; padding:3px 8px; border-radius:2px;
+  }
   .aba-note { font-size:13px; color:var(--muted); }
 </style>
 </head>
@@ -68,146 +73,18 @@
   <p class="breadcrumb"><a href="index.html">Home</a> / Art by Artists</p>
   <div class="page-hero__row" style="margin-top:20px;">
     <h1 class="display display--l" style="max-width:16ch;">Art by artists</h1>
-    <p class="muted aba-intro">Browse the collection the way collectors do — by the hand that made it. A selection of available works, grouped by artist. Follow through to the shop for size, price and availability, or ask us for a full portfolio.</p>
+    <p class="muted aba-intro">Browse the collection the way collectors do — by the hand that made it. Works grouped by artist, straight from the gallery's live catalogue. Follow through to the shop for size, price and availability, or ask us for a full portfolio.</p>
   </div>
 </section>
 
 <section class="section wrap">
+  <div id="aba-list"><p class="aba-note">Loading the collection…</p></div>
 
-  <!-- ============ DEON STOLZ ============ -->
-  <div class="artist-block reveal">
-    <div class="artist-block__head">
-      <div class="artist-block__id">
-        <img class="artist-block__photo" src="assets/images/artists/deon-stolz.jpg" alt="Deon Stolz" loading="lazy">
-        <div><h2 class="artist-block__name display display--m">Deon Stolz</h2><p class="artist-block__meta">Bushveld wildlife · oil on canvas</p></div>
-      </div>
-      <a class="tlink" href="artist.html?a=deon-stolz">See more from the artist →</a>
-    </div>
-    <div class="artwork-grid">
-      <a class="artwork" href="art-for-sale.html"><span class="artwork__img"><img src="assets/images/art/481133857_1465525504406408_361695882614013422_n.jpg" alt="The Sentinel" loading="lazy"></span><span class="artwork__title">The Sentinel</span><span class="artwork__meta">Oil on canvas</span></a>
-      <a class="artwork" href="art-for-sale.html"><span class="artwork__img"><img src="assets/images/art/481072144_1465525274406431_7419952904267985910_n.jpg" alt="Bushveld Lion" loading="lazy"></span><span class="artwork__title">Bushveld Lion</span><span class="artwork__meta">Oil on canvas</span></a>
-      <a class="artwork" href="art-for-sale.html"><span class="artwork__img"><img src="assets/images/art/481134307_1465525647739727_8130890387216363959_n.jpg" alt="At the Waterhole" loading="lazy"></span><span class="artwork__title">At the Waterhole</span><span class="artwork__meta">Oil on canvas</span></a>
-      <a class="artwork" href="art-for-sale.html"><span class="artwork__img"><img src="assets/images/art/481240143_1465525611073064_2185242308816161662_n.jpg" alt="Out of the Dust" loading="lazy"></span><span class="artwork__title">Out of the Dust</span><span class="artwork__meta">Oil on canvas</span></a>
-      <a class="artwork" href="art-for-sale.html"><span class="artwork__img"><img src="assets/images/art/481673968_1465525631073062_245065602767476672_n.jpg" alt="Rhino &amp; Egrets" loading="lazy"></span><span class="artwork__title">Rhino &amp; Egrets</span><span class="artwork__meta">Oil on canvas</span></a>
-      <a class="artwork" href="art-for-sale.html"><span class="artwork__img"><img src="assets/images/art/481915860_1465525637739728_3040351051394270591_n.jpg" alt="Kudu, Golden Hour" loading="lazy"></span><span class="artwork__title">Kudu, Golden Hour</span><span class="artwork__meta">Oil on canvas</span></a>
-    </div>
-  </div>
-
-  <!-- ============ GAYNOR ============ -->
-  <div class="artist-block reveal">
-    <div class="artist-block__head">
-      <div class="artist-block__id">
-        <span class="artist-block__badge" aria-hidden="true">G</span>
-        <div><h2 class="artist-block__name display display--m">Gaynor</h2><p class="artist-block__meta">Coast &amp; harbour · palette-knife oil</p></div>
-      </div>
-      <a class="tlink" href="artist.html?a=gaynor">See more from the artist →</a>
-    </div>
-    <div class="artwork-grid">
-      <a class="artwork" href="art-for-sale.html"><span class="artwork__img"><img src="assets/images/art/481076952_1467795767512715_7350483388941025729_n.jpg" alt="Evening Sail" loading="lazy"></span><span class="artwork__title">Evening Sail</span><span class="artwork__meta">Oil · palette knife</span></a>
-      <a class="artwork" href="art-for-sale.html"><span class="artwork__img"><img src="assets/images/art/481076550_1467795667512725_5892456818749260120_n.jpg" alt="Two Boats, Bright Sea" loading="lazy"></span><span class="artwork__title">Two Boats, Bright Sea</span><span class="artwork__meta">Oil · palette knife</span></a>
-      <a class="artwork" href="art-for-sale.html"><span class="artwork__img"><img src="assets/images/art/482252317_1467795617512730_3031483635331666865_n.jpg" alt="Fishing Harbour" loading="lazy"></span><span class="artwork__title">Fishing Harbour</span><span class="artwork__meta">Oil · palette knife</span></a>
-      <a class="artwork" href="art-for-sale.html"><span class="artwork__img"><img src="assets/images/art/482268372_1467795534179405_7633487693280745775_n.jpg" alt="City Marina" loading="lazy"></span><span class="artwork__title">City Marina</span><span class="artwork__meta">Oil · palette knife</span></a>
-      <a class="artwork" href="art-for-sale.html"><span class="artwork__img"><img src="assets/images/art/481508751_1467795610846064_2347801665651455254_n.jpg" alt="The Harbour Village" loading="lazy"></span><span class="artwork__title">The Harbour Village</span><span class="artwork__meta">Oil · panoramic</span></a>
-    </div>
-  </div>
-
-  <!-- ============ WAKABA MUTHEKI ============ -->
-  <div class="artist-block reveal">
-    <div class="artist-block__head">
-      <div class="artist-block__id">
-        <img class="artist-block__photo" src="assets/images/artists/wakaba-mutheki.jpg" alt="Wakaba Mutheki" loading="lazy">
-        <div><h2 class="artist-block__name display display--m">Wakaba Mutheki</h2><p class="artist-block__meta">Figures &amp; portraits</p></div>
-      </div>
-      <a class="tlink" href="artist.html?a=wakaba-mutheki">See more from the artist →</a>
-    </div>
-    <div class="artwork-grid">
-      <a class="artwork" href="art-for-sale.html"><span class="artwork__img"><img src="assets/images/artworks/wakaba-mutheki-musician.jpg" alt="Musician" loading="lazy"></span><span class="artwork__title">Musician</span><span class="artwork__meta">Original work</span></a>
-      <a class="artwork" href="art-for-sale.html"><span class="artwork__img"><img src="assets/images/artworks/wakaba-mutheki-portrait.jpg" alt="Portrait" loading="lazy"></span><span class="artwork__title">Portrait</span><span class="artwork__meta">Original work</span></a>
-    </div>
-  </div>
-
-  <!-- ============ DANIEL NOVELA ============ -->
-  <div class="artist-block reveal">
-    <div class="artist-block__head">
-      <div class="artist-block__id">
-        <img class="artist-block__photo" src="assets/images/artists/daniel-novela.jpg" alt="Daniel Novela" loading="lazy">
-        <div><h2 class="artist-block__name display display--m">Daniel Novela</h2><p class="artist-block__meta">African landscapes</p></div>
-      </div>
-      <a class="tlink" href="artist.html?a=daniel-novela">See more from the artist →</a>
-    </div>
-    <div class="artwork-grid">
-      <a class="artwork" href="art-for-sale.html"><span class="artwork__img"><img src="assets/images/artworks/daniel-novela-african-landscape.jpg" alt="African Landscape" loading="lazy"></span><span class="artwork__title">African Landscape</span><span class="artwork__meta">Oil on canvas</span></a>
-      <a class="artwork" href="art-for-sale.html"><span class="artwork__img"><img src="assets/images/artworks/daniel-novela-landscape-with-cows.jpg" alt="Landscape with Cows" loading="lazy"></span><span class="artwork__title">Landscape with Cows</span><span class="artwork__meta">Oil on canvas</span></a>
-    </div>
-  </div>
-
-  <!-- ============ STAN POLSON ============ -->
-  <div class="artist-block reveal">
-    <div class="artist-block__head">
-      <div class="artist-block__id">
-        <img class="artist-block__photo" src="assets/images/artists/stan-polson.jpg" alt="Stan Polson" loading="lazy">
-        <div><h2 class="artist-block__name display display--m">Stan Polson</h2><p class="artist-block__meta">Trees &amp; landscape</p></div>
-      </div>
-      <a class="tlink" href="artist.html?a=stan-polson">See more from the artist →</a>
-    </div>
-    <div class="artwork-grid">
-      <a class="artwork" href="art-for-sale.html"><span class="artwork__img"><img src="assets/images/artworks/stan-polson-tree-1.jpg" alt="Tree" loading="lazy"></span><span class="artwork__title">Tree</span><span class="artwork__meta">Original work</span></a>
-      <a class="artwork" href="art-for-sale.html"><span class="artwork__img"><img src="assets/images/artworks/stan-polson-tree-2.jpg" alt="Tree II" loading="lazy"></span><span class="artwork__title">Tree II</span><span class="artwork__meta">Original work</span></a>
-    </div>
-  </div>
-
-  <!-- ============ ADRIAAN BOSHOFF SENIOR ============ -->
-  <div class="artist-block reveal">
-    <div class="artist-block__head">
-      <div class="artist-block__id">
-        <img class="artist-block__photo" src="assets/images/artists/adriaan-boshoff-senior.jpg" alt="Adriaan Boshoff Senior" loading="lazy">
-        <div><h2 class="artist-block__name display display--m">Adriaan Boshoff Senior</h2><p class="artist-block__meta">Classic landscapes</p></div>
-      </div>
-      <a class="tlink" href="artist.html?a=adriaan-boshoff-senior">See more from the artist →</a>
-    </div>
-    <div class="artwork-grid">
-      <a class="artwork" href="art-for-sale.html"><span class="artwork__img"><img src="assets/images/artworks/adriaan-boshoff-senior-workers-on-landscape.jpg" alt="Workers on Landscape" loading="lazy"></span><span class="artwork__title">Workers on Landscape</span><span class="artwork__meta">Oil on canvas</span></a>
-    </div>
-  </div>
-
-  <!-- ============ NORMAN CATHERINE ============ -->
-  <div class="artist-block reveal">
-    <div class="artist-block__head">
-      <div class="artist-block__id">
-        <img class="artist-block__photo" src="assets/images/artists/norman-catherine.jpg" alt="Norman Catherine" loading="lazy">
-        <div><h2 class="artist-block__name display display--m">Norman Catherine</h2><p class="artist-block__meta">Contemporary · abstract</p></div>
-      </div>
-      <a class="tlink" href="artist.html?a=norman-catherine">See more from the artist →</a>
-    </div>
-    <div class="artwork-grid">
-      <a class="artwork" href="art-for-sale.html"><span class="artwork__img"><img src="assets/images/artworks/norman-catherine-abstract.jpg" alt="Abstract" loading="lazy"></span><span class="artwork__title">Abstract</span><span class="artwork__meta">Mixed media</span></a>
-    </div>
-  </div>
-
-  <!-- ============ STREET-ART SERIES ============ -->
-  <div class="artist-block reveal">
-    <div class="artist-block__head">
-      <div class="artist-block__id">
-        <span class="artist-block__badge" aria-hidden="true">◆</span>
-        <div><h2 class="artist-block__name display display--m">Street-art series</h2><p class="artist-block__meta">Pop &amp; graffiti · acrylic &amp; spray</p></div>
-      </div>
-      <a class="tlink" href="interactive-gallery.html">See in the virtual gallery →</a>
-    </div>
-    <div class="artwork-grid">
-      <a class="artwork" href="art-for-sale.html"><span class="artwork__img"><img src="assets/images/art/481167161_1467634804195478_1478706551339518710_n.jpg" alt="Dream Big" loading="lazy"></span><span class="artwork__title">Dream Big</span><span class="artwork__meta">Acrylic &amp; spray</span></a>
-      <a class="artwork" href="art-for-sale.html"><span class="artwork__img"><img src="assets/images/art/481248973_1467634877528804_1184155112256966395_n.jpg" alt="Love Jazz" loading="lazy"></span><span class="artwork__title">Love Jazz</span><span class="artwork__meta">Acrylic &amp; spray</span></a>
-      <a class="artwork" href="art-for-sale.html"><span class="artwork__img"><img src="assets/images/art/481114011_1467634810862144_3370715028362227983_n.jpg" alt="Peace of Mind" loading="lazy"></span><span class="artwork__title">Peace of Mind</span><span class="artwork__meta">Acrylic &amp; spray</span></a>
-      <a class="artwork" href="art-for-sale.html"><span class="artwork__img"><img src="assets/images/art/481103951_1467634827528809_1486712764805892684_n.jpg" alt="Never Stop Dreaming" loading="lazy"></span><span class="artwork__title">Never Stop Dreaming</span><span class="artwork__meta">Acrylic &amp; spray</span></a>
-      <a class="artwork" href="art-for-sale.html"><span class="artwork__img"><img src="assets/images/art/481662730_1467634807528811_793329585621988949_n.jpg" alt="Home Is Where the Art Is" loading="lazy"></span><span class="artwork__title">Home Is Where the Art Is</span><span class="artwork__meta">Acrylic &amp; spray</span></a>
-    </div>
-  </div>
-
-  <p class="aba-note reveal" style="margin-top:40px;max-width:64ch;">
+  <p class="aba-note" style="margin-top:40px;max-width:64ch;">
     Looking for a particular artist? See the full roster of represented artists on the
     <a class="tlink" href="artists.html">Artists page →</a> &nbsp;·&nbsp; or
     <a class="tlink" href="contact.html">ask us for a portfolio →</a>
   </p>
-
 </section>
 
 </main>
@@ -227,6 +104,80 @@
   </div>
 </footer>
 
+<script src="assets/artists-data.js"></script>
 <script src="site.js"></script>
+<script>
+(function(){
+  var host = document.getElementById('aba-list');
+  if(!host){ return; }
+
+  // Look up a represented artist by name → { slug, photo } for the round photo + link.
+  var ARTISTS = {};
+  (window.ARTPRO_ARTISTS || []).forEach(function(a){ ARTISTS[a.name.toLowerCase()] = a; });
+
+  // Optional descriptive taglines for known groups; falls back to a work count.
+  var TAGLINES = {
+    'deon stolz': 'Bushveld wildlife · oil on canvas',
+    'gaynor': 'Coast & harbour · palette-knife oil',
+    'wakaba mutheki': 'Figures & portraits',
+    'daniel novela': 'African landscapes',
+    'stan polson': 'Trees & landscape',
+    'adriaan boshoff senior': 'Classic landscapes',
+    'norman catherine': 'Contemporary · abstract',
+    'street-art series': 'Pop & graffiti · acrylic & spray'
+  };
+
+  function esc(s){ var d = document.createElement('div'); d.textContent = String(s == null ? '' : s); return d.innerHTML; }
+
+  fetch('/api/public/pieces')
+    .then(function(r){ if(!r.ok){ throw new Error('http ' + r.status); } return r.json(); })
+    .then(function(data){
+      var pieces = (data && data.pieces) || [];
+      if(!pieces.length){ host.innerHTML = '<p class="aba-note">The collection is being updated — please check back soon.</p>'; return; }
+
+      // group by artist, preserving first-seen order (server sorts by artist)
+      var groups = [], byArtist = {};
+      pieces.forEach(function(p){
+        var key = (p.artist || 'Other').trim() || 'Other';
+        if(!byArtist[key]){ byArtist[key] = { artist: key, items: [] }; groups.push(byArtist[key]); }
+        byArtist[key].items.push(p);
+      });
+      host.innerHTML = groups.map(renderGroup).join('');
+    })
+    .catch(function(){
+      host.innerHTML = '<p class="aba-note">Couldn’t load the collection right now — please refresh the page.</p>';
+    });
+
+  function renderGroup(g){
+    var meta = ARTISTS[g.artist.toLowerCase()];
+    var idHtml = (meta && meta.photo)
+      ? '<img class="artist-block__photo" src="' + esc(meta.photo) + '" alt="' + esc(g.artist) + '" loading="lazy">'
+      : '<span class="artist-block__badge" aria-hidden="true">' + esc(g.artist.charAt(0).toUpperCase()) + '</span>';
+    var tagline = TAGLINES[g.artist.toLowerCase()] || (g.items.length + ' work' + (g.items.length === 1 ? '' : 's'));
+    var link = meta
+      ? '<a class="tlink" href="artist.html?a=' + encodeURIComponent(meta.slug) + '">See more from the artist →</a>'
+      : '';
+    return '<div class="artist-block">' +
+      '<div class="artist-block__head">' +
+        '<div class="artist-block__id">' + idHtml +
+          '<div><h2 class="artist-block__name display display--m">' + esc(g.artist) + '</h2>' +
+          '<p class="artist-block__meta">' + esc(tagline) + '</p></div>' +
+        '</div>' + link +
+      '</div>' +
+      '<div class="artwork-grid">' + g.items.map(renderWork).join('') + '</div>' +
+    '</div>';
+  }
+
+  function renderWork(p){
+    var src = p.photo ? esc(p.photo) : 'assets/images/artists/_placeholder.jpg';
+    var sold = /sold/i.test(p.status || '') ? '<span class="artwork__sold">Sold</span>' : '';
+    var metaLine = p.medium ? '<span class="artwork__meta">' + esc(p.medium) + '</span>' : '';
+    return '<a class="artwork" href="art-for-sale.html">' +
+      '<span class="artwork__img"><img src="' + src + '" alt="' + esc(p.desc) + '" loading="lazy">' + sold + '</span>' +
+      '<span class="artwork__title">' + esc(p.desc || 'Untitled') + '</span>' + metaLine +
+    '</a>';
+  }
+})();
+</script>
 </body>
 </html>

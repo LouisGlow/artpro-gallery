@@ -43,6 +43,19 @@ function rowToPiece(r) {
   };
 }
 
+// Public-safe view of a piece — excludes internal fields like location.
+function publicPiece(r) {
+  let photo = r.photo || '';
+  if (photo.startsWith('/api/pieces/')) {
+    photo += (photo.indexOf('?') < 0 ? '?' : '&') + 'v=' + (r.updated || 0);
+  }
+  return {
+    pid: r.pid, photo: photo,
+    id: r.art_id || '', desc: r.descr || '', artist: r.artist || '',
+    medium: r.medium || '', art: r.art_size || '', frame: r.frame || '', status: r.status || ''
+  };
+}
+
 // Decode a data: URL into { bytes: Uint8Array, type } or null for a plain URL/path.
 function decodeDataUrl(photo) {
   if (typeof photo !== 'string' || !photo.startsWith('data:')) return null;
@@ -117,6 +130,15 @@ async function handleApi(request, env, url) {
 
   if (!env.DB) return json({ error: 'Database not configured' }, 500);
   await ensureSchema(env.DB);
+
+  // Public read for the website's own pages — non-archived pieces, no location.
+  if (pathname === '/api/public/pieces') {
+    const { results } = await env.DB.prepare(
+      `SELECT pid, photo, art_id, descr, artist, medium, art_size, frame, status, updated
+         FROM pieces WHERE archived = 0 ORDER BY artist ASC, created ASC, rowid ASC`
+    ).all();
+    return json({ pieces: (results || []).map(publicPiece) });
+  }
 
   // /api/pieces
   if (pathname === '/api/pieces') {
@@ -201,10 +223,12 @@ const GATED_PAGES = ['/catalog', '/add-a-piece'];
 function isGatedPage(pathname) {
   return GATED_PAGES.some(function (p) { return pathname === p || pathname === p + '.html'; });
 }
-function needsAuth(pathname) {
+function needsAuth(pathname, method) {
   if (pathname === '/api/health') return false;
-  if (pathname.startsWith('/api/')) return true;
-  return isGatedPage(pathname);
+  if (pathname === '/api/public/pieces') return false;                          // public read (curated)
+  if (method === 'GET' && /^\/api\/pieces\/[^/]+\/photo$/.test(pathname)) return false; // public images
+  if (pathname.startsWith('/api/')) return true;                                // staff reads + all writes
+  return isGatedPage(pathname);                                                 // staff HTML pages
 }
 function checkAuth(request, env) {
   const expected = env.STAFF_PASSWORD;
@@ -227,7 +251,7 @@ export default {
   async fetch(request, env) {
     const url = new URL(request.url);
 
-    if (needsAuth(url.pathname) && !checkAuth(request, env)) {
+    if (needsAuth(url.pathname, request.method.toUpperCase()) && !checkAuth(request, env)) {
       return unauthorized();
     }
 
