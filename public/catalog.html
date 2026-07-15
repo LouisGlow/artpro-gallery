@@ -149,32 +149,7 @@
       <div class="apc-table-wrap">
         <table class="apc-table">
           <thead><tr><th>Photo</th><th>ID</th><th>Description</th><th>Artist</th><th>Medium</th><th>Art size</th><th>Frame size</th><th>Location</th><th>Status</th></tr></thead>
-          <tbody>
-            <tr>
-              <td><img src="assets/images/art/481133857_1465525504406408_361695882614013422_n.jpg" alt="Lion at first light" loading="lazy"></td>
-              <td class="apc-id">AP-0101</td><td>Lone lion at first light</td><td>Deon Stolz</td><td>Oil</td><td>900 &times; 600 mm</td><td>1010 &times; 710 &times; 40 mm</td><td>Sunninghill Village</td><td><span class="apc-status apc-status--display">On display</span></td>
-            </tr>
-            <tr>
-              <td><img src="assets/images/art/481134307_1465525647739727_8130890387216363959_n.jpg" alt="Two lions at a waterhole" loading="lazy"></td>
-              <td class="apc-id">AP-0102</td><td>Two lions at a waterhole</td><td>Deon Stolz</td><td>Oil</td><td>1200 &times; 800 mm</td><td>1310 &times; 910 &times; 45 mm</td><td>Maggies Farm</td><td><span class="apc-status apc-status--stock">In stockroom</span></td>
-            </tr>
-            <tr>
-              <td><img src="assets/images/art/481076952_1467795767512715_7350483388941025729_n.jpg" alt="Yachts at dusk" loading="lazy"></td>
-              <td class="apc-id">AP-0110</td><td>Yachts under an evening sky</td><td>Gaynor</td><td>Oil</td><td>500 &times; 500 mm</td><td>600 &times; 600 &times; 35 mm</td><td>ArtPro @ Lifestyle</td><td><span class="apc-status apc-status--sold">Sold</span></td>
-            </tr>
-            <tr>
-              <td><img src="assets/images/art/482268372_1467795534179405_7633487693280745775_n.jpg" alt="City marina" loading="lazy"></td>
-              <td class="apc-id">AP-0111</td><td>Sailboats at the city marina</td><td>Gaynor</td><td>Oil</td><td>760 &times; 760 mm</td><td>860 &times; 860 &times; 40 mm</td><td>ArtPro @ Lifestyle</td><td><span class="apc-status apc-status--display">On display</span></td>
-            </tr>
-            <tr>
-              <td><img src="assets/images/artworks/daniel-novela-african-landscape.jpg" alt="African landscape" loading="lazy"></td>
-              <td class="apc-id">AP-0120</td><td>African landscape with distant hills</td><td>Daniel Novela</td><td>Oil</td><td>900 &times; 600 mm</td><td>&mdash;</td><td>Prison Break Market</td><td><span class="apc-status apc-status--stock">In stockroom</span></td>
-            </tr>
-            <tr>
-              <td><img src="assets/images/artworks/wakaba-mutheki-musician.jpg" alt="Musician" loading="lazy"></td>
-              <td class="apc-id">AP-0130</td><td>Township musician with trumpet</td><td>Wakaba Mutheki</td><td>Mixed</td><td>400 &times; 600 mm</td><td>500 &times; 700 &times; 35 mm</td><td>Sunninghill Village</td><td><span class="apc-status apc-status--display">On display</span></td>
-            </tr>
-          </tbody>
+          <tbody><!-- rows rendered from the store (assets/store.js); seeded from assets/catalog-seed.js on a fresh device --></tbody>
         </table>
       </div>
 
@@ -201,6 +176,7 @@
 
 <script src="assets/artists-data.js"></script>
 <script src="assets/store.js"></script>
+<script src="assets/catalog-seed.js"></script>
 <script src="site.js"></script>
 
 <!-- Edit piece modal -->
@@ -518,16 +494,16 @@
       .forEach(function(n){ var o = document.createElement('option'); o.textContent = n; sel.appendChild(o); });
   })();
 
-  // Load saved pieces if there are any; otherwise the hardcoded sample rows are
-  // the seed — persist them so the very first edit has something to save into.
+  // Render the table from the store. On a fresh device (never seeded) fall back
+  // to the sample pieces in assets/catalog-seed.js and persist them once.
   function hydrate(){
-    var saved = window.ArtProStore ? ArtProStore.load() : null;
-    if(saved){                       // seeded before (even if the staff emptied it)
-      tbody.innerHTML = '';
-      saved.forEach(addRow);
-    } else {
-      persist();                     // first ever load — seed from the sample rows
+    var pieces = window.ArtProStore ? ArtProStore.load() : null;
+    if(!pieces){
+      pieces = (window.ARTPRO_SEED || []).slice();
+      if(window.ArtProStore){ ArtProStore.saveAll(pieces); }
     }
+    tbody.innerHTML = '';
+    pieces.forEach(addRow);
   }
 
   hydrate();
