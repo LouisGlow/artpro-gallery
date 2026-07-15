@@ -289,6 +289,13 @@ body { background: #ece7df; font-family: 'Montserrat', -apple-system, 'Segoe UI'
 }
 .vg-grid::-webkit-scrollbar { width:6px; }
 .vg-grid::-webkit-scrollbar-thumb { background:rgba(33,29,24,.25); border-radius:4px; }
+.vg-filters { display:flex; gap:8px; margin-top:14px; }
+.vg-filter {
+	flex:1; min-width:0; -webkit-appearance:none; appearance:none;
+	background:rgba(255,255,255,.55); border:1px solid var(--glass-brd); border-radius:3px;
+	color:var(--ink); font-family:var(--font-body); font-size:12px; padding:9px 10px; cursor:pointer;
+}
+.vg-filter:focus { outline:none; border-color:var(--gold); box-shadow:0 0 0 2px rgba(184,145,47,.3); }
 .vg-thumb {
 	position:relative; aspect-ratio:1/1; overflow:hidden; border-radius:3px;
 	cursor:pointer; border:1px solid transparent; background:var(--paper-2);
@@ -634,7 +641,12 @@ body { background: #ece7df; font-family: 'Montserrat', -apple-system, 'Segoe UI'
 			<span class="vg-count"><span class="vg-count__num">0</span> pieces</span>
 		</div>
 
-		<!-- Thumbnail grid populated from the GALLERY array -->
+		<div class="vg-filters">
+			<select class="vg-filter" id="vg-filter-artist" aria-label="Filter by artist"><option value="">All artists</option></select>
+			<select class="vg-filter" id="vg-filter-medium" aria-label="Filter by medium"><option value="">All mediums</option></select>
+		</div>
+
+		<!-- Thumbnail grid populated from the catalogue -->
 		<div class="vg-grid" role="listbox" aria-label="Collection thumbnails"></div>
 	</aside>
 
@@ -741,7 +753,7 @@ body { background: #ece7df; font-family: 'Montserrat', -apple-system, 'Segoe UI'
 	 * is demonstration metadata — swap it for your real records.
 	 * --------------------------------------------------------------- */
 	var ART = 'assets/images/art/';
-	var GALLERY = [
+	var FALLBACK = [
 		// — Gaynor · coastal & harbour palette-knife oils —
 		{ url:ART+'481076952_1467795767512715_7350483388941025729_n.jpg', thumb:ART+'481076952_1467795767512715_7350483388941025729_n.jpg', title:'Evening Sail',          caption:'Oil on canvas · palette knife', artist:'Gaynor' },
 		{ url:ART+'481076550_1467795667512725_5892456818749260120_n.jpg', thumb:ART+'481076550_1467795667512725_5892456818749260120_n.jpg', title:'Two Boats, Bright Sea', caption:'Oil on canvas · palette knife', artist:'Gaynor' },
@@ -763,8 +775,11 @@ body { background: #ece7df; font-family: 'Montserrat', -apple-system, 'Segoe UI'
 		{ url:ART+'481662730_1467634807528811_793329585621988949_n.jpg',  thumb:ART+'481662730_1467634807528811_793329585621988949_n.jpg',  title:'Home Is Where the Art Is', caption:'Acrylic & spray on canvas',  artist:'' }
 	];
 
+	var GALLERY = [];   // the currently-shown (filtered) list
+	var ALL = [];       // the full catalogue from /api/public/pieces (FALLBACK if offline)
+
 	var root = document.getElementById('artpro-vg');
-	if (!root || !GALLERY.length) { return; }
+	if (!root) { return; }
 
 	/* ---- Cache DOM refs ---- */
 	var activeImg   = root.querySelector('.vg-active-img');
@@ -782,7 +797,7 @@ body { background: #ece7df; font-family: 'Montserrat', -apple-system, 'Segoe UI'
 	var marqueeSrc  = Array.prototype.slice.call(root.querySelectorAll('.vg-marquee__src'));
 	var layers      = Array.prototype.slice.call(root.querySelectorAll('[data-depth]'));
 
-	countNum.textContent = GALLERY.length;
+	countNum.textContent = 0;
 
 	/* Artist name → bio slug, from the artists DB (names don't always slugify
 	 * to their slug). Once loaded, re-render the spotlight + any open viewer. */
@@ -800,22 +815,27 @@ body { background: #ece7df; font-family: 'Montserrat', -apple-system, 'Segoe UI'
 	 * Build the thumbnail grid from the array.
 	 * --------------------------------------------------------------- */
 	var thumbs = [];
-	GALLERY.forEach(function (item, i) {
-		var btn = document.createElement('button');
-		btn.className = 'vg-thumb';
-		btn.type = 'button';
-		btn.setAttribute('role', 'option');
-		btn.setAttribute('aria-label', item.title || ('Artwork ' + (i + 1)));
-		var im = document.createElement('img');
-		im.src = item.thumb || item.url;
-		im.alt = item.title || '';
-		im.loading = 'lazy';
-		im.decoding = 'async';
-		btn.appendChild(im);
-		btn.addEventListener('click', function () { setActive(i); });
-		grid.appendChild(btn);
-		thumbs.push(btn);
-	});
+	function buildGrid() {
+		grid.innerHTML = '';
+		thumbs = [];
+		GALLERY.forEach(function (item, i) {
+			var btn = document.createElement('button');
+			btn.className = 'vg-thumb';
+			btn.type = 'button';
+			btn.setAttribute('role', 'option');
+			btn.setAttribute('aria-label', item.title || ('Artwork ' + (i + 1)));
+			var im = document.createElement('img');
+			im.src = item.thumb || item.url;
+			im.alt = item.title || '';
+			im.loading = 'lazy';
+			im.decoding = 'async';
+			btn.appendChild(im);
+			btn.addEventListener('click', function () { setActive(i); });
+			grid.appendChild(btn);
+			thumbs.push(btn);
+		});
+		countNum.textContent = GALLERY.length;
+	}
 
 	/* ------------------------------------------------------------------
 	 * Swap the active centre piece + sync spotlight + marquee.
@@ -851,7 +871,67 @@ body { background: #ece7df; font-family: 'Montserrat', -apple-system, 'Segoe UI'
 		current = i;
 	}
 
-	setActive(0); // Boot with the first piece.
+	/* ------------------------------------------------------------------
+	 * Catalog-driven display. Fetch pieces, let the viewer filter by
+	 * artist / medium, and slowly auto-rotate the centre image through the
+	 * filtered list (an ambient display that scrolls all day).
+	 * --------------------------------------------------------------- */
+	var ROTATE_MS = 7000, rotateTimer = null;
+	var artistSel = document.getElementById('vg-filter-artist');
+	var mediumSel = document.getElementById('vg-filter-medium');
+
+	function pieceToItem(p) {
+		return { url: p.photo, thumb: p.photo, title: p.desc || 'Untitled', caption: p.medium || 'ArtPro Gallery', artist: p.artist || '', medium: p.medium || '' };
+	}
+	function uniqueSorted(arr) {
+		var seen = {}, out = [];
+		arr.forEach(function (x) { if (x && !seen[x]) { seen[x] = 1; out.push(x); } });
+		return out.sort(function (a, b) { return a.localeCompare(b); });
+	}
+	function fillSelect(sel, values) {
+		if (!sel) { return; }
+		values.forEach(function (v) { var o = document.createElement('option'); o.value = v; o.textContent = v; sel.appendChild(o); });
+	}
+	function applyFilter() {
+		var a = artistSel ? artistSel.value : '';
+		var m = mediumSel ? mediumSel.value : '';
+		GALLERY = ALL.filter(function (it) { return (!a || it.artist === a) && (!m || it.medium === m); });
+		current = -1;
+		buildGrid();
+		stopRotate();
+		if (GALLERY.length) { setActive(0); startRotate(); }
+		else {
+			frameTitle.textContent = 'No works match';
+			frameMeta.textContent = 'Try another filter';
+			activeImg.removeAttribute('src');
+			marqueeNow.forEach(function (el) { el.textContent = '—'; });
+		}
+	}
+	function startRotate() {
+		stopRotate();
+		if (GALLERY.length > 1) {
+			rotateTimer = setInterval(function () {
+				if (stage && !stage.hidden) { return; }   // don't fight the fullscreen viewer / tour
+				setActive((current + 1) % GALLERY.length);
+			}, ROTATE_MS);
+		}
+	}
+	function stopRotate() { if (rotateTimer) { clearInterval(rotateTimer); rotateTimer = null; } }
+
+	if (artistSel) { artistSel.addEventListener('change', applyFilter); }
+	if (mediumSel) { mediumSel.addEventListener('change', applyFilter); }
+
+	function bootGallery(items) {
+		ALL = items;
+		fillSelect(artistSel, uniqueSorted(ALL.map(function (it) { return it.artist; })));
+		fillSelect(mediumSel, uniqueSorted(ALL.map(function (it) { return it.medium; })));
+		applyFilter();
+	}
+
+	fetch('/api/public/pieces').then(function (r) { return r.json(); }).then(function (d) {
+		var items = ((d && d.pieces) || []).filter(function (p) { return p.photo; }).map(pieceToItem);
+		bootGallery(items.length ? items : FALLBACK);
+	}).catch(function () { bootGallery(FALLBACK); });
 
 	/* ------------------------------------------------------------------
 	 * Mouse-parallax depth. Each layer moves by an amount proportional to
