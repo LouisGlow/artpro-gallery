@@ -139,8 +139,8 @@
           </div>
           <button class="apc-btn apc-btn--ghost" type="button" id="apc-import-btn">Import CSV</button>
           <input type="file" id="apc-import" accept=".csv,text/csv" hidden>
-          <a class="apc-btn apc-btn--ghost" href="add-a-piece.html">+ Add a piece</a>
-          <a class="apc-btn" href="#" id="apc-export-btn">Export BOM (CSV)</a>
+          <a class="apc-btn" href="add-a-piece.html">+ Add a piece</a>
+          <a class="apc-btn apc-btn--ghost" href="#" id="apc-export-btn">Export BOM (CSV)</a>
         </div>
       </div>
 
@@ -152,27 +152,27 @@
           <tbody>
             <tr>
               <td><img src="assets/images/art/481133857_1465525504406408_361695882614013422_n.jpg" alt="Lion at first light" loading="lazy"></td>
-              <td class="apc-id">AP-0101</td><td>Lone lion at first light</td><td>Oil on canvas</td><td>900 &times; 600 mm</td><td>1010 &times; 710 mm</td><td>Sunninghill Village</td><td><span class="apc-status apc-status--display">On display</span></td>
+              <td class="apc-id">AP-0101</td><td>Lone lion at first light</td><td>Oil</td><td>900 &times; 600 mm</td><td>1010 &times; 710 mm</td><td>Sunninghill Village</td><td><span class="apc-status apc-status--display">On display</span></td>
             </tr>
             <tr>
               <td><img src="assets/images/art/481134307_1465525647739727_8130890387216363959_n.jpg" alt="Two lions at a waterhole" loading="lazy"></td>
-              <td class="apc-id">AP-0102</td><td>Two lions at a waterhole</td><td>Oil on canvas</td><td>1200 &times; 800 mm</td><td>1310 &times; 910 mm</td><td>Maggies Farm</td><td><span class="apc-status apc-status--stock">In stockroom</span></td>
+              <td class="apc-id">AP-0102</td><td>Two lions at a waterhole</td><td>Oil</td><td>1200 &times; 800 mm</td><td>1310 &times; 910 mm</td><td>Maggies Farm</td><td><span class="apc-status apc-status--stock">In stockroom</span></td>
             </tr>
             <tr>
               <td><img src="assets/images/art/481076952_1467795767512715_7350483388941025729_n.jpg" alt="Yachts at dusk" loading="lazy"></td>
-              <td class="apc-id">AP-0110</td><td>Yachts under an evening sky</td><td>Oil &middot; palette knife</td><td>500 &times; 500 mm</td><td>600 &times; 600 mm</td><td>ArtPro @ Lifestyle</td><td><span class="apc-status apc-status--sold">Sold</span></td>
+              <td class="apc-id">AP-0110</td><td>Yachts under an evening sky</td><td>Oil</td><td>500 &times; 500 mm</td><td>600 &times; 600 mm</td><td>ArtPro @ Lifestyle</td><td><span class="apc-status apc-status--sold">Sold</span></td>
             </tr>
             <tr>
               <td><img src="assets/images/art/482268372_1467795534179405_7633487693280745775_n.jpg" alt="City marina" loading="lazy"></td>
-              <td class="apc-id">AP-0111</td><td>Sailboats at the city marina</td><td>Oil &middot; palette knife</td><td>760 &times; 760 mm</td><td>860 &times; 860 mm</td><td>ArtPro @ Lifestyle</td><td><span class="apc-status apc-status--display">On display</span></td>
+              <td class="apc-id">AP-0111</td><td>Sailboats at the city marina</td><td>Oil</td><td>760 &times; 760 mm</td><td>860 &times; 860 mm</td><td>ArtPro @ Lifestyle</td><td><span class="apc-status apc-status--display">On display</span></td>
             </tr>
             <tr>
               <td><img src="assets/images/artworks/daniel-novela-african-landscape.jpg" alt="African landscape" loading="lazy"></td>
-              <td class="apc-id">AP-0120</td><td>African landscape with distant hills</td><td>Oil on canvas</td><td>900 &times; 600 mm</td><td>&mdash;</td><td>Prison Break Market</td><td><span class="apc-status apc-status--stock">In stockroom</span></td>
+              <td class="apc-id">AP-0120</td><td>African landscape with distant hills</td><td>Oil</td><td>900 &times; 600 mm</td><td>&mdash;</td><td>Prison Break Market</td><td><span class="apc-status apc-status--stock">In stockroom</span></td>
             </tr>
             <tr>
               <td><img src="assets/images/artworks/wakaba-mutheki-musician.jpg" alt="Musician" loading="lazy"></td>
-              <td class="apc-id">AP-0130</td><td>Township musician with trumpet</td><td>Mixed media</td><td>400 &times; 600 mm</td><td>500 &times; 700 mm</td><td>Sunninghill Village</td><td><span class="apc-status apc-status--display">On display</span></td>
+              <td class="apc-id">AP-0130</td><td>Township musician with trumpet</td><td>Mixed</td><td>400 &times; 600 mm</td><td>500 &times; 700 mm</td><td>Sunninghill Village</td><td><span class="apc-status apc-status--display">On display</span></td>
             </tr>
           </tbody>
         </table>
@@ -227,7 +227,7 @@
             <div class="apc-field"><label for="e_desc">Description</label><textarea id="e_desc"></textarea></div>
             <div class="apc-pair">
               <div class="apc-field"><label for="e_id">ID</label><input type="text" id="e_id"></div>
-              <div class="apc-field"><label for="e_medium">Medium</label><input type="text" id="e_medium"></div>
+              <div class="apc-field"><label for="e_medium">Medium</label><select class="apc-select" id="e_medium"><option value="">Select medium&hellip;</option><option>Oil</option><option>Acrylic</option><option>Watercolour</option><option>Charcoal</option><option>Pastel</option><option>Linocut</option><option>Etching</option><option>Print</option><option>Ceramics</option><option>Mixed</option><option>Canvas</option><option>Stretched</option></select></div>
             </div>
             <div class="apc-pair">
               <div class="apc-field"><label for="e_art">Art size</label><input type="text" id="e_art"></div>
@@ -277,16 +277,26 @@
 
   function cells(tr){ return tr.querySelectorAll('td'); }
 
+  function setSelect(sel, val){
+    val = val || '';
+    var prev = sel.querySelector('option[data-custom]'); if(prev){ prev.remove(); }
+    sel.value = val;
+    if(val && sel.value !== val){
+      var o = document.createElement('option'); o.value = val; o.textContent = val; o.setAttribute('data-custom','1');
+      sel.appendChild(o); sel.value = val;
+    }
+  }
+
   function openRow(tr){
     current = tr; var c = cells(tr);
     // 0 photo | 1 id | 2 desc | 3 medium | 4 art | 5 frame | 6 location | 7 status
     g('e_heading').textContent = c[2].textContent.trim() || 'Piece';
     g('e_id').value     = c[1].textContent.trim();
     g('e_desc').value   = c[2].textContent.trim();
-    g('e_medium').value = c[3].textContent.trim();
+    setSelect(g('e_medium'), c[3].textContent.trim());
     g('e_art').value    = c[4].textContent.trim();
     var fr = c[5].textContent.trim(); g('e_frame').value = (fr === '—' ? '' : fr);
-    g('e_location').value = c[6].textContent.trim();
+    setSelect(g('e_location'), c[6].textContent.trim());
     var st = c[7].textContent.toLowerCase();
     g('e_sold').checked    = st.indexOf('sold') !== -1;
     g('e_display').checked = st.indexOf('display') !== -1;
