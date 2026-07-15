@@ -295,7 +295,7 @@ a { color: inherit; }
 .tile--wide img { aspect-ratio: auto; height: 100%; }
 
 /* ============================================================
-   EDITORIAL FEATURE (Markus / split)
+   EDITORIAL FEATURE (split image + text band)
    ============================================================ */
 .feature { display: grid; grid-template-columns: 1fr 1fr; gap: 0; align-items: stretch; }
 .feature--flip .feature__media { order: 2; }
