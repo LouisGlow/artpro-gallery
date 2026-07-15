@@ -339,7 +339,7 @@ async function handleApi(request, env, url) {
 // dashboard). Until it's set, nothing is locked (avoids locking ourselves out
 // before setup). /api/health stays open so the client can detect the API.
 // The username is ignored — staff just need the password.
-const GATED_PAGES = ['/catalog', '/add-a-piece'];
+const GATED_PAGES = ['/catalog', '/add-a-piece', '/manage-artists'];
 function isGatedPage(pathname) {
   return GATED_PAGES.some(function (p) { return pathname === p || pathname === p + '.html'; });
 }

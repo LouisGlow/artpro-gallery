@@ -1,0 +1,257 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Manage Artists — ArtPro Gallery</title>
+<meta name="description" content="Staff — manage the represented artists (preview).">
+<link rel="icon" href="assets/images/favicon.jpg">
+<link rel="stylesheet" href="styles.css">
+<style>
+.apc{--gold:#b8912f;--gold-deep:#8a6d1f;--ink:#211d18;--muted:#6c6459;--paper:#f3efe8;--surface:#fff;--border:#e0d9cd;
+  font-family:'Montserrat',-apple-system,'Segoe UI',system-ui,sans-serif;color:var(--ink);}
+.apc *{box-sizing:border-box;}
+.apc__kicker{font-family:'Barlow Condensed','Oswald',sans-serif;text-transform:uppercase;letter-spacing:.28em;font-size:12px;color:var(--gold-deep);margin:0 0 10px;}
+.apc-toolbar{display:flex;gap:14px;align-items:center;flex-wrap:wrap;margin:22px 0 18px;}
+.apc-toolbar__count{font-family:'Barlow Condensed','Oswald',sans-serif;text-transform:uppercase;letter-spacing:.14em;font-size:13px;color:var(--muted);}
+.apc-toolbar__spacer{flex:1;}
+.apc-btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:48px;font-family:'Barlow Condensed','Oswald',sans-serif;font-weight:600;letter-spacing:.12em;text-transform:uppercase;font-size:14px;text-decoration:none;cursor:pointer;padding:12px 22px;border:1px solid var(--gold);background:var(--gold);color:#1a1712;border-radius:3px;transition:background .2s,color .2s;}
+.apc-btn:hover{background:#cda43a;border-color:#cda43a;}
+.apc-btn--ghost{background:transparent;color:var(--ink);border-color:var(--border);}
+.apc-btn--ghost:hover{background:var(--ink);color:var(--paper);border-color:var(--ink);}
+.apc-tablewrap{overflow-x:auto;border:1px solid var(--border);background:var(--surface);}
+.apc-table{width:100%;border-collapse:collapse;background:var(--surface);font-size:14px;min-width:720px;}
+.apc-table th{font-family:'Barlow Condensed','Oswald',sans-serif;text-transform:uppercase;letter-spacing:.12em;font-size:12px;color:var(--muted);text-align:left;padding:12px 14px;border-bottom:1px solid var(--border);background:#faf8f4;}
+.apc-table td{padding:11px 14px;border-bottom:1px solid var(--border);vertical-align:middle;}
+.apc-table tbody tr{cursor:pointer;transition:background .15s;}
+.apc-table tbody tr:hover{background:#faf7f1;}
+.apc-table img{width:46px;height:46px;border-radius:50%;object-fit:cover;object-position:center top;border:1px solid var(--border);background:var(--paper);display:block;}
+.apc-name{font-weight:600;}
+.apc-bio{color:var(--muted);font-size:13px;max-width:46ch;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.apc-pill{display:inline-block;font-family:'Barlow Condensed','Oswald',sans-serif;text-transform:uppercase;letter-spacing:.08em;font-size:11px;padding:3px 9px;border-radius:20px;border:1px solid var(--border);color:var(--muted);}
+.apc-pill--yes{background:rgba(184,145,47,.14);border-color:var(--gold);color:var(--gold-deep);}
+.apc-note{font-size:12.5px;color:var(--muted);margin:16px 0 0;}
+/* modal */
+.apc-modal{position:fixed;inset:0;z-index:1000;display:none;align-items:flex-start;justify-content:center;padding:24px 16px;overflow:auto;}
+.apc-modal.is-open{display:flex;}
+.apc-modal__scrim{position:fixed;inset:0;background:rgba(30,25,18,.55);}
+.apc-modal__dialog{position:relative;background:var(--paper);border:1px solid var(--border);max-width:640px;width:100%;margin:auto;border-radius:6px;box-shadow:0 30px 80px -30px rgba(30,25,18,.6);}
+.apc-modal__head{display:flex;align-items:flex-start;justify-content:space-between;padding:20px 22px 0;}
+.apc-modal__close{background:none;border:0;font-size:22px;line-height:1;cursor:pointer;color:var(--muted);}
+.apc-modal__body{padding:16px 22px;display:flex;flex-direction:column;gap:16px;}
+.apc-modal__foot{display:flex;gap:12px;align-items:center;flex-wrap:wrap;padding:0 22px 22px;}
+.apc-modal__del{margin-left:auto;background:none;border:0;color:#a5382f;cursor:pointer;font-size:13px;text-decoration:underline;}
+.apc-field{display:flex;flex-direction:column;gap:7px;}
+.apc-field label{font-family:'Barlow Condensed','Oswald',sans-serif;text-transform:uppercase;letter-spacing:.12em;font-size:13px;color:var(--ink);}
+.apc-field input[type=text],.apc-field input[type=number],.apc-field textarea{width:100%;min-height:48px;padding:12px 14px;border:1px solid var(--border);background:#fbfaf7;font:inherit;font-size:15px;color:var(--ink);border-radius:3px;}
+.apc-field textarea{min-height:200px;line-height:1.55;resize:vertical;}
+.apc-field input:focus,.apc-field textarea:focus{outline:none;border-color:var(--gold);box-shadow:0 0 0 3px rgba(184,145,47,.16);}
+.apc-pair{display:grid;grid-template-columns:1fr 160px;gap:16px;}
+.apc-check{display:flex;align-items:center;gap:12px;font-size:15px;cursor:pointer;padding-top:8px;}
+.apc-check input{width:22px;height:22px;accent-color:var(--gold);}
+.apc-file{display:flex;align-items:center;gap:14px;}
+.apc-file__preview{width:72px;height:72px;border-radius:50%;object-fit:cover;object-position:center top;border:1px solid var(--border);background:var(--surface);}
+.apc-file__btn{display:inline-flex;align-items:center;gap:8px;cursor:pointer;border:1px dashed var(--border);background:#fbfaf7;padding:12px 16px;border-radius:4px;font-family:'Barlow Condensed','Oswald',sans-serif;text-transform:uppercase;letter-spacing:.1em;font-size:13px;color:var(--muted);}
+.apc-file__btn:hover{border-color:var(--gold);color:var(--ink);}
+@media(max-width:600px){.apc-pair{grid-template-columns:1fr;}.apc-modal__foot{flex-direction:column;align-items:stretch;}.apc-modal__del{margin-left:0;}}
+</style>
+</head>
+<body>
+
+<header class="site-header">
+  <div class="wrap site-header__inner">
+    <a class="brand" href="index.html" aria-label="ArtPro Gallery — home"><img src="assets/images/logo.png" alt="ArtPro Gallery"></a>
+    <nav class="nav" id="primary-nav" aria-label="Primary">
+      <a href="index.html">Home</a>
+      <a href="about.html">About</a>
+      <a href="services.html">Services</a>
+      <a href="artists.html">Artists</a>
+      <a href="art-by-artists.html">Art by Artists</a>
+      <a href="art-for-sale.html">Art for Sale</a>
+      <a href="interactive-gallery.html">Virtual Gallery</a>
+      <a href="contact.html">Contact</a>
+    </nav>
+    <a class="btn btn--gold header-cta" href="art-for-sale.html">Browse art <span class="btn__arrow">→</span></a>
+    <button class="nav-toggle" aria-label="Menu" aria-controls="primary-nav" aria-expanded="false"><span></span></button>
+  </div>
+</header>
+
+<main>
+  <section class="page-hero wrap"><p class="breadcrumb"><a href="index.html">Home</a> / <a href="catalog.html">Catalog</a> / Manage Artists</p></section>
+
+  <section class="section wrap" style="padding-top:clamp(16px,3vw,28px);">
+    <div class="apc">
+      <p class="apc__kicker">Staff · Artists</p>
+      <h2 class="display display--l" style="max-width:18ch;">Manage artists</h2>
+      <p class="muted" style="max-width:60ch;">Add a new artist or click one to edit their name, photo, bio and represented status. These profiles power the Artists page, the artist bios, and the artist dropdowns in the catalog.</p>
+
+      <div class="apc-toolbar">
+        <span class="apc-toolbar__count"><span id="a-count">0</span> artists · <span id="a-rep">0</span> represented</span>
+        <span class="apc-toolbar__spacer"></span>
+        <a class="apc-btn apc-btn--ghost" href="catalog.html">← Catalog</a>
+        <button class="apc-btn" type="button" id="a-add">+ Add artist</button>
+      </div>
+
+      <div class="apc-tablewrap">
+        <table class="apc-table">
+          <thead><tr><th>Photo</th><th>Name</th><th>Represented</th><th>Bio</th></tr></thead>
+          <tbody id="a-rows"><tr><td colspan="4" style="color:var(--muted);">Loading artists…</td></tr></tbody>
+        </table>
+      </div>
+      <p class="apc-note" id="a-msg" style="display:none;"></p>
+      <p class="apc-note">Represented artists appear on the public <b>Artists</b> page; un-representing hides them there but keeps their profile and any catalogued work.</p>
+    </div>
+  </section>
+</main>
+
+<!-- edit modal -->
+<div class="apc-modal apc" id="a-modal" role="dialog" aria-modal="true" aria-label="Edit artist">
+  <div class="apc-modal__scrim" data-close></div>
+  <div class="apc-modal__dialog">
+    <div class="apc-modal__head">
+      <div><p class="apc__kicker" id="a-mode">Edit artist</p><h3 id="a-heading" style="margin:0;">Artist</h3></div>
+      <button class="apc-modal__close" type="button" data-close aria-label="Close">&#10005;</button>
+    </div>
+    <div class="apc-modal__body">
+      <div class="apc-field">
+        <label>Photo</label>
+        <div class="apc-file">
+          <img class="apc-file__preview" id="a-photo-img" alt="">
+          <label class="apc-file__btn" for="a-photo">Change photo</label>
+          <input type="file" id="a-photo" accept="image/*" hidden>
+        </div>
+      </div>
+      <div class="apc-pair">
+        <div class="apc-field"><label for="a-name">Name</label><input type="text" id="a-name" autocomplete="off"></div>
+        <div class="apc-field"><label for="a-order">Display order</label><input type="number" id="a-order" step="1"></div>
+      </div>
+      <label class="apc-check"><input type="checkbox" id="a-rep-in"> Represented (show on the Artists page)</label>
+      <div class="apc-field"><label for="a-bio">Bio</label><textarea id="a-bio" placeholder="Artist biography…"></textarea></div>
+    </div>
+    <div class="apc-modal__foot">
+      <button class="apc-btn" type="button" id="a-save">Save</button>
+      <button class="apc-btn apc-btn--ghost" type="button" data-close>Cancel</button>
+      <button class="apc-modal__del" type="button" id="a-del">Delete artist</button>
+    </div>
+  </div>
+</div>
+
+<footer class="site-footer">
+  <div class="wrap wrap--wide">
+    <div class="footer-bottom" style="border:0;">
+      <p>© 2026 ArtPro Gallery · Lee Holloway. Staff back office.</p>
+    </div>
+  </div>
+</footer>
+
+<script src="assets/store.js"></script>
+<script src="site.js"></script>
+<script>
+(function(){
+  var g = function(id){ return document.getElementById(id); };
+  var modal = g('a-modal'), tbody = g('a-rows');
+  var current = null;              // slug being edited, or null for a new artist
+  var newPhoto = null;             // data URL of a freshly chosen photo
+
+  function esc(s){ var d = document.createElement('div'); d.textContent = String(s == null ? '' : s); return d.innerHTML; }
+  function msg(t){ var el = g('a-msg'); el.textContent = t; el.style.display = ''; }
+
+  function render(artists){
+    if(!artists.length){ tbody.innerHTML = '<tr><td colspan="4" style="color:var(--muted);">No artists yet — add one.</td></tr>'; }
+    else {
+      tbody.innerHTML = artists.map(function(a){
+        var rep = a.represented ? '<span class="apc-pill apc-pill--yes">Represented</span>' : '<span class="apc-pill">Hidden</span>';
+        var bio = (a.bio || '').replace(/\s+/g, ' ').trim();
+        var photo = a.photo || 'assets/images/artists/_placeholder.jpg';
+        return '<tr data-slug="' + esc(a.slug) + '">' +
+          '<td><img src="' + esc(photo) + '" alt="" loading="lazy"></td>' +
+          '<td class="apc-name">' + esc(a.name) + '</td>' +
+          '<td>' + rep + '</td>' +
+          '<td><div class="apc-bio">' + esc(bio || '—') + '</div></td></tr>';
+      }).join('');
+    }
+    g('a-count').textContent = artists.length;
+    g('a-rep').textContent = artists.filter(function(a){ return a.represented; }).length;
+  }
+
+  var cache = [];
+  function reload(){
+    return ArtProArtists.list().then(function(list){
+      // keep display order, then name
+      list.sort(function(x,y){ return (x.sortOrder - y.sortOrder) || x.name.localeCompare(y.name); });
+      cache = list; render(list);
+    }).catch(function(){ tbody.innerHTML = '<tr><td colspan="4" style="color:#a5382f;">Couldn’t load artists — is the API up?</td></tr>'; });
+  }
+
+  function openEditor(artist){
+    current = artist ? artist.slug : null;
+    newPhoto = null;
+    g('a-mode').textContent = artist ? 'Edit artist' : 'New artist';
+    g('a-heading').textContent = artist ? artist.name : 'New artist';
+    g('a-name').value = artist ? artist.name : '';
+    g('a-bio').value = artist ? artist.bio : '';
+    g('a-order').value = artist ? (artist.sortOrder || 0) : (cache.length ? Math.max.apply(null, cache.map(function(a){ return a.sortOrder || 0; })) + 1 : 0);
+    g('a-rep-in').checked = artist ? !!artist.represented : true;
+    var img = g('a-photo-img');
+    img.src = (artist && artist.photo) ? artist.photo : 'assets/images/artists/_placeholder.jpg';
+    g('a-photo').value = '';
+    g('a-del').style.display = artist ? '' : 'none';
+    modal.classList.add('is-open'); document.body.style.overflow = 'hidden';
+  }
+  function close(){ modal.classList.remove('is-open'); document.body.style.overflow = ''; current = null; }
+
+  function payload(){
+    var p = {
+      name: g('a-name').value.trim(),
+      bio: g('a-bio').value,
+      represented: g('a-rep-in').checked,
+      sortOrder: parseInt(g('a-order').value, 10) || 0
+    };
+    // only send photo when a new one was picked (a data URL) — otherwise keep existing
+    if(newPhoto){ p.photo = newPhoto; }
+    return p;
+  }
+
+  function save(){
+    var name = g('a-name').value.trim();
+    if(!name){ g('a-name').focus(); return; }
+    var body = payload();
+    var op = current ? ArtProArtists.update(current, body) : ArtProArtists.create(body);
+    close();
+    op.then(function(){ return reload(); })
+      .then(function(){ msg('Saved “' + name + '”.'); })
+      .catch(function(){ msg('Could not save “' + name + '” — please try again.'); });
+  }
+
+  function del(){
+    if(!current){ return; }
+    if(!window.confirm('Delete this artist? Their catalogued work stays, but the profile is removed.')){ return; }
+    var slug = current;
+    close();
+    ArtProArtists.remove(slug).then(function(){ return reload(); }).then(function(){ msg('Artist deleted.'); })
+      .catch(function(){ msg('Could not delete — please try again.'); });
+  }
+
+  // events
+  tbody.addEventListener('click', function(e){
+    var tr = e.target.closest('tr[data-slug]'); if(!tr){ return; }
+    var slug = tr.getAttribute('data-slug');
+    var a = cache.filter(function(x){ return x.slug === slug; })[0];
+    if(a){ openEditor(a); }
+  });
+  g('a-add').addEventListener('click', function(){ openEditor(null); });
+  g('a-save').addEventListener('click', save);
+  g('a-del').addEventListener('click', del);
+  Array.prototype.forEach.call(modal.querySelectorAll('[data-close]'), function(el){ el.addEventListener('click', close); });
+  document.addEventListener('keydown', function(e){ if(e.key === 'Escape' && modal.classList.contains('is-open')){ close(); } });
+  g('a-photo').addEventListener('change', function(){
+    var f = this.files[0]; if(!f){ return; }
+    ArtProStore.readPhoto(f).then(function(dataUrl){ newPhoto = dataUrl; g('a-photo-img').src = dataUrl; })
+      .catch(function(){ msg('Could not read that image.'); });
+  });
+
+  reload();
+})();
+</script>
+</body>
+</html>

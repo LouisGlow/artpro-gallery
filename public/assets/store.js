@@ -89,6 +89,19 @@
     });
   }
 
+  // ---- artists (API-only; the admin needs the server) ----
+  function jreq(path, method, bodyObj) {
+    var opts = { method: method };
+    if (bodyObj) { opts.headers = { 'content-type': 'application/json' }; opts.body = JSON.stringify(bodyObj); }
+    return fetch(path, opts).then(function (r) { if (!r.ok) throw new Error('API ' + r.status); return r.status === 204 ? null : r.json(); });
+  }
+  window.ArtProArtists = {
+    list:   function ()          { return fetch('/api/public/artists').then(function (r) { return r.json(); }).then(function (d) { return d.artists || []; }); },
+    create: function (a)         { return jreq('/api/artists', 'POST', a).then(function (d) { return d.artist; }); },
+    update: function (slug, a)   { return jreq('/api/artists/' + encodeURIComponent(slug), 'PUT', a).then(function (d) { return d.artist; }); },
+    remove: function (slug)      { return jreq('/api/artists/' + encodeURIComponent(slug), 'DELETE'); }
+  };
+
   window.ArtProStore = {
     // True once probed and the API answered; useful for UI hints.
     isRemote: function () { return apiUp === true; },
