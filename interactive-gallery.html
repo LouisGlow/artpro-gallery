@@ -1,0 +1,1199 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Interactive Virtual Gallery — ArtPro Gallery</title>
+<meta name="description" content="Step inside ArtPro Gallery's interactive virtual space — a layered, glassmorphic experience where South African artworks float in a 3D gallery you explore with your cursor.">
+<link rel="icon" href="assets/images/favicon.jpg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@300;400;500;600&family=Montserrat:wght@300;400;500;600&display=swap" rel="stylesheet">
+
+<!-- =====================================================================
+     STATIC HTML PORT of page-interactive-gallery.php
+     ---------------------------------------------------------------------
+     The WordPress template pulls images live from the Media Library. This
+     static version ships a fixed collection built from the site's own
+     /assets/images so the experience opens straight from disk with no PHP.
+     All CSS + JS are self-contained. To wire real data later, just replace
+     the GALLERY array near the bottom of this file.
+     ================================================================== -->
+
+<style>
+/* ---- Global reset for the standalone page ---- */
+html, body { margin: 0; padding: 0; }
+body { background: #ece7df; font-family: 'Montserrat', -apple-system, 'Segoe UI', system-ui, sans-serif; }
+::selection { background: #b8912f; color: #211d18; }
+
+/* ---- Slim glass top bar — keeps the page part of the ArtPro site ---- */
+.vg-topbar {
+	position: fixed; top: 0; left: 0; right: 0; z-index: 40;
+	height: 58px; display: flex; align-items: center; justify-content: space-between;
+	padding: 0 clamp(16px, 4vw, 40px);
+	background: rgba(255,255,255,.46);
+	-webkit-backdrop-filter: blur(12px) saturate(180%);
+	backdrop-filter: blur(12px) saturate(180%);
+	border-bottom: 1px solid rgba(255,255,255,.55);
+}
+.vg-topbar__brand {
+	display: flex; align-items: center; gap: 10px; text-decoration: none;
+	color: #211d18; font-family: 'Barlow Condensed', sans-serif; font-weight: 600;
+	letter-spacing: .16em; text-transform: uppercase; font-size: 15px;
+}
+.vg-topbar__brand img { height: 30px; width: auto; display: block; }
+.vg-topbar__nav { display: flex; gap: 4px; align-items: center; }
+.vg-topbar__nav a {
+	font-family: 'Barlow Condensed', sans-serif; font-weight: 500; font-size: 12px;
+	letter-spacing: .16em; text-transform: uppercase; color: #211d18; text-decoration: none;
+	padding: 8px 12px; border-radius: 2px; transition: background .2s, color .2s;
+}
+.vg-topbar__nav a:hover { background: #211d18; color: #ece7df; }
+.vg-topbar__nav a.is-current { color: #8a6d1f; }
+@media (max-width: 640px) {
+	.vg-topbar__nav a:not(.vg-topbar__home) { display: none; }
+}
+
+.vg-visually-hidden {
+	position: absolute !important; width: 1px; height: 1px; padding: 0; margin: -1px;
+	overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0;
+}
+
+/* ---- Scoped reset & design tokens (ported from the .php template) ---- */
+#artpro-vg, #artpro-vg * { box-sizing: border-box; }
+#artpro-vg {
+	--paper:   #ece7df;               /* warm neutral gallery tone           */
+	--paper-2: #dcd5c9;
+	--ink:     #211d18;
+	--muted:   #6c6459;
+	--gold:    #b8912f;               /* ArtPro accent, tuned for glass      */
+	--glass:   rgba(255,255,255,.42);
+	--glass-2: rgba(255,255,255,.24);
+	--glass-brd: rgba(255,255,255,.55);
+	--shadow:  0 20px 60px rgba(40,34,25,.22);
+	--font-display: 'Barlow Condensed','Oswald',-apple-system,system-ui,sans-serif;
+	--font-body:    'Montserrat',-apple-system,'Segoe UI',system-ui,sans-serif;
+
+	position: relative;
+	min-height: 100vh;
+	padding-top: 58px;                /* clears the fixed top bar            */
+	overflow: hidden;
+	font-family: var(--font-body);
+	color: var(--ink);
+	background: var(--paper);
+	perspective: 1400px;              /* enables the 3D depth effect         */
+	isolation: isolate;
+}
+
+/* ---- Ambient environment (background layer) — a virtual gallery room ---- */
+.vg-environment {
+	position:absolute; inset:0; z-index:0; overflow:hidden;
+	/* base wall-to-floor wash: lighter at eye level, deeper toward the floor */
+	background: linear-gradient(180deg, #efe9df 0%, #e9e2d6 40%, #ddd4c5 58%, #cabfad 100%);
+}
+/* enclosing vignette so the space reads as a room, not a flat page */
+.vg-environment::after {
+	content:""; position:absolute; inset:0; pointer-events:none; z-index:3;
+	box-shadow: inset 0 0 200px 50px rgba(46,36,23,.36);
+	background: radial-gradient(135% 82% at 50% 42%, transparent 52%, rgba(46,36,23,.26) 100%);
+}
+/* WALL: soft ceiling spotlight wash + faint vertical panel seams */
+.vg-wall {
+	position:absolute; left:0; right:0; top:0; height:66%;
+	background:
+		radial-gradient(72% 92% at 50% -12%, rgba(255,252,246,.95) 0%, rgba(255,252,246,0) 62%),
+		repeating-linear-gradient(90deg, rgba(90,74,50,.055) 0 1px, transparent 1px 20%);
+}
+/* FLOOR: a receding perspective plane with grid lines */
+.vg-floor {
+	position:absolute; left:50%; bottom:-6%;
+	width:230%; height:60%;
+	transform: translateX(-50%) perspective(620px) rotateX(66deg);
+	transform-origin:bottom center;
+	background: linear-gradient(180deg, rgba(198,188,170,0) 0%, #bcb29b 34%, #a89c84 100%);
+}
+.vg-floor::before {
+	content:""; position:absolute; inset:0;
+	background-image:
+		repeating-linear-gradient(90deg, rgba(60,48,30,.22) 0 2px, transparent 2px 90px),
+		repeating-linear-gradient(0deg,  rgba(60,48,30,.14) 0 2px, transparent 2px 90px);
+	-webkit-mask-image: linear-gradient(180deg, transparent 6%, #000 66%);
+	        mask-image: linear-gradient(180deg, transparent 6%, #000 66%);
+}
+/* SPOTLIGHT: a warm cone of light behind the central artwork + a pool on the floor */
+.vg-spotlight {
+	position:absolute; left:50%; top:3%; width:min(66vw,780px); height:88%;
+	transform:translateX(-50%); pointer-events:none; z-index:1;
+	background:
+		radial-gradient(46% 52% at 50% 33%, rgba(255,251,242,.92) 0%, rgba(255,251,242,0) 70%),
+		radial-gradient(28% 11% at 50% 90%, rgba(255,247,232,.75) 0%, rgba(255,247,232,0) 76%);
+}
+/* ambient colour orbs for subtle life */
+.vg-orb {
+	position:absolute; border-radius:50%; filter: blur(50px); opacity:.6;
+	will-change: transform; z-index:1;
+}
+.vg-orb--a { width:380px; height:380px; left:5%;  top:22%;
+	background: radial-gradient(circle, rgba(184,145,47,.6), transparent 70%);
+	animation: vg-drift 18s ease-in-out infinite; }
+.vg-orb--b { width:340px; height:340px; right:7%; bottom:18%;
+	background: radial-gradient(circle, rgba(90,124,162,.55), transparent 70%);
+	animation: vg-drift 22s ease-in-out infinite reverse; }
+@keyframes vg-drift {
+	0%,100% { transform: translate3d(0,0,0); }
+	50%     { transform: translate3d(30px,-24px,0); }
+}
+
+/* ---- Shared floating-layer base ---- */
+.central-focal-point,
+.floating-panel,
+.depth-control-sidebar {
+	position: absolute;
+	z-index: 2;
+	will-change: transform;                 /* promote to its own GPU layer   */
+	transform: translate3d(0,0,0);
+	transition: transform .12s cubic-bezier(.22,.61,.36,1);
+	transform-style: preserve-3d;
+}
+
+/* ---- Glass panel look ---- */
+.floating-panel,
+.depth-control-sidebar,
+.vg-floating-nav,
+.bottom-marquee {
+	background: var(--glass);
+	-webkit-backdrop-filter: blur(12px) saturate(180%);
+	backdrop-filter: blur(12px) saturate(180%);
+	border: 1px solid var(--glass-brd);
+	box-shadow: var(--shadow);
+}
+
+/* ---- Central focal point ---- */
+.central-focal-point {
+	left:50%; top:calc(50% + 29px);
+	width: min(46vw, 460px);
+	transform: translate3d(-50%,-50%,0);
+	display:flex; flex-direction:column; align-items:center; gap:22px;
+}
+.vg-frame {
+	position:relative;
+	width:100%; aspect-ratio: 4/5;
+	background:#fff;
+	padding:14px;
+	border:1px solid var(--glass-brd);
+	box-shadow: 0 30px 80px rgba(40,34,25,.34), 0 2px 0 rgba(255,255,255,.6) inset;
+	transform-style: preserve-3d;
+}
+.vg-active-img {
+	width:100%; height:100%; object-fit:cover; display:block;
+	background:var(--paper-2);
+	transition: opacity .5s ease;
+}
+.vg-active-img.is-swapping { opacity:0; }
+.vg-expand {
+	position:absolute; top:22px; right:22px; z-index:4;
+	width:34px; height:34px; display:grid; place-items:center;
+	color:#f4efe6; background:rgba(20,17,13,.55);
+	border:1px solid rgba(255,255,255,.35); border-radius:2px; cursor:pointer;
+	-webkit-backdrop-filter:blur(6px); backdrop-filter:blur(6px);
+	transform: translateZ(30px); transition: background .2s;
+}
+.vg-expand:hover { background:var(--gold); color:#211d18; }
+.vg-frame__plate {
+	position:absolute; left:14px; right:14px; bottom:14px;
+	padding:12px 14px;
+	background: rgba(20,17,13,.62);
+	-webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px);
+	color:#f4efe6;
+	display:flex; flex-direction:column; gap:2px;
+	transform: translateZ(30px);            /* pops forward in 3D space        */
+}
+.vg-frame__title {
+	font-family:var(--font-display); font-weight:600; font-size:20px;
+	letter-spacing:.06em; text-transform:uppercase; line-height:1.1;
+}
+.vg-frame__meta { font-size:11px; letter-spacing:.14em; text-transform:uppercase; color:#d8cfbf; }
+
+/* ---- Floating nav overlay ---- */
+.vg-floating-nav {
+	display:flex; gap:6px; padding:8px; border-radius:2px;
+	flex-wrap:wrap; justify-content:center;
+}
+.vg-floating-nav__item {
+	font-family:var(--font-display); font-weight:600;
+	font-size:14px; letter-spacing:.18em; text-transform:uppercase;
+	color:var(--ink); text-decoration:none;
+	padding:8px 14px; border-radius:2px; cursor:pointer;
+	transition: background .2s, color .2s;
+}
+.vg-floating-nav__item:hover { background:var(--ink); color:var(--paper); }
+.vg-floating-nav__item--cta { background:var(--gold); color:#211d18; }
+.vg-floating-nav__item--cta:hover { background:var(--ink); color:var(--paper); }
+
+/* ---- Shared panel typography ---- */
+.vg-panel__eyebrow {
+	font-family:var(--font-display); font-weight:600;
+	font-size:12px; letter-spacing:.24em; text-transform:uppercase;
+	color:var(--gold); margin:0 0 14px;
+}
+.vg-panel__head { display:flex; align-items:baseline; justify-content:space-between; }
+.vg-count { font-size:11px; letter-spacing:.12em; text-transform:uppercase; color:var(--muted); }
+.vg-count__num { color:var(--ink); font-weight:700; }
+
+/* ---- LEFT: artist spotlight ---- */
+.floating-panel-left {
+	left: 3.5vw; top:calc(50% + 29px);
+	width: min(24vw, 300px);
+	transform: translate3d(0,-50%,0);
+	padding:22px;
+	border-radius:4px;
+}
+.floating-panel-left.is-highlight {
+	box-shadow: var(--shadow), 0 0 0 2px var(--gold);
+	animation: vg-pulse 1.4s ease;
+}
+@keyframes vg-pulse {
+	0% { box-shadow: var(--shadow), 0 0 0 0 rgba(184,145,47,.6); }
+	100% { box-shadow: var(--shadow), 0 0 0 16px rgba(184,145,47,0); }
+}
+.vg-artist__photo {
+	width:100%; aspect-ratio:1/1; overflow:hidden; border-radius:3px;
+	background:var(--paper-2); margin-bottom:16px;
+	border:1px solid var(--glass-brd);
+}
+.vg-artist__img { width:100%; height:100%; object-fit:cover; display:block; filter:grayscale(.2); }
+.vg-artist__name {
+	font-family:var(--font-display); font-weight:600; font-size:26px;
+	letter-spacing:.04em; text-transform:uppercase; margin:0 0 8px; line-height:1;
+}
+.vg-artist__bio { font-size:13px; line-height:1.6; color:var(--muted); margin:0 0 14px; }
+.vg-artist__link {
+	font-size:12px; letter-spacing:.1em; text-transform:uppercase;
+	color:var(--ink); text-decoration:none; font-weight:600;
+	border-bottom:1px solid var(--gold); padding-bottom:2px;
+}
+
+/* ---- RIGHT: collection manager ---- */
+.floating-panel-right {
+	right: 3.5vw; top:calc(50% + 29px);
+	width: min(26vw, 330px);
+	transform: translate3d(0,-50%,0);
+	padding:22px;
+	border-radius:4px;
+}
+.vg-grid {
+	display:grid; grid-template-columns:repeat(3,1fr); gap:8px;
+	margin-top:18px; max-height:280px; overflow-y:auto; padding-right:4px;
+}
+.vg-grid::-webkit-scrollbar { width:6px; }
+.vg-grid::-webkit-scrollbar-thumb { background:rgba(33,29,24,.25); border-radius:4px; }
+.vg-thumb {
+	position:relative; aspect-ratio:1/1; overflow:hidden; border-radius:3px;
+	cursor:pointer; border:1px solid transparent; background:var(--paper-2);
+	padding:0; transition:border-color .18s, transform .18s;
+}
+.vg-thumb img { width:100%; height:100%; object-fit:cover; display:block;
+	filter:grayscale(.35); transition:filter .25s, transform .3s; }
+.vg-thumb:hover img { filter:grayscale(0); transform:scale(1.08); }
+.vg-thumb.is-active { border-color:var(--gold); }
+.vg-thumb.is-active::after {
+	content:""; position:absolute; inset:0; border:2px solid var(--gold);
+	border-radius:3px; pointer-events:none;
+}
+
+/* ---- Depth control sidebar ---- */
+.depth-control-sidebar {
+	right: calc(3.5vw + min(26vw,330px) + 18px);
+	top:calc(50% + 29px); transform:translate3d(0,-50%,0);
+	width:70px; padding:16px 10px; border-radius:4px;
+	display:flex; flex-direction:column; align-items:center; gap:16px;
+}
+.vg-depth { display:flex; flex-direction:column; align-items:center; gap:10px; }
+.vg-depth__label, .vg-map__label {
+	font-family:var(--font-display); font-weight:600; font-size:11px;
+	letter-spacing:.2em; text-transform:uppercase; color:var(--muted);
+}
+.vg-depth__slider {
+	-webkit-appearance:none; appearance:none;
+	writing-mode: vertical-lr; direction: rtl;      /* vertical slider, broad support */
+	width:6px; height:140px; border-radius:4px;
+	background: linear-gradient(var(--gold), rgba(33,29,24,.2));
+	cursor:pointer;
+}
+.vg-depth__slider::-webkit-slider-thumb {
+	-webkit-appearance:none; width:18px; height:18px; border-radius:50%;
+	background:#fff; border:2px solid var(--gold); box-shadow:0 2px 6px rgba(0,0,0,.3);
+}
+.vg-depth__slider::-moz-range-thumb {
+	width:18px; height:18px; border-radius:50%; background:#fff;
+	border:2px solid var(--gold); box-shadow:0 2px 6px rgba(0,0,0,.3);
+}
+.vg-depth__value { font-size:12px; font-weight:700; color:var(--ink); font-variant-numeric:tabular-nums; }
+.vg-map { display:flex; flex-direction:column; align-items:center; gap:8px; width:100%; }
+.vg-map__svg { width:46px; height:auto; }
+.vg-map__room { fill:none; stroke:rgba(33,29,24,.35); stroke-width:1.4; }
+.vg-map__hall { stroke:rgba(33,29,24,.2); stroke-width:1; stroke-dasharray:2 3; }
+.vg-map__cell { fill:rgba(33,29,24,.14); }
+.vg-map__cell--active { fill:var(--gold); }
+.vg-map__you { fill:var(--ink); }
+
+/* ---- Bottom marquee ---- */
+.bottom-marquee {
+	position:absolute; left:0; right:0; bottom:0; z-index:3;
+	height:46px; display:flex; align-items:center; gap:14px;
+	padding:0 16px; border-left:0; border-right:0; border-bottom:0;
+	border-radius:0;
+}
+.vg-marquee__tag {
+	flex:0 0 auto; font-family:var(--font-display); font-weight:600;
+	font-size:12px; letter-spacing:.2em; text-transform:uppercase;
+	color:var(--paper); background:var(--gold);
+	padding:5px 12px; border-radius:2px;
+}
+.vg-marquee__viewport { flex:1 1 auto; overflow:hidden; }
+.vg-marquee__track {
+	display:inline-flex; align-items:center; gap:22px; white-space:nowrap;
+	will-change: transform; animation: vg-scroll 32s linear infinite;
+}
+.vg-marquee__item { font-size:13px; letter-spacing:.05em; color:var(--ink); }
+.vg-marquee__item b { color:var(--ink); font-weight:700; }
+.vg-marquee__sep { color:var(--gold); font-size:9px; }
+@keyframes vg-scroll {
+	from { transform: translateX(0); }
+	to   { transform: translateX(-50%); }
+}
+
+/* ---- Fullscreen stage (lightbox + virtual tour) ---- */
+.vg-stage {
+	position:fixed; inset:0; z-index:100;
+	display:flex; align-items:center; justify-content:center;
+}
+.vg-stage[hidden] { display:none; }
+.vg-stage__scrim {
+	position:absolute; inset:0; background:rgba(18,15,11,.82);
+	-webkit-backdrop-filter:blur(6px); backdrop-filter:blur(6px);
+}
+.vg-stage__inner {
+	position:relative; z-index:1;
+	display:grid; grid-template-columns:minmax(0,1fr) minmax(240px,340px);
+	gap:36px; align-items:center; width:min(92vw,1100px);
+}
+.vg-stage__figure { margin:0; display:flex; justify-content:center; min-width:0; }
+.vg-stage__img {
+	max-width:100%; max-height:80vh; object-fit:contain;
+	background:#0d0b08; box-shadow:0 40px 120px rgba(0,0,0,.6);
+}
+.vg-stage__caption { color:#ece7df; }
+.vg-stage__eyebrow {
+	font-family:var(--font-display); font-weight:600; font-size:12px;
+	letter-spacing:.24em; text-transform:uppercase; color:var(--gold); margin:0 0 14px;
+}
+.vg-stage__title {
+	font-family:var(--font-display); font-weight:600; font-size:clamp(28px,3vw,44px);
+	letter-spacing:.03em; text-transform:uppercase; line-height:1; margin:0 0 12px; color:#f4efe6;
+}
+.vg-stage__meta { font-size:12px; letter-spacing:.14em; text-transform:uppercase; color:#c9c0b1; margin:0 0 18px; }
+.vg-stage__artist { font-size:14px; line-height:1.6; color:#d8cfbf; margin:0; }
+.vg-stage__btn {
+	position:absolute; z-index:2; cursor:pointer;
+	background:rgba(255,255,255,.1); color:#f4efe6;
+	border:1px solid rgba(255,255,255,.35);
+	-webkit-backdrop-filter:blur(6px); backdrop-filter:blur(6px);
+	transition:background .2s, color .2s;
+}
+.vg-stage__btn:hover { background:var(--gold); color:#211d18; border-color:var(--gold); }
+.vg-stage__close { top:20px; right:20px; width:42px; height:42px; border-radius:2px; font-size:18px; }
+.vg-stage__nav {
+	top:50%; transform:translateY(-50%); width:52px; height:52px;
+	border-radius:50%; font-size:28px; line-height:1; display:grid; place-items:center;
+}
+.vg-stage__prev { left:24px; }
+.vg-stage__next { right:24px; }
+
+/* ---- Virtual-tour transport bar (only while touring) ---- */
+.vg-tour-bar {
+	position:absolute; left:50%; bottom:28px; transform:translateX(-50%);
+	z-index:2; display:none; align-items:center; gap:16px;
+	padding:10px 16px; border-radius:3px;
+	background:rgba(255,255,255,.12); border:1px solid rgba(255,255,255,.3);
+	-webkit-backdrop-filter:blur(10px); backdrop-filter:blur(10px);
+	color:#f4efe6; width:min(90vw,520px);
+}
+.vg-stage.is-touring .vg-tour-bar { display:flex; }
+.vg-tour-toggle {
+	display:flex; align-items:center; gap:8px; cursor:pointer;
+	background:var(--gold); color:#211d18; border:0; border-radius:2px;
+	padding:7px 12px; font-family:var(--font-display); font-weight:600;
+	letter-spacing:.12em; text-transform:uppercase; font-size:12px;
+}
+.vg-tour-toggle__icon { font-size:10px; }
+.vg-tour-progress { flex:1 1 auto; height:4px; border-radius:4px; background:rgba(255,255,255,.25); overflow:hidden; }
+.vg-tour-progress__fill { display:block; height:100%; width:0; background:var(--gold); }
+.vg-tour-status { font-size:11px; letter-spacing:.14em; text-transform:uppercase; color:#d8cfbf; white-space:nowrap; }
+.vg-tour-end {
+	cursor:pointer; background:transparent; color:#f4efe6;
+	border:1px solid rgba(255,255,255,.4); border-radius:2px; padding:7px 12px;
+	font-family:var(--font-display); font-weight:600; letter-spacing:.12em;
+	text-transform:uppercase; font-size:12px; transition:background .2s, color .2s;
+}
+.vg-tour-end:hover { background:#f4efe6; color:#211d18; }
+
+/* ---- Responsive: stack the experience on tablet & phone ---- */
+@media (max-width: 1024px) {
+	#artpro-vg { overflow-y:auto; }
+	.central-focal-point { position:relative; left:auto; top:auto; transform:none;
+		width:min(80vw,420px); margin:32px auto 0; }
+	.floating-panel-left, .floating-panel-right, .depth-control-sidebar {
+		position:relative; left:auto; right:auto; top:auto; transform:none;
+		width:min(92vw,460px); margin:18px auto;
+	}
+	.depth-control-sidebar { flex-direction:row; width:min(92vw,460px); justify-content:space-around; }
+	.vg-depth__slider { writing-mode:horizontal-tb; width:160px; height:6px; }
+	.bottom-marquee { position:relative; margin-top:20px; }
+	.vg-floor { display:none; }
+	.vg-stage__inner { grid-template-columns:1fr; gap:20px; text-align:center; }
+	.vg-stage__img { max-height:52vh; }
+	.vg-stage__nav { width:44px; height:44px; font-size:24px; }
+}
+
+/* ---- Motion-reduction respect ---- */
+@media (prefers-reduced-motion: reduce) {
+	.vg-orb, .vg-marquee__track { animation:none; }
+	.central-focal-point, .floating-panel, .depth-control-sidebar { transition:none; }
+}
+
+/* =====================================================================
+   STORY SECTION — the "why" content, below the immersive experience.
+   Editorial light theme so it reads as a natural continuation of the
+   main ArtPro site rather than part of the dark interactive canvas.
+   ================================================================== */
+.vg-story {
+	position:relative; z-index:1;
+	background:#f3efe8; color:#211d18;
+	font-family:'Montserrat',-apple-system,'Segoe UI',system-ui,sans-serif;
+	font-weight:300; line-height:1.7;
+	border-top:1px solid #e0d9cd;
+	padding:clamp(56px,8vw,120px) 0;
+}
+.vg-story__wrap { max-width:1180px; margin:0 auto; padding:0 clamp(20px,5vw,64px); }
+.vg-story__head { max-width:60ch; }
+.vg-story__kicker {
+	font-family:'Barlow Condensed',sans-serif; font-weight:600;
+	letter-spacing:.32em; text-transform:uppercase; font-size:12px;
+	color:#8a6d1f; margin:0 0 18px; display:flex; align-items:center; gap:.9em;
+}
+.vg-story__kicker::before { content:""; width:40px; height:1px; background:#b8912f; }
+.vg-story__title {
+	font-family:'Barlow Condensed',sans-serif; font-weight:400;
+	text-transform:uppercase; letter-spacing:.02em; line-height:.95;
+	font-size:clamp(32px,5vw,60px); margin:0 0 20px; color:#14110d; text-wrap:balance;
+}
+.vg-story__lead { font-size:clamp(16px,1.4vw,19px); line-height:1.65; color:#4a4338; margin:0; max-width:62ch; }
+
+.vg-story__grid {
+	display:grid; grid-template-columns:repeat(auto-fit,minmax(240px,1fr));
+	gap:1px; background:#e0d9cd; border:1px solid #e0d9cd;
+	margin:clamp(40px,6vw,72px) 0 0;
+}
+.vg-feature { background:#f3efe8; padding:clamp(24px,3vw,38px); }
+.vg-feature__num {
+	font-family:'Barlow Condensed',sans-serif; font-weight:600;
+	font-size:13px; letter-spacing:.24em; color:#b8912f;
+}
+.vg-feature__title {
+	font-family:'Barlow Condensed',sans-serif; font-weight:500;
+	text-transform:uppercase; letter-spacing:.03em; line-height:1.05;
+	font-size:22px; margin:14px 0 10px; color:#14110d;
+}
+.vg-feature__text { font-size:14.5px; line-height:1.62; color:#5b5346; margin:0; }
+
+.vg-story__how { margin-top:clamp(48px,6vw,80px); }
+.vg-story__how-title {
+	font-family:'Barlow Condensed',sans-serif; font-weight:600;
+	text-transform:uppercase; letter-spacing:.2em; font-size:13px; color:#8a6d1f; margin:0 0 24px;
+}
+.vg-how-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:clamp(20px,3vw,36px); }
+.vg-how { display:flex; flex-direction:column; gap:8px; }
+.vg-how__key {
+	font-family:'Barlow Condensed',sans-serif; font-weight:600; font-size:15px;
+	text-transform:uppercase; letter-spacing:.06em; color:#14110d;
+	padding-bottom:10px; border-bottom:1px solid #d8d0c2;
+}
+.vg-how__text { font-size:14px; line-height:1.6; color:#5b5346; margin:0; }
+
+.vg-story__cta {
+	margin-top:clamp(48px,6vw,84px);
+	background:#14110d; color:#ece7df;
+	padding:clamp(40px,6vw,72px) clamp(24px,5vw,64px);
+	text-align:center;
+}
+.vg-story__cta h3 {
+	font-family:'Barlow Condensed',sans-serif; font-weight:400;
+	text-transform:uppercase; letter-spacing:.03em; line-height:.98;
+	font-size:clamp(26px,3.4vw,44px); margin:0 auto; max-width:18ch; color:#fff;
+}
+.vg-story__cta p { color:rgba(236,231,223,.72); max-width:52ch; margin:18px auto 0; font-size:15px; }
+.vg-story__cta-row { display:flex; gap:14px; justify-content:center; flex-wrap:wrap; margin-top:30px; }
+.vg-btn {
+	font-family:'Barlow Condensed',sans-serif; font-weight:600;
+	letter-spacing:.14em; text-transform:uppercase; font-size:13px;
+	text-decoration:none; padding:14px 26px; border-radius:2px;
+	transition:background .2s, color .2s, border-color .2s;
+}
+.vg-btn--gold { background:#b8912f; color:#14110d; border:1px solid #b8912f; }
+.vg-btn--gold:hover { background:#cda43a; border-color:#cda43a; }
+.vg-btn--ghost { color:#ece7df; border:1px solid rgba(236,231,223,.4); }
+.vg-btn--ghost:hover { background:#ece7df; color:#14110d; }
+.vg-story__contact {
+	margin-top:22px; font-family:'Barlow Condensed',sans-serif;
+	letter-spacing:.12em; text-transform:uppercase; font-size:13px; color:rgba(236,231,223,.6);
+}
+.vg-story__contact a { color:#cda43a; text-decoration:none; }
+</style>
+</head>
+<body>
+
+<!-- ============ SLIM TOP BAR ============ -->
+<header class="vg-topbar">
+	<a class="vg-topbar__brand" href="index.html" aria-label="ArtPro Gallery — home">
+		<img src="assets/images/logo.png" alt="ArtPro Gallery">
+	</a>
+	<nav class="vg-topbar__nav" aria-label="Primary">
+		<a class="vg-topbar__home" href="index.html">Home</a>
+		<a href="about.html">About</a>
+		<a href="services.html">Services</a>
+		<a href="artists.html">Artists</a>
+		<a href="art-by-artists.html">Art by Artists</a>
+		<a href="art-for-sale.html">Art for Sale</a>
+		<a href="interactive-gallery.html" class="is-current" aria-current="page">Virtual Gallery</a>
+		<a href="contact.html">Contact</a>
+	</nav>
+</header>
+
+<!-- =====================================================================
+     SEMANTIC HTML5 STRUCTURE
+     ================================================================== -->
+<main id="artpro-vg" class="gallery-canvas" role="main" aria-label="Interactive virtual gallery">
+
+	<h1 class="vg-visually-hidden">Interactive Virtual Gallery — ArtPro Gallery</h1>
+
+	<!-- Ambient gallery environment (absolute background layer) -->
+	<div class="vg-environment" aria-hidden="true">
+		<div class="vg-floor"></div>
+		<div class="vg-wall"></div>
+		<div class="vg-spotlight"></div>
+		<span class="vg-orb vg-orb--a"></span>
+		<span class="vg-orb vg-orb--b"></span>
+	</div>
+
+	<!-- Central 3D focal point — the "virtual plinth" holding the active piece -->
+	<section class="central-focal-point" data-depth="1.0" aria-live="polite">
+		<div class="vg-frame">
+			<img class="vg-active-img" src="" alt="" decoding="async">
+			<button class="vg-expand" type="button" aria-label="View fullscreen" data-action="lightbox">
+				<svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M4 9V4h5M20 15v5h-5M20 9V4h-5M4 15v5h5"/></svg>
+			</button>
+			<div class="vg-frame__plate">
+				<span class="vg-frame__title">—</span>
+				<span class="vg-frame__meta">—</span>
+			</div>
+		</div>
+
+		<!-- Floating navigation overlay, layered over the central piece -->
+		<nav class="vg-floating-nav" aria-label="Gallery sections">
+			<a class="vg-floating-nav__item" role="button" tabindex="0" data-action="lightbox">The&nbsp;Spaces</a>
+			<a class="vg-floating-nav__item" role="button" tabindex="0" data-action="artists">Our&nbsp;Artists</a>
+			<a class="vg-floating-nav__item" href="contact.html">Private&nbsp;Commissions</a>
+			<a class="vg-floating-nav__item vg-floating-nav__item--cta" role="button" tabindex="0" data-action="tour">Virtual&nbsp;Tours</a>
+		</nav>
+	</section>
+
+	<!-- LEFT: Artist Spotlight card -->
+	<aside class="floating-panel floating-panel-left" data-depth="2.2" aria-label="Artist spotlight">
+		<p class="vg-panel__eyebrow">Artist Spotlight</p>
+		<div class="vg-artist">
+			<div class="vg-artist__photo">
+				<img class="vg-artist__img" src="" alt="" decoding="async">
+			</div>
+			<div class="vg-artist__body">
+				<h3 class="vg-artist__name">—</h3>
+				<p class="vg-artist__bio">Selecting a piece from the collection reveals its artist here.</p>
+				<a href="artists.html" class="vg-artist__link">View collection →</a>
+			</div>
+		</div>
+	</aside>
+
+	<!-- RIGHT: Virtual Collection Manager + Active Display Grid -->
+	<aside class="floating-panel floating-panel-right" data-depth="2.6" aria-label="Virtual collection manager">
+		<div class="vg-panel__head">
+			<p class="vg-panel__eyebrow">Active Display</p>
+			<span class="vg-count"><span class="vg-count__num">0</span> pieces</span>
+		</div>
+
+		<!-- Thumbnail grid populated from the GALLERY array -->
+		<div class="vg-grid" role="listbox" aria-label="Collection thumbnails"></div>
+	</aside>
+
+	<!-- RIGHT EDGE: Depth control + abstract gallery map -->
+	<aside class="depth-control-sidebar" data-depth="1.6" aria-label="Depth and map controller">
+		<div class="vg-depth">
+			<span class="vg-depth__label">Depth</span>
+			<input class="vg-depth__slider" type="range" min="0" max="100" value="55"
+				aria-label="Parallax depth intensity">
+			<span class="vg-depth__value">55</span>
+		</div>
+		<div class="vg-map" aria-hidden="true">
+			<span class="vg-map__label">Layout</span>
+			<svg viewBox="0 0 60 90" class="vg-map__svg">
+				<rect x="4"  y="6"  width="52" height="78" class="vg-map__room"/>
+				<line x1="30" y1="6" x2="30" y2="84" class="vg-map__hall"/>
+				<rect x="8"  y="12" width="16" height="10" class="vg-map__cell"/>
+				<rect x="8"  y="30" width="16" height="10" class="vg-map__cell"/>
+				<rect x="8"  y="48" width="16" height="10" class="vg-map__cell"/>
+				<rect x="36" y="12" width="16" height="10" class="vg-map__cell"/>
+				<rect x="36" y="30" width="16" height="14" class="vg-map__cell vg-map__cell--active"/>
+				<rect x="36" y="52" width="16" height="10" class="vg-map__cell"/>
+				<circle cx="30" cy="70" r="3" class="vg-map__you"/>
+			</svg>
+		</div>
+	</aside>
+
+	<!-- BOTTOM: Scrolling newsfeed marquee -->
+	<div class="bottom-marquee" aria-label="Recent additions">
+		<div class="vg-marquee__tag">Live</div>
+		<div class="vg-marquee__viewport">
+			<div class="vg-marquee__track">
+				<span class="vg-marquee__item">Recent additions: <b>Seascapes by Gaynor · wildlife by Deon Stolz · new street-art series</b></span>
+				<span class="vg-marquee__sep">◆</span>
+				<span class="vg-marquee__item">Now showing: <b class="vg-marquee__active">—</b></span>
+				<span class="vg-marquee__sep">◆</span>
+				<span class="vg-marquee__item">Source: <b class="vg-marquee__src">Gallery Collection</b></span>
+				<span class="vg-marquee__sep">◆</span>
+				<span class="vg-marquee__item">Private commissions now open for 2026</span>
+				<span class="vg-marquee__sep">◆</span>
+				<span class="vg-marquee__item">Enquiries: <b>082 555 4272</b> · lee@artprogallery.co.za</span>
+				<span class="vg-marquee__sep">◆</span>
+				<!-- duplicated once for a seamless -50% scroll loop -->
+				<span class="vg-marquee__item">Recent additions: <b>Seascapes by Gaynor · wildlife by Deon Stolz · new street-art series</b></span>
+				<span class="vg-marquee__sep">◆</span>
+				<span class="vg-marquee__item">Now showing: <b class="vg-marquee__active">—</b></span>
+				<span class="vg-marquee__sep">◆</span>
+				<span class="vg-marquee__item">Source: <b class="vg-marquee__src">Gallery Collection</b></span>
+				<span class="vg-marquee__sep">◆</span>
+				<span class="vg-marquee__item">Private commissions now open for 2026</span>
+				<span class="vg-marquee__sep">◆</span>
+				<span class="vg-marquee__item">Enquiries: <b>082 555 4272</b> · lee@artprogallery.co.za</span>
+				<span class="vg-marquee__sep">◆</span>
+			</div>
+		</div>
+	</div>
+
+</main>
+
+<!-- FULLSCREEN STAGE — serves both the manual lightbox and the auto Virtual Tour -->
+<div class="vg-stage" id="vg-stage" role="dialog" aria-modal="true" aria-label="Artwork viewer" tabindex="-1" hidden>
+	<div class="vg-stage__scrim" data-action="close"></div>
+
+	<div class="vg-stage__inner">
+		<figure class="vg-stage__figure">
+			<img class="vg-stage__img" src="" alt="" decoding="async">
+		</figure>
+		<div class="vg-stage__caption">
+			<p class="vg-stage__eyebrow"><span class="vg-stage__index">1 / 1</span></p>
+			<h2 class="vg-stage__title">—</h2>
+			<p class="vg-stage__meta">—</p>
+			<p class="vg-stage__artist">—</p>
+		</div>
+	</div>
+
+	<!-- Controls -->
+	<button class="vg-stage__btn vg-stage__close" type="button" aria-label="Close viewer" data-action="close">✕</button>
+	<button class="vg-stage__btn vg-stage__nav vg-stage__prev" type="button" aria-label="Previous artwork" data-action="prev">‹</button>
+	<button class="vg-stage__btn vg-stage__nav vg-stage__next" type="button" aria-label="Next artwork" data-action="next">›</button>
+
+	<!-- Virtual-tour transport bar (only visible while touring) -->
+	<div class="vg-tour-bar" role="group" aria-label="Virtual tour controls">
+		<button class="vg-tour-toggle" type="button" aria-label="Pause tour" data-action="tour-toggle">
+			<span class="vg-tour-toggle__icon" aria-hidden="true">❚❚</span>
+			<span class="vg-tour-toggle__text">Pause</span>
+		</button>
+		<div class="vg-tour-progress" aria-hidden="true"><span class="vg-tour-progress__fill"></span></div>
+		<span class="vg-tour-status">Virtual tour</span>
+		<button class="vg-tour-end" type="button" data-action="close">End tour</button>
+	</div>
+</div>
+
+<!-- =====================================================================
+     STORY / VALUE SECTION — sits below the immersive experience
+     ================================================================== -->
+<section class="vg-story" aria-label="About the virtual gallery">
+	<div class="vg-story__wrap">
+
+		<div class="vg-story__head">
+			<p class="vg-story__kicker">A different way to see art</p>
+			<h2 class="vg-story__title">Not a page you scroll — a space you step into</h2>
+			<p class="vg-story__lead">Most gallery websites look the same: a white background and a grid of static thumbnails. This is a room you move through. Artworks sit in a simulated space with depth and light, artists rotate through the spotlight, and the whole collection stays live from our media library — so what you see is always the gallery as it stands today.</p>
+		</div>
+
+		<!-- Five reasons, adapted from the gallery's own brief -->
+		<div class="vg-story__grid">
+			<article class="vg-feature">
+				<span class="vg-feature__num">01</span>
+				<h3 class="vg-feature__title">An experience worth sharing</h3>
+				<p class="vg-feature__text">A gallery that behaves like a living space, not a wall of thumbnails, signals a gallery that is premium and forward-thinking. It is the kind of thing visitors screenshot, share and talk about — turning a first click into word-of-mouth across design and art circles.</p>
+			</article>
+			<article class="vg-feature">
+				<span class="vg-feature__num">02</span>
+				<h3 class="vg-feature__title">The presence of the real thing</h3>
+				<p class="vg-feature__text">Flat photos flatten art. By placing each piece inside a space with depth and perspective, the screen begins to convey the scale of a canvas or the dimension of a sculpture — helping local and international buyers picture a work on their own wall.</p>
+			</article>
+			<article class="vg-feature">
+				<span class="vg-feature__num">03</span>
+				<h3 class="vg-feature__title">Room to linger</h3>
+				<p class="vg-feature__text">A static page is read in seconds. This one invites you to play — slide the depth control, swap the centre piece, follow an artist through the spotlight. Minutes of genuine engagement instead of a passing glance.</p>
+			</article>
+			<article class="vg-feature">
+				<span class="vg-feature__num">04</span>
+				<h3 class="vg-feature__title">Always the latest work</h3>
+				<p class="vg-feature__text">The Active Display syncs to the gallery's media library. A new sculpture or painting uploaded behind the scenes appears here automatically — no developer, no rebuild. Set it once, and the virtual exhibition keeps itself current.</p>
+			</article>
+			<article class="vg-feature">
+				<span class="vg-feature__num">05</span>
+				<h3 class="vg-feature__title">Built for the serious collector</h3>
+				<p class="vg-feature__text">Private commissions, virtual tours and bespoke curation sit front and centre — not buried in a footer. It is the level of presentation high-value and corporate collectors expect, and a digital velvet rope that positions ArtPro as a top-tier gallery.</p>
+			</article>
+		</div>
+
+		<!-- How to explore -->
+		<div class="vg-story__how">
+			<p class="vg-story__how-title">How to explore this page</p>
+			<div class="vg-how-grid">
+				<div class="vg-how">
+					<span class="vg-how__key">Move your mouse</span>
+					<p class="vg-how__text">The layers shift at different speeds — a parallax depth effect that makes the space feel physical. Use the <b>Depth</b> slider on the right to dial the intensity up or down.</p>
+				</div>
+				<div class="vg-how">
+					<span class="vg-how__key">Click any piece</span>
+					<p class="vg-how__text">Choose a thumbnail from the Active Display and it takes the centre frame. The Artist Spotlight on the left rotates through the artists we represent — click it to advance.</p>
+				</div>
+				<div class="vg-how">
+					<span class="vg-how__key">Go fullscreen</span>
+					<p class="vg-how__text">Use the expand control, or “The Spaces”, to view any work fullscreen with previous / next. Everything stays keyboard-navigable.</p>
+				</div>
+				<div class="vg-how">
+					<span class="vg-how__key">Take the tour</span>
+					<p class="vg-how__text">“Virtual Tours” walks you through the collection automatically, with pause and play — a hands-free way to see everything on show.</p>
+				</div>
+			</div>
+		</div>
+
+		<!-- CTA -->
+		<div class="vg-story__cta">
+			<h3>Bring a piece into your own space</h3>
+			<p>Browse the collection online, arrange a private viewing, or tell us what you are looking for — we will point you to the right artist, gallery and price.</p>
+			<div class="vg-story__cta-row">
+				<a class="vg-btn vg-btn--gold" href="art-for-sale.html">Browse art for sale</a>
+				<a class="vg-btn vg-btn--ghost" href="contact.html">Enquire &amp; private commissions</a>
+			</div>
+			<p class="vg-story__contact">Enquiries · <a href="tel:+27825554272">082 555 4272</a> · <a href="mailto:lee@artprogallery.co.za">lee@artprogallery.co.za</a></p>
+		</div>
+
+	</div>
+</section>
+
+<!-- =====================================================================
+     INTERACTIVE JAVASCRIPT
+     ================================================================== -->
+<script>
+(function () {
+	"use strict";
+
+	/* ------------------------------------------------------------------
+	 * The collection. In the WordPress template this array is serialized
+	 * from the Media Library via wp_json_encode(). Here it is a static
+	 * list built from the site's own /assets/images. Artist / title data
+	 * is demonstration metadata — swap it for your real records.
+	 * --------------------------------------------------------------- */
+	var ART = 'assets/images/art/';
+	var GALLERY = [
+		// — Gaynor · coastal & harbour palette-knife oils —
+		{ url:ART+'481076952_1467795767512715_7350483388941025729_n.jpg', thumb:ART+'481076952_1467795767512715_7350483388941025729_n.jpg', title:'Evening Sail',          caption:'Oil on canvas · palette knife', artist:'Gaynor' },
+		{ url:ART+'481076550_1467795667512725_5892456818749260120_n.jpg', thumb:ART+'481076550_1467795667512725_5892456818749260120_n.jpg', title:'Two Boats, Bright Sea', caption:'Oil on canvas · palette knife', artist:'Gaynor' },
+		{ url:ART+'482252317_1467795617512730_3031483635331666865_n.jpg', thumb:ART+'482252317_1467795617512730_3031483635331666865_n.jpg', title:'Fishing Harbour',       caption:'Oil on canvas · palette knife', artist:'Gaynor' },
+		{ url:ART+'482268372_1467795534179405_7633487693280745775_n.jpg', thumb:ART+'482268372_1467795534179405_7633487693280745775_n.jpg', title:'City Marina',           caption:'Oil on canvas · palette knife', artist:'Gaynor' },
+		{ url:ART+'481508751_1467795610846064_2347801665651455254_n.jpg', thumb:ART+'481508751_1467795610846064_2347801665651455254_n.jpg', title:'The Harbour Village',   caption:'Oil on canvas · panoramic',     artist:'Gaynor' },
+		// — Deon Stolz · bushveld wildlife oils —
+		{ url:ART+'481133857_1465525504406408_361695882614013422_n.jpg',  thumb:ART+'481133857_1465525504406408_361695882614013422_n.jpg',  title:'The Sentinel',          caption:'Oil on canvas · wildlife',      artist:'Deon Stolz' },
+		{ url:ART+'481072144_1465525274406431_7419952904267985910_n.jpg', thumb:ART+'481072144_1465525274406431_7419952904267985910_n.jpg', title:'Bushveld Lion',         caption:'Oil on canvas · wildlife',      artist:'Deon Stolz' },
+		{ url:ART+'481134307_1465525647739727_8130890387216363959_n.jpg', thumb:ART+'481134307_1465525647739727_8130890387216363959_n.jpg', title:'At the Waterhole',      caption:'Oil on canvas · wildlife',      artist:'Deon Stolz' },
+		{ url:ART+'481240143_1465525611073064_2185242308816161662_n.jpg', thumb:ART+'481240143_1465525611073064_2185242308816161662_n.jpg', title:'Out of the Dust',       caption:'Oil on canvas · wildlife',      artist:'Deon Stolz' },
+		{ url:ART+'481673968_1465525631073062_245065602767476672_n.jpg',  thumb:ART+'481673968_1465525631073062_245065602767476672_n.jpg',  title:'Rhino & Egrets',        caption:'Oil on canvas · wildlife',      artist:'Deon Stolz' },
+		{ url:ART+'481915860_1465525637739728_3040351051394270591_n.jpg', thumb:ART+'481915860_1465525637739728_3040351051394270591_n.jpg', title:'Kudu, Golden Hour',     caption:'Oil on canvas · wildlife',      artist:'Deon Stolz' },
+		// — Street-art / pop series (artist to be confirmed) —
+		{ url:ART+'481167161_1467634804195478_1478706551339518710_n.jpg', thumb:ART+'481167161_1467634804195478_1478706551339518710_n.jpg', title:'Dream Big',             caption:'Acrylic & spray on canvas',     artist:'' },
+		{ url:ART+'481248973_1467634877528804_1184155112256966395_n.jpg', thumb:ART+'481248973_1467634877528804_1184155112256966395_n.jpg', title:'Love Jazz',             caption:'Acrylic & spray on canvas',     artist:'' },
+		{ url:ART+'481114011_1467634810862144_3370715028362227983_n.jpg', thumb:ART+'481114011_1467634810862144_3370715028362227983_n.jpg', title:'Peace of Mind',         caption:'Acrylic & spray on canvas',     artist:'' },
+		{ url:ART+'481103951_1467634827528809_1486712764805892684_n.jpg', thumb:ART+'481103951_1467634827528809_1486712764805892684_n.jpg', title:'Never Stop Dreaming',   caption:'Acrylic & spray on canvas',     artist:'' },
+		{ url:ART+'481662730_1467634807528811_793329585621988949_n.jpg',  thumb:ART+'481662730_1467634807528811_793329585621988949_n.jpg',  title:'Home Is Where the Art Is', caption:'Acrylic & spray on canvas',  artist:'' }
+	];
+
+	var root = document.getElementById('artpro-vg');
+	if (!root || !GALLERY.length) { return; }
+
+	/* ---- Cache DOM refs ---- */
+	var activeImg   = root.querySelector('.vg-active-img');
+	var frameTitle  = root.querySelector('.vg-frame__title');
+	var frameMeta   = root.querySelector('.vg-frame__meta');
+	var grid        = root.querySelector('.vg-grid');
+	var countNum    = root.querySelector('.vg-count__num');
+	var artistImg   = root.querySelector('.vg-artist__img');
+	var artistName  = root.querySelector('.vg-artist__name');
+	var artistBio   = root.querySelector('.vg-artist__bio');
+	var leftPanel   = root.querySelector('.floating-panel-left');
+	var slider      = root.querySelector('.vg-depth__slider');
+	var sliderVal   = root.querySelector('.vg-depth__value');
+	var marqueeNow  = Array.prototype.slice.call(root.querySelectorAll('.vg-marquee__active'));
+	var marqueeSrc  = Array.prototype.slice.call(root.querySelectorAll('.vg-marquee__src'));
+	var layers      = Array.prototype.slice.call(root.querySelectorAll('[data-depth]'));
+
+	countNum.textContent = GALLERY.length;
+
+	/* ------------------------------------------------------------------
+	 * Build the thumbnail grid from the array.
+	 * --------------------------------------------------------------- */
+	var thumbs = [];
+	GALLERY.forEach(function (item, i) {
+		var btn = document.createElement('button');
+		btn.className = 'vg-thumb';
+		btn.type = 'button';
+		btn.setAttribute('role', 'option');
+		btn.setAttribute('aria-label', item.title || ('Artwork ' + (i + 1)));
+		var im = document.createElement('img');
+		im.src = item.thumb || item.url;
+		im.alt = item.title || '';
+		im.loading = 'lazy';
+		im.decoding = 'async';
+		btn.appendChild(im);
+		btn.addEventListener('click', function () { setActive(i); });
+		grid.appendChild(btn);
+		thumbs.push(btn);
+	});
+
+	/* ------------------------------------------------------------------
+	 * Swap the active centre piece + sync spotlight + marquee.
+	 * --------------------------------------------------------------- */
+	var current = -1;
+	function setActive(i) {
+		var item = GALLERY[i];
+		if (!item) { return; }
+
+		if (i !== current) {
+			// Cross-fade the centre image.
+			activeImg.classList.add('is-swapping');
+			var pre = new Image();
+			pre.onload = function () {
+				activeImg.src = item.url;
+				activeImg.alt = item.title || 'Artwork';
+				requestAnimationFrame(function () { activeImg.classList.remove('is-swapping'); });
+			};
+			pre.src = item.url;
+		}
+
+		frameTitle.textContent = item.title || 'Untitled';
+		frameMeta.textContent  = item.caption || 'ArtPro Gallery';
+
+		// (The Artist Spotlight runs its own real-artist rotation — see below —
+		//  so selecting an artwork no longer overwrites it.)
+
+		// Marquee "now showing" (updates both copies of the looped track).
+		marqueeNow.forEach(function (el) { el.textContent = item.title || 'Untitled'; });
+
+		// Active state on thumbnails.
+		thumbs.forEach(function (t, ti) { t.classList.toggle('is-active', ti === i); });
+		current = i;
+	}
+
+	setActive(0); // Boot with the first piece.
+
+	/* ------------------------------------------------------------------
+	 * Mouse-parallax depth. Each layer moves by an amount proportional to
+	 * its data-depth and the current Depth-slider intensity. We lerp
+	 * toward the target each frame for smooth motion, and only touch
+	 * transforms (GPU-friendly, no layout thrash).
+	 * --------------------------------------------------------------- */
+	var reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+	var intensity = parseInt(slider.value, 10) / 100;   // 0 → 1
+	var targetX = 0, targetY = 0, curX = 0, curY = 0;
+	var isDesktop = window.matchMedia('(min-width: 1025px)').matches;
+
+	slider.addEventListener('input', function () {
+		intensity = parseInt(slider.value, 10) / 100;
+		sliderVal.textContent = slider.value;
+	});
+
+	if (!reduceMotion && isDesktop) {
+		window.addEventListener('mousemove', function (e) {
+			// Normalised -0.5 … 0.5 around viewport centre.
+			targetX = (e.clientX / window.innerWidth)  - 0.5;
+			targetY = (e.clientY / window.innerHeight) - 0.5;
+		}, { passive: true });
+
+		(function raf() {
+			// Ease current toward target.
+			curX += (targetX - curX) * 0.08;
+			curY += (targetY - curY) * 0.08;
+
+			layers.forEach(function (el) {
+				var depth = parseFloat(el.getAttribute('data-depth')) || 1;
+				// Base translate keeps each panel anchored where CSS placed it.
+				var base = el.classList.contains('central-focal-point') ? 'translate(-50%,-50%)'
+					: (el.classList.contains('floating-panel-left') || el.classList.contains('floating-panel-right') || el.classList.contains('depth-control-sidebar'))
+						? 'translateY(-50%)' : '';
+				var maxShift = 26 * depth * intensity;      // px
+				var tx = -curX * maxShift;                  // opposite direction = depth
+				var ty = -curY * maxShift;
+				var rot = curX * 4 * intensity * (el.classList.contains('central-focal-point') ? 1 : 0);
+				el.style.transform =
+					base + ' translate3d(' + tx.toFixed(2) + 'px,' + ty.toFixed(2) + 'px,0)' +
+					(rot ? ' rotateY(' + rot.toFixed(2) + 'deg)' : '');
+			});
+			requestAnimationFrame(raf);
+		})();
+	}
+
+	/* ==================================================================
+	 * ARTIST SPOTLIGHT — rotates the real represented artists.
+	 * Portraits live in /assets/images/artists (pulled from the gallery's
+	 * own site). In the WordPress build these would come from a "Represented
+	 * Artists" CPT / the Media Library; here it's a static roster.
+	 * ============================================================== */
+	var ARTISTS = [
+		{ name:'Adriaan Boshoff Junior',      photo:'assets/images/artists/adriaan-boshoff-jr.jpg' },
+		{ name:'Adriaan Boshoff Senior',      photo:'assets/images/artists/adriaan-boshoff-senior.jpg' },
+		{ name:'André de Beer',               photo:'assets/images/artists/andre-de-beer.jpg' },
+		{ name:'Anton Benson',                photo:'assets/images/artists/anton-benson.jpg' },
+		{ name:'Brian Scott Dawkins',         photo:'assets/images/artists/brian-scott-dawkins.jpg' },
+		{ name:'Chris Tugwell',               photo:'assets/images/artists/chris-tugwell.jpg' },
+		{ name:'Daniel Novela',               photo:'assets/images/artists/daniel-novela.jpg' },
+		{ name:'David Johnson',               photo:'assets/images/artists/david-johnson.jpg' },
+		{ name:'Deon Stolz',                  photo:'assets/images/artists/deon-stolz.jpg' },
+		{ name:'Deon Theron',                 photo:'assets/images/artists/deon-theron.jpg' },
+		{ name:'Dewald Fourie',               photo:'assets/images/artists/dewald-fourie.jpg' },
+		{ name:'Ella Botha',                  photo:'assets/images/artists/ella-botha.jpg' },
+		{ name:'Erina Abrahams',              photo:'assets/images/artists/erina-abrahams.jpg' },
+		{ name:'Estelle Logie',               photo:'assets/images/artists/estelle-logie.jpg' },
+		{ name:'Eugene Van Vrede',            photo:'assets/images/artists/eugene-van-vrede.jpg' },
+		{ name:'Garth Palmer',                photo:'assets/images/artists/garth-palmer.jpg' },
+		{ name:'Helene Kapp',                 photo:'assets/images/artists/helene-kapp.jpg' },
+		{ name:'Hennie Niemann Senior',       photo:'assets/images/artists/hennie-niemann-senior.jpg' },
+		{ name:'Ian Hertslet',                photo:'assets/images/artists/ian-hertslet.jpg' },
+		{ name:'Jerry Lion Motau',            photo:'assets/images/artists/jerry-lion-motau.jpg' },
+		{ name:'Karien Boonzaaier',           photo:'assets/images/artists/karien-boonzaaier.jpg' },
+		{ name:'Kobus Moller',                photo:'assets/images/artists/kobus-moller.jpg' },
+		{ name:'Kobus van Schalkwyk',         photo:'assets/images/artists/kobus-van-schalkwyk.jpg' },
+		{ name:'Lute Vink',                   photo:'assets/images/artists/lute-vink.jpg' },
+		{ name:'Margaret Gradwell',           photo:'assets/images/artists/margaret-gradwell.jpg' },
+		{ name:'Maria Magdalena Oosthuizen',  photo:'assets/images/artists/maria-magdalena-oosthuizen.jpg' },
+		{ name:'Mind Shana',                  photo:'assets/images/artists/mind-shana.jpg' },
+		{ name:'Nic van Rensburg',            photo:'assets/images/artists/nic-van-rensburg.jpg' },
+		{ name:'Nicky van Rensburg',          photo:'assets/images/artists/nicky-van-rensburg.jpg' },
+		{ name:'Norman Catherine',            photo:'assets/images/artists/norman-catherine.jpg' },
+		{ name:'Paul Munro',                  photo:'assets/images/artists/paul-munro.jpg' },
+		{ name:'Petro Neal',                  photo:'assets/images/artists/petro-neal.jpg' },
+		{ name:'Phillip Brits',               photo:'assets/images/artists/phillip-brits.jpg' },
+		{ name:'Pieter Van Tonder',           photo:'assets/images/artists/pieter-van-tonder.jpg' },
+		{ name:'Reece Swanepoel',             photo:'assets/images/artists/reece-swanepoel.jpg' },
+		{ name:'Riaan Van Der Merwe',         photo:'assets/images/artists/riaan-van-der-merwe.jpg' },
+		{ name:'Riana Vorster',               photo:'assets/images/artists/riana-vorster.jpg' },
+		{ name:'Ruben Dante',                 photo:'assets/images/artists/ruben-dante.jpg' },
+		{ name:'Stan Polson',                 photo:'assets/images/artists/stan-polson.jpg' },
+		{ name:'Tanya Jansen',                photo:'assets/images/artists/tanya-jansen.jpg' },
+		{ name:'Wakaba Mutheki',              photo:'assets/images/artists/wakaba-mutheki.jpg' }
+	];
+	// Honest, non-biographical captions rotated by index (no invented facts).
+	var ARTIST_BLURBS = [
+		'Represented across ArtPro’s four galleries in and around Johannesburg.',
+		'Part of the ArtPro roster of South African artists.',
+		'Showing now across our galleries — browse available works in the collection.'
+	];
+
+	var artistIdx = -1, artistTimer = null, ARTIST_MS = 5000;
+
+	function showArtist(i) {
+		var a = ARTISTS[i];
+		if (!a) { return; }
+		artistIdx = i;
+		// Preload so the swap is clean.
+		var pre = new Image();
+		pre.onload = function () { artistImg.src = a.photo; };
+		pre.src = a.photo;
+		artistImg.alt = a.name;
+		artistName.textContent = a.name;
+		artistBio.textContent  = ARTIST_BLURBS[i % ARTIST_BLURBS.length];
+	}
+	function nextArtist() { showArtist((artistIdx + 1) % ARTISTS.length); }
+	function startArtistRotation() { if (!artistTimer) { artistTimer = setInterval(nextArtist, ARTIST_MS); } }
+	function stopArtistRotation()  { if (artistTimer) { clearInterval(artistTimer); artistTimer = null; } }
+
+	showArtist(0);
+	if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) { startArtistRotation(); }
+
+	// Pause the rotation while the visitor is reading; advance on click.
+	if (leftPanel) {
+		leftPanel.addEventListener('mouseenter', stopArtistRotation);
+		leftPanel.addEventListener('mouseleave', function () {
+			if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) { startArtistRotation(); }
+		});
+		leftPanel.addEventListener('click', function (e) {
+			if (e.target.closest('a')) { return; } // let the "View collection" link work
+			nextArtist();
+		});
+	}
+
+	/* ==================================================================
+	 * FULLSCREEN STAGE — lightbox + virtual tour
+	 * ============================================================== */
+	var stage        = document.getElementById('vg-stage');
+	var stageImg     = stage.querySelector('.vg-stage__img');
+	var stageTitle   = stage.querySelector('.vg-stage__title');
+	var stageMeta    = stage.querySelector('.vg-stage__meta');
+	var stageArtist  = stage.querySelector('.vg-stage__artist');
+	var stageIndex   = stage.querySelector('.vg-stage__index');
+	var tourFill     = stage.querySelector('.vg-tour-progress__fill');
+	var tourStatus   = stage.querySelector('.vg-tour-status');
+	var tourIcon     = stage.querySelector('.vg-tour-toggle__icon');
+	var tourText     = stage.querySelector('.vg-tour-toggle__text');
+
+	var stageIdx = 0;
+	var TOUR_MS = 4200;                       // ms per artwork on tour
+	var touring = false, tourPaused = false;
+	var tourRAF = null, tourElapsed = 0, lastTS = 0;
+
+	function renderStage(i) {
+		var item = GALLERY[i];
+		if (!item) { return; }
+		stageIdx = i;
+		stageImg.src = item.url;
+		stageImg.alt = item.title || 'Artwork';
+		stageTitle.textContent  = item.title || 'Untitled';
+		stageMeta.textContent   = item.caption || 'ArtPro Gallery';
+		stageArtist.textContent = item.artist ? 'By ' + item.artist : 'ArtPro Collection · virtual exhibition';
+		stageIndex.textContent  = (i + 1) + ' / ' + GALLERY.length;
+		setActive(i);                          // keep centre + spotlight in sync
+	}
+
+	function openStage(i) {
+		renderStage(typeof i === 'number' ? i : (current < 0 ? 0 : current));
+		stage.hidden = false;
+		document.body.style.overflow = 'hidden';
+		stage.focus();
+	}
+
+	function closeStage() {
+		stopTour();
+		stage.hidden = true;
+		document.body.style.overflow = '';
+	}
+
+	function stageStep(dir) {
+		renderStage((stageIdx + dir + GALLERY.length) % GALLERY.length);
+		if (touring) { tourElapsed = 0; }      // restart the dwell timer on manual step
+	}
+
+	/* ---- Virtual tour ---- */
+	function tourLoop(ts) {
+		if (!touring) { return; }
+		if (!lastTS) { lastTS = ts; }
+		var dt = ts - lastTS; lastTS = ts;
+		if (!tourPaused) { tourElapsed += dt; }
+		var p = Math.min(tourElapsed / TOUR_MS, 1);
+		if (tourFill) { tourFill.style.width = (p * 100).toFixed(1) + '%'; }
+		if (p >= 1) {
+			tourElapsed = 0;
+			renderStage((stageIdx + 1) % GALLERY.length);
+		}
+		tourRAF = requestAnimationFrame(tourLoop);
+	}
+
+	function startTour() {
+		openStage(current < 0 ? 0 : current);
+		touring = true; tourPaused = false; tourElapsed = 0; lastTS = 0;
+		stage.classList.add('is-touring');
+		tourIcon.textContent = '❚❚'; tourText.textContent = 'Pause';
+		tourStatus.textContent = 'Virtual tour — playing';
+		tourRAF = requestAnimationFrame(tourLoop);
+	}
+
+	function stopTour() {
+		if (!touring && !tourRAF) { return; }
+		touring = false;
+		if (tourRAF) { cancelAnimationFrame(tourRAF); tourRAF = null; }
+		stage.classList.remove('is-touring');
+		if (tourFill) { tourFill.style.width = '0%'; }
+	}
+
+	function toggleTour() {
+		tourPaused = !tourPaused;
+		lastTS = 0;                            // avoid a big dt jump after a pause
+		tourIcon.textContent = tourPaused ? '►' : '❚❚';
+		tourText.textContent = tourPaused ? 'Play' : 'Pause';
+		tourStatus.textContent = 'Virtual tour — ' + (tourPaused ? 'paused' : 'playing');
+	}
+
+	/* ---- Artist highlight pulse (the "Our Artists" action) ---- */
+	var highlightT = null;
+	function highlightArtist() {
+		if (!leftPanel) { return; }
+		leftPanel.classList.remove('is-highlight');
+		// Force reflow so the animation can retrigger on repeat clicks.
+		void leftPanel.offsetWidth;
+		leftPanel.classList.add('is-highlight');
+		if (highlightT) { clearTimeout(highlightT); }
+		highlightT = setTimeout(function () { leftPanel.classList.remove('is-highlight'); }, 1500);
+		leftPanel.scrollIntoView({ behavior: 'smooth', block: 'center' });
+	}
+
+	/* ------------------------------------------------------------------
+	 * Delegated actions — every [data-action] control routes through here.
+	 * --------------------------------------------------------------- */
+	function handleAction(a, e) {
+		switch (a) {
+			case 'lightbox':    if (e) e.preventDefault(); openStage(current); break;
+			case 'artists':     if (e) e.preventDefault(); nextArtist(); highlightArtist();  break;
+			case 'tour':        if (e) e.preventDefault(); startTour();        break;
+			case 'close':       if (e) e.preventDefault(); closeStage();       break;
+			case 'next':        if (e) e.preventDefault(); stageStep(1);       break;
+			case 'prev':        if (e) e.preventDefault(); stageStep(-1);      break;
+			case 'tour-toggle': if (e) e.preventDefault(); toggleTour();       break;
+		}
+	}
+
+	document.addEventListener('click', function (e) {
+		var t = e.target.closest('[data-action]');
+		if (t) { handleAction(t.getAttribute('data-action'), e); }
+	});
+
+	// Keyboard activation for the role="button" floating-nav links.
+	root.addEventListener('keydown', function (e) {
+		var t = e.target.closest('.vg-floating-nav__item[data-action]');
+		if (t && (e.key === 'Enter' || e.key === ' ')) {
+			e.preventDefault();
+			handleAction(t.getAttribute('data-action'), e);
+		}
+	});
+
+	/* ------------------------------------------------------------------
+	 * Global keyboard: arrows browse; Escape closes the stage.
+	 * --------------------------------------------------------------- */
+	document.addEventListener('keydown', function (e) {
+		var stageOpen = !stage.hidden;
+		if (e.key === 'Escape' && stageOpen) { closeStage(); return; }
+		if (e.key === 'ArrowRight') { stageOpen ? stageStep(1)  : setActive((current + 1) % GALLERY.length); }
+		else if (e.key === 'ArrowLeft') { stageOpen ? stageStep(-1) : setActive((current - 1 + GALLERY.length) % GALLERY.length); }
+	});
+
+})();
+</script>
+
+</body>
+</html>

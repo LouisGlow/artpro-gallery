@@ -1,0 +1,10 @@
+# Normalise text to LF; never touch binaries
+* text=auto eol=lf
+
+*.jpg  binary
+*.jpeg binary
+*.png  binary
+*.gif  binary
+*.ico  binary
+*.webp binary
+*.pdf  binary

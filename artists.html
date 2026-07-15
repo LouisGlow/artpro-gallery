@@ -1,0 +1,166 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Artists — ArtPro Gallery</title>
+<meta name="description" content="The South African artists represented by ArtPro Gallery — from Adriaan Boshoff to Wakaba Mutheki. Tap an artist to read their story and see available work.">
+<link rel="icon" href="assets/images/favicon.jpg">
+<link rel="stylesheet" href="styles.css">
+<style>
+  .artist-search { display:flex; gap:12px; align-items:center; flex-wrap:wrap; margin-bottom:clamp(28px,4vw,44px); }
+  .artist-search input {
+    flex:1; min-width:240px; background:var(--surface); border:1px solid var(--border);
+    padding:14px 16px; font-family:var(--font-body); font-size:15px; color:var(--ink);
+  }
+  .artist-search input:focus { outline:none; border-color:var(--gold); }
+  .artist-count { font-family:var(--font-display); text-transform:uppercase; letter-spacing:.16em; font-size:12px; color:var(--muted); }
+  .artist-empty { display:none; color:var(--muted); padding:24px 0; }
+
+  /* ---- artist cards ---- */
+  .artist-grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(200px, 1fr)); gap:clamp(16px, 2vw, 30px); }
+  .artist-card { text-decoration:none; color:inherit; display:flex; flex-direction:column; gap:12px; }
+  .artist-card__photo { aspect-ratio:4/5; overflow:hidden; background:var(--surface); border:1px solid var(--border); position:relative; }
+  .artist-card__photo img { width:100%; height:100%; object-fit:cover; object-position:center top; filter:grayscale(.28) contrast(1.02); transition:filter .3s ease, transform .5s ease; }
+  .artist-card:hover .artist-card__photo img { filter:grayscale(0); transform:scale(1.04); }
+  .artist-card:focus-visible { outline:2px solid var(--gold); outline-offset:3px; }
+  .artist-card__photo--placeholder img { filter:grayscale(1) opacity(.5); }
+  .artist-card__name { font-family:var(--font-display); text-transform:uppercase; letter-spacing:.05em; font-weight:500; font-size:15px; line-height:1.15; color:var(--ink); }
+  /* mini paintings strip */
+  .artist-card__works { display:flex; gap:6px; margin-top:-2px; }
+  .artist-card__works span { flex:0 0 auto; width:calc((100% - 12px) / 3); aspect-ratio:1/1; overflow:hidden; border:1px solid var(--border); background:var(--surface); }
+  .artist-card__works img { width:100%; height:100%; object-fit:cover; }
+  .artist-card__tag { font-family:var(--font-display); text-transform:uppercase; letter-spacing:.14em; font-size:10.5px; color:var(--gold-deep); }
+  .artist-card__tag--muted { color:var(--muted); }
+  @media (max-width:520px) { .artist-grid { grid-template-columns:repeat(2, 1fr); } }
+</style>
+</head>
+<body>
+
+<header class="site-header">
+  <div class="wrap site-header__inner">
+    <a class="brand" href="index.html" aria-label="ArtPro Gallery — home"><img src="assets/images/logo.png" alt="ArtPro Gallery"></a>
+    <nav class="nav" id="primary-nav" aria-label="Primary">
+      <a href="index.html">Home</a>
+      <a href="about.html">About</a>
+      <a href="services.html">Services</a>
+      <a href="artists.html" aria-current="page">Artists</a>
+      <a href="art-by-artists.html">Art by Artists</a>
+      <a href="art-for-sale.html">Art for Sale</a>
+      <a href="interactive-gallery.html">Virtual Gallery</a>
+      <a href="contact.html">Contact</a>
+    </nav>
+    <a class="btn btn--gold header-cta" href="art-for-sale.html">Browse art <span class="btn__arrow">→</span></a>
+    <button class="nav-toggle" aria-label="Menu" aria-controls="primary-nav" aria-expanded="false"><span></span></button>
+  </div>
+</header>
+
+<main>
+
+<section class="page-hero wrap">
+  <p class="breadcrumb"><a href="index.html">Home</a> / Artists</p>
+  <div class="page-hero__row" style="margin-top:20px;">
+    <h1 class="display display--l" style="max-width:16ch;">The artists we represent</h1>
+    <p class="muted" style="max-width:34ch;">A growing roster of South African talent — traditional masters and contemporary voices. Tap an artist to read their story and see available work.</p>
+  </div>
+</section>
+
+<section class="section wrap">
+  <div class="artist-search reveal">
+    <input type="search" id="artist-filter" placeholder="Search artists…" aria-label="Search artists">
+    <span class="artist-count"><span id="visible-count">0</span> artists</span>
+  </div>
+
+  <div class="artist-grid" id="artist-index"></div>
+  <p class="artist-empty" id="artist-empty">No artist by that name — try another spelling, or <a class="tlink" href="contact.html">ask us →</a></p>
+
+  <p class="muted reveal" style="margin-top:36px;font-size:14px;max-width:60ch;">Prefer to browse by the work rather than the name? See the collection grouped by artist on <a class="tlink" href="art-by-artists.html">Art by Artists →</a> &nbsp;·&nbsp; or find availability and pricing on the shop — <a class="tlink" href="art-for-sale.html">browse art for sale →</a></p>
+</section>
+
+</main>
+
+<footer class="site-footer">
+  <div class="wrap wrap--wide">
+    <div class="footer-top">
+      <div class="footer-brand"><div class="footer-brand__word">ArtPro Gallery</div><p>South African art across four galleries in and around Johannesburg. Delivered with care.</p></div>
+      <div class="footer-col"><h4>Explore</h4><ul><li><a href="art-for-sale.html">Art for Sale</a></li><li><a href="artists.html">Artists</a></li><li><a href="art-by-artists.html">Art by Artists</a></li><li><a href="services.html">Services</a></li></ul></div>
+      <div class="footer-col"><h4>Contact</h4><ul><li><a href="tel:+27825554272">+27 82 555 4272</a></li><li><a href="mailto:lee@artprogallery.co.za">lee@artprogallery.co.za</a></li><li><a href="mailto:admin@artprogallery.co.za">admin@artprogallery.co.za</a></li><li><a href="contact.html">Find a gallery</a></li></ul></div>
+      <div class="footer-col footer-newsletter"><h4>Newsletter</h4><p style="color:color-mix(in oklab,var(--paper) 60%,transparent);font-size:14px;margin:0 0 12px;">New arrivals and gallery events, occasionally.</p><form onsubmit="return false;"><input type="email" placeholder="Email address" aria-label="Email address"><button class="btn btn--gold" type="submit">Subscribe</button></form></div>
+    </div>
+    <div class="footer-bottom">
+      <p>© 2026 ArtPro Gallery · Lee Holloway. All rights reserved.</p>
+      <div class="footer-staff"><a class="footer-staff__btn" href="/catalog/">Staff login <span aria-hidden="true">&#8594;</span></a></div>
+      <div class="footer-social"><a href="https://web.facebook.com/ArtProGalleries" target="_blank" rel="noopener">Facebook</a><a href="https://www.instagram.com/artprogallery/" target="_blank" rel="noopener">Instagram</a><a href="https://www.youtube.com/@ArtProGallery" target="_blank" rel="noopener">YouTube</a></div>
+    </div>
+  </div>
+</footer>
+
+<script src="assets/artists-data.js"></script>
+<script src="site.js"></script>
+<script>
+(function(){
+  var grid  = document.getElementById('artist-index');
+  var input = document.getElementById('artist-filter');
+  var count = document.getElementById('visible-count');
+  var empty = document.getElementById('artist-empty');
+  var list  = (window.ARTPRO_ARTISTS || []).filter(function(a){ return a.slug !== 'gaynor'; }); // represented roster only
+
+  list.forEach(function(a){
+    var card = document.createElement('a');
+    card.className = 'artist-card';
+    card.href = 'artist.html?a=' + encodeURIComponent(a.slug);
+    card.setAttribute('data-name', a.name);
+
+    var photo = document.createElement('span');
+    photo.className = 'artist-card__photo' + (/_placeholder\.jpg$/.test(a.photo) ? ' artist-card__photo--placeholder' : '');
+    var pimg = document.createElement('img');
+    pimg.src = a.photo; pimg.alt = a.name; pimg.loading = 'lazy'; pimg.decoding = 'async';
+    photo.appendChild(pimg);
+    card.appendChild(photo);
+
+    var name = document.createElement('span');
+    name.className = 'artist-card__name'; name.textContent = a.name;
+    card.appendChild(name);
+
+    var works = a.works || [];
+    if (works.length) {
+      var strip = document.createElement('span');
+      strip.className = 'artist-card__works';
+      works.slice(0,3).forEach(function(w){
+        var cell = document.createElement('span');
+        var im = document.createElement('img');
+        im.src = w.img; im.alt = w.title || ''; im.loading = 'lazy'; im.decoding = 'async';
+        cell.appendChild(im); strip.appendChild(cell);
+      });
+      card.appendChild(strip);
+      var tag = document.createElement('span');
+      tag.className = 'artist-card__tag';
+      tag.textContent = works.length + (works.length === 1 ? ' work available' : ' works available');
+      card.appendChild(tag);
+    } else {
+      var tag2 = document.createElement('span');
+      tag2.className = 'artist-card__tag artist-card__tag--muted';
+      tag2.textContent = 'View profile →';
+      card.appendChild(tag2);
+    }
+    grid.appendChild(card);
+  });
+
+  // search filter
+  var cards = Array.prototype.slice.call(grid.querySelectorAll('.artist-card'));
+  count.textContent = cards.length;
+  input.addEventListener('input', function(){
+    var q = input.value.trim().toLowerCase();
+    var shown = 0;
+    cards.forEach(function(c){
+      var match = (c.getAttribute('data-name') || '').toLowerCase().indexOf(q) !== -1;
+      c.style.display = match ? '' : 'none';
+      if (match) shown++;
+    });
+    count.textContent = shown;
+    empty.style.display = shown === 0 ? 'block' : 'none';
+  });
+})();
+</script>
+</body>
+</html>

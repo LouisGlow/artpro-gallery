@@ -1,0 +1,176 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Artist — ArtPro Gallery</title>
+<meta name="description" content="Represented artist at ArtPro Gallery.">
+<link rel="icon" href="assets/images/favicon.jpg">
+<link rel="stylesheet" href="styles.css">
+<style>
+  .bio-layout { display:grid; grid-template-columns: minmax(0, 320px) minmax(0, 1fr); gap:clamp(28px, 5vw, 64px); align-items:start; }
+  .bio-photo-wrap { position:relative; }
+  .bio-photo { width:100%; aspect-ratio:4/5; object-fit:cover; object-position:center top; border:1px solid var(--border); background:var(--surface); filter:grayscale(.15); }
+  .bio-side__actions { display:flex; flex-direction:column; gap:10px; margin-top:20px; }
+  .bio-side__actions .btn { justify-content:center; }
+  .bio-eyebrow { font-family:var(--font-display); text-transform:uppercase; letter-spacing:.28em; font-size:12px; color:var(--gold-deep); margin:0 0 14px; }
+  .bio-name { margin:0 0 8px; }
+  .bio-born { font-family:var(--font-display); text-transform:uppercase; letter-spacing:.18em; font-size:13px; color:var(--muted); margin:0 0 22px; }
+  .bio-text { max-width:64ch; }
+  .bio-text p { margin:0 0 16px; }
+  .bio-works { margin-top:clamp(40px,6vw,72px); }
+  .bio-works__head { display:flex; align-items:baseline; justify-content:space-between; gap:16px; flex-wrap:wrap; margin-bottom:24px; }
+  .artwork-grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(190px, 1fr)); gap:clamp(16px, 2vw, 26px); }
+  .artwork { text-decoration:none; color:inherit; display:flex; flex-direction:column; gap:10px; }
+  .artwork__img { aspect-ratio:1/1; overflow:hidden; background:var(--surface); border:1px solid var(--border); }
+  .artwork__img img { width:100%; height:100%; object-fit:cover; transition:transform .5s ease; }
+  .artwork:hover .artwork__img img { transform:scale(1.05); }
+  .artwork__title { font-family:var(--font-display); text-transform:uppercase; letter-spacing:.04em; font-size:15px; font-weight:500; color:var(--ink); line-height:1.15; }
+  .artwork__meta { font-size:12px; color:var(--muted); margin-top:-4px; }
+  .bio-empty { color:var(--muted); font-size:14px; }
+  @media (max-width:720px){ .bio-layout { grid-template-columns:1fr; } .bio-photo { max-width:320px; } }
+</style>
+</head>
+<body>
+
+<header class="site-header">
+  <div class="wrap site-header__inner">
+    <a class="brand" href="index.html" aria-label="ArtPro Gallery — home"><img src="assets/images/logo.png" alt="ArtPro Gallery"></a>
+    <nav class="nav" id="primary-nav" aria-label="Primary">
+      <a href="index.html">Home</a>
+      <a href="about.html">About</a>
+      <a href="services.html">Services</a>
+      <a href="artists.html">Artists</a>
+      <a href="art-by-artists.html">Art by Artists</a>
+      <a href="art-for-sale.html">Art for Sale</a>
+      <a href="interactive-gallery.html">Virtual Gallery</a>
+      <a href="contact.html">Contact</a>
+    </nav>
+    <a class="btn btn--gold header-cta" href="art-for-sale.html">Browse art <span class="btn__arrow">→</span></a>
+    <button class="nav-toggle" aria-label="Menu" aria-controls="primary-nav" aria-expanded="false"><span></span></button>
+  </div>
+</header>
+
+<main>
+
+<section class="page-hero wrap">
+  <p class="breadcrumb"><a href="index.html">Home</a> / <a href="artists.html">Artists</a> / <span id="bc-name">Artist</span></p>
+</section>
+
+<section class="section wrap" id="bio-root">
+  <div class="bio-layout">
+    <aside class="bio-side">
+      <div class="bio-photo-wrap"><img class="bio-photo" id="bio-photo" src="" alt=""></div>
+      <div class="bio-side__actions">
+        <a class="btn btn--gold" id="bio-enquire" href="contact.html">Enquire about this artist <span class="btn__arrow">→</span></a>
+        <a class="btn btn--ghost" href="art-for-sale.html">Browse art for sale</a>
+      </div>
+    </aside>
+    <div class="bio-main">
+      <p class="bio-eyebrow">Represented artist</p>
+      <h1 class="display display--l bio-name" id="bio-name">Artist</h1>
+      <p class="bio-born" id="bio-born" hidden></p>
+      <div class="bio-text" id="bio-text"></div>
+    </div>
+  </div>
+
+  <div class="bio-works" id="bio-works-wrap" hidden>
+    <div class="bio-works__head">
+      <h2 class="display display--m">Available works</h2>
+      <a class="tlink" href="art-for-sale.html">All work for sale →</a>
+    </div>
+    <div class="artwork-grid" id="bio-works"></div>
+  </div>
+</section>
+
+</main>
+
+<footer class="site-footer">
+  <div class="wrap wrap--wide">
+    <div class="footer-top">
+      <div class="footer-brand"><div class="footer-brand__word">ArtPro Gallery</div><p>South African art across four galleries in and around Johannesburg. Delivered with care.</p></div>
+      <div class="footer-col"><h4>Explore</h4><ul><li><a href="art-for-sale.html">Art for Sale</a></li><li><a href="artists.html">Artists</a></li><li><a href="art-by-artists.html">Art by Artists</a></li><li><a href="services.html">Services</a></li></ul></div>
+      <div class="footer-col"><h4>Contact</h4><ul><li><a href="tel:+27825554272">+27 82 555 4272</a></li><li><a href="mailto:lee@artprogallery.co.za">lee@artprogallery.co.za</a></li><li><a href="mailto:admin@artprogallery.co.za">admin@artprogallery.co.za</a></li><li><a href="contact.html">Find a gallery</a></li></ul></div>
+      <div class="footer-col footer-newsletter"><h4>Newsletter</h4><p style="color:color-mix(in oklab,var(--paper) 60%,transparent);font-size:14px;margin:0 0 12px;">New arrivals and gallery events, occasionally.</p><form onsubmit="return false;"><input type="email" placeholder="Email address" aria-label="Email address"><button class="btn btn--gold" type="submit">Subscribe</button></form></div>
+    </div>
+    <div class="footer-bottom">
+      <p>© 2026 ArtPro Gallery · Lee Holloway. All rights reserved.</p>
+      <div class="footer-staff"><a class="footer-staff__btn" href="/catalog/">Staff login <span aria-hidden="true">&#8594;</span></a></div>
+      <div class="footer-social"><a href="https://web.facebook.com/ArtProGalleries" target="_blank" rel="noopener">Facebook</a><a href="https://www.instagram.com/artprogallery/" target="_blank" rel="noopener">Instagram</a><a href="https://www.youtube.com/@ArtProGallery" target="_blank" rel="noopener">YouTube</a></div>
+    </div>
+  </div>
+</footer>
+
+<script src="assets/artists-data.js"></script>
+<script src="site.js"></script>
+<script>
+(function(){
+  var params = new URLSearchParams(location.search);
+  var slug = (params.get('a') || '').toLowerCase();
+  var list = (window.ARTPRO_ARTISTS || []);
+  var artist = list.filter(function(a){ return a.slug === slug; })[0];
+
+  var nameEl = document.getElementById('bio-name');
+  var bcEl   = document.getElementById('bc-name');
+
+  if (!artist) {
+    nameEl.textContent = 'Artist not found';
+    bcEl.textContent = 'Not found';
+    document.getElementById('bio-text').innerHTML =
+      '<p class="bio-empty">We couldn’t find that artist. Browse the full roster on the <a class="tlink" href="artists.html">Artists page →</a></p>';
+    document.getElementById('bio-photo').closest('.bio-side').style.display = 'none';
+    return;
+  }
+
+  // Head / title
+  document.title = artist.name + ' — ArtPro Gallery';
+  nameEl.textContent = artist.name;
+  bcEl.textContent = artist.name;
+
+  // Photo
+  var photo = document.getElementById('bio-photo');
+  photo.src = artist.photo;
+  photo.alt = artist.name;
+
+  // Enquire link carries the artist name
+  document.getElementById('bio-enquire').href = 'contact.html?artist=' + encodeURIComponent(artist.name);
+
+  // Born line (if the bio starts with "b. YYYY")
+  var bio = (artist.bio || '').trim();
+  var bornEl = document.getElementById('bio-born');
+  var m = bio.match(/^\s*(b\.\s*\d{4}|\d{4}\s*[–\-]\s*\d{4})/i);
+  if (m) { bornEl.textContent = m[1].replace(/\s+/g,' ').trim(); bornEl.hidden = false; bio = bio.slice(m[0].length).replace(/^[\s–\-]+/,'').trim(); }
+
+  // Bio paragraphs
+  var textEl = document.getElementById('bio-text');
+  if (bio) {
+    bio.split(/\n{2,}|(?<=[.!?])\s{2,}/).filter(Boolean).forEach(function(p){
+      var el = document.createElement('p'); el.textContent = p.trim(); textEl.appendChild(el);
+    });
+    // fallback: if it produced a single blob, just show it
+    if (!textEl.children.length) { var el=document.createElement('p'); el.textContent=bio; textEl.appendChild(el); }
+  } else {
+    textEl.innerHTML = '<p class="bio-empty">A biography for this artist is on the way. In the meantime, ask us for available works and details.</p>';
+  }
+
+  // Works
+  var works = artist.works || [];
+  if (works.length) {
+    var wrap = document.getElementById('bio-works-wrap');
+    var grid = document.getElementById('bio-works');
+    wrap.hidden = false;
+    works.forEach(function(w){
+      var a = document.createElement('a'); a.className='artwork'; a.href='art-for-sale.html';
+      var fig = document.createElement('span'); fig.className='artwork__img';
+      var im = document.createElement('img'); im.src=w.img; im.alt=w.title||artist.name; im.loading='lazy'; im.decoding='async';
+      fig.appendChild(im);
+      var t = document.createElement('span'); t.className='artwork__title'; t.textContent=w.title||'Untitled';
+      var mt = document.createElement('span'); mt.className='artwork__meta'; mt.textContent=w.medium||'Original work';
+      a.appendChild(fig); a.appendChild(t); a.appendChild(mt);
+      grid.appendChild(a);
+    });
+  }
+})();
+</script>
+</body>
+</html>
