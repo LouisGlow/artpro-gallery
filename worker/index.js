@@ -183,9 +183,46 @@ async function handleApi(request, env, url) {
   return json({ error: 'Not found' }, 404);
 }
 
+// ---- staff auth (HTTP Basic) ----
+// Gate the staff catalog, the capture form, and the API behind a password.
+// The password comes from the STAFF_PASSWORD secret (set in the Cloudflare
+// dashboard). Until it's set, nothing is locked (avoids locking ourselves out
+// before setup). /api/health stays open so the client can detect the API.
+// The username is ignored — staff just need the password.
+const GATED_PAGES = ['/catalog', '/add-a-piece'];
+function isGatedPage(pathname) {
+  return GATED_PAGES.some(function (p) { return pathname === p || pathname === p + '.html'; });
+}
+function needsAuth(pathname) {
+  if (pathname === '/api/health') return false;
+  if (pathname.startsWith('/api/')) return true;
+  return isGatedPage(pathname);
+}
+function checkAuth(request, env) {
+  const expected = env.STAFF_PASSWORD;
+  if (!expected) return true;                 // not configured yet -> don't lock
+  const h = request.headers.get('Authorization') || '';
+  if (!h.startsWith('Basic ')) return false;
+  let decoded = '';
+  try { decoded = atob(h.slice(6)); } catch (e) { return false; }
+  const pass = decoded.slice(decoded.indexOf(':') + 1);
+  return pass === expected;
+}
+function unauthorized() {
+  return new Response('Staff access only — enter the catalog password.', {
+    status: 401,
+    headers: { 'WWW-Authenticate': 'Basic realm="ArtPro Staff", charset="UTF-8"' }
+  });
+}
+
 export default {
   async fetch(request, env) {
     const url = new URL(request.url);
+
+    if (needsAuth(url.pathname) && !checkAuth(request, env)) {
+      return unauthorized();
+    }
+
     if (url.pathname.startsWith('/api/')) {
       try {
         return await handleApi(request, env, url);
