@@ -6,3 +6,6 @@ compatibility_date = "2026-07-01"
 
 [assets]
 directory = "./public"
+# Serve .html files directly (our links are explicit .html) — no redirects.
+html_handling = "none"
+not_found_handling = "none"
