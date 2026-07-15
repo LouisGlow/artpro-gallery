@@ -16,4 +16,4 @@ binding = "ASSETS"
 [[d1_databases]]
 binding = "DB"
 database_name = "artpro-catalog"
-database_id = "REPLACE_WITH_DATABASE_ID"
+database_id = "ff37ee77-4d49-4ac1-b968-26af46b311d3"
