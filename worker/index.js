@@ -22,9 +22,15 @@ const json = (data, status = 200) => new Response(JSON.stringify(data), { status
 
 // D1 row -> API piece (never includes the blob)
 function rowToPiece(r) {
+  // Version internal photo URLs by the row's updated time so a replaced image
+  // (or a previously bad cache) always busts the browser cache.
+  let photo = r.photo || '';
+  if (photo.startsWith('/api/pieces/')) {
+    photo += (photo.indexOf('?') < 0 ? '?' : '&') + 'v=' + (r.updated || 0);
+  }
   return {
     pid: r.pid,
-    photo: r.photo || '',
+    photo: photo,
     id: r.art_id || '',
     desc: r.descr || '',
     artist: r.artist || '',
@@ -116,7 +122,7 @@ async function handleApi(request, env, url) {
   if (pathname === '/api/pieces') {
     if (method === 'GET') {
       const { results } = await env.DB.prepare(
-        `SELECT pid, photo, art_id, descr, artist, medium, art_size, frame, loc, status, archived
+        `SELECT pid, photo, art_id, descr, artist, medium, art_size, frame, loc, status, archived, updated
            FROM pieces ORDER BY created ASC, rowid ASC`
       ).all();
       return json({ pieces: (results || []).map(rowToPiece) });
@@ -130,7 +136,7 @@ async function handleApi(request, env, url) {
         `INSERT INTO pieces (pid, photo, photo_blob, photo_type, art_id, descr, artist, medium, art_size, frame, loc, status, archived, created, updated)
          VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`
       ).bind(pid, c.photo, c.photo_blob, c.photo_type, c.art_id, c.descr, c.artist, c.medium, c.art_size, c.frame, c.loc, c.status, c.archived, now, now).run();
-      const { results } = await env.DB.prepare(`SELECT pid, photo, art_id, descr, artist, medium, art_size, frame, loc, status, archived FROM pieces WHERE pid = ?`).bind(pid).all();
+      const { results } = await env.DB.prepare(`SELECT pid, photo, art_id, descr, artist, medium, art_size, frame, loc, status, archived, updated FROM pieces WHERE pid = ?`).bind(pid).all();
       return json({ piece: rowToPiece(results[0]) }, 201);
     }
     return json({ error: 'Method not allowed' }, 405);
@@ -170,7 +176,7 @@ async function handleApi(request, env, url) {
           `UPDATE pieces SET photo=?, art_id=?, descr=?, artist=?, medium=?, art_size=?, frame=?, loc=?, status=?, archived=?, updated=? WHERE pid=?`
         ).bind(c.photo, c.art_id, c.descr, c.artist, c.medium, c.art_size, c.frame, c.loc, c.status, c.archived, now, pid).run();
       }
-      const { results } = await env.DB.prepare(`SELECT pid, photo, art_id, descr, artist, medium, art_size, frame, loc, status, archived FROM pieces WHERE pid = ?`).bind(pid).all();
+      const { results } = await env.DB.prepare(`SELECT pid, photo, art_id, descr, artist, medium, art_size, frame, loc, status, archived, updated FROM pieces WHERE pid = ?`).bind(pid).all();
       if (!results || !results.length) return json({ error: 'Not found' }, 404);
       return json({ piece: rowToPiece(results[0]) });
     }
