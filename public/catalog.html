@@ -64,6 +64,8 @@
 .apc-select:focus{outline:none;border-color:var(--gold);}
 .apc-checks{display:flex;flex-direction:column;}
 .apc-check{display:flex;align-items:center;gap:12px;padding:11px 4px;border-top:1px solid var(--border);cursor:pointer;font-size:15px;}
+.apc-nf{display:flex;align-items:center;gap:9px;font-size:13.5px;color:var(--muted);cursor:pointer;margin-top:6px;}
+.apc-nf input{width:18px;height:18px;accent-color:var(--gold);}
 .apc-check:first-child{border-top:0;}
 .apc-check input{width:22px;height:22px;accent-color:var(--gold);flex:0 0 auto;}
 .apc-file{display:flex;align-items:center;gap:14px;min-height:80px;border:2px dashed var(--border);background:#fbfaf7;border-radius:5px;cursor:pointer;padding:12px 16px;color:var(--muted);font-family:'Barlow Condensed','Oswald',sans-serif;text-transform:uppercase;letter-spacing:.08em;font-size:13px;transition:border-color .2s,color .2s;}
@@ -211,7 +213,7 @@
             </div>
             <div class="apc-pair">
               <div class="apc-field"><label for="e_art">Art size</label><input type="text" id="e_art"></div>
-              <div class="apc-field"><label for="e_frame">Frame size</label><input type="text" id="e_frame"></div>
+              <div class="apc-field"><label for="e_frame">Frame size</label><input type="text" id="e_frame"><label class="apc-nf"><input type="checkbox" id="e_no_frame"> No frame</label></div>
             </div>
           </div>
           <aside class="apc-side">
@@ -307,7 +309,11 @@
     setSelect(g('e_artist'), c[3].textContent.trim());
     setSelect(g('e_medium'), c[4].textContent.trim());
     g('e_art').value    = c[5].textContent.trim();
-    var fr = c[6].textContent.trim(); g('e_frame').value = (fr === '—' ? '' : fr);
+    var fr = c[6].textContent.trim();
+    var isNoFrame = /^no frame$/i.test(fr);
+    g('e_no_frame').checked = isNoFrame;
+    g('e_frame').disabled = isNoFrame;
+    g('e_frame').value = (isNoFrame || fr === '—') ? '' : fr;
     setSelect(g('e_location'), c[7].textContent.trim());
     var st = c[8].textContent.toLowerCase();
     g('e_sold').checked    = st.indexOf('sold') !== -1;
@@ -344,7 +350,7 @@
       artist: g('e_artist').value.trim(),
       medium: g('e_medium').value.trim(),
       art:    g('e_art').value.trim(),
-      frame:  g('e_frame').value.trim(),
+      frame:  g('e_no_frame').checked ? 'No frame' : g('e_frame').value.trim(),
       loc:    g('e_location').value.trim(),
       status: statusText(),
       archived: current.getAttribute('data-archived') === '1'
@@ -390,6 +396,10 @@
   tbody.addEventListener('click', function(e){
     var tr = e.target.closest('tr');
     if(tr && tbody.contains(tr)){ openRow(tr); }
+  });
+  g('e_no_frame').addEventListener('change', function(){
+    g('e_frame').disabled = this.checked;
+    if(this.checked){ g('e_frame').value = ''; }
   });
   g('e_save').addEventListener('click', save);
   g('e_del').addEventListener('click', del);

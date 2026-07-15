@@ -33,6 +33,8 @@
 .apc-check{display:flex;align-items:center;gap:12px;padding:12px 4px;border-top:1px solid var(--border);cursor:pointer;font-size:15px;-webkit-tap-highlight-color:transparent;}
 .apc-check:first-child{border-top:0;}
 .apc-check input{width:22px;height:22px;accent-color:var(--gold);flex:0 0 auto;}
+.apc-nf{display:flex;align-items:center;gap:9px;font-size:14px;color:var(--muted);cursor:pointer;margin-top:4px;-webkit-tap-highlight-color:transparent;}
+.apc-nf input{width:19px;height:19px;accent-color:var(--gold);}
 .apc-file{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;min-height:120px;border:2px dashed var(--border);background:#fbfaf7;border-radius:5px;cursor:pointer;font-family:'Barlow Condensed','Oswald',sans-serif;text-transform:uppercase;letter-spacing:.1em;font-size:15px;color:var(--muted);padding:18px;text-align:center;transition:border-color .2s,background .2s,color .2s;-webkit-tap-highlight-color:transparent;}
 .apc-file:hover,.apc-file:active{border-color:var(--gold);background:#fff;color:var(--ink);}
 .apc-file__icon{font-size:30px;line-height:1;}
@@ -136,6 +138,7 @@
               <div class="apc-field">
                 <label for="apc_frame_size">Frame size</label>
                 <input type="text" id="apc_frame_size" placeholder="e.g. 700 &times; 1000 &times; 40 mm" autocomplete="off">
+                <label class="apc-nf"><input type="checkbox" id="apc_no_frame"> No frame</label>
               </div>
             </div>
           </div>
@@ -222,6 +225,7 @@
   function resetForm(){
     g('apc_desc').value = ''; g('apc_id').value = '';
     g('apc_art_size').value = ''; g('apc_frame_size').value = '';
+    if(noFrame){ noFrame.checked = false; } frameInput.disabled = false;
     g('apc_artist').value = ''; g('apc_medium').value = ''; g('apc_location').value = '';
     Array.prototype.forEach.call(document.querySelectorAll('input[name="apc_status"]'), function(cb){ cb.checked = false; });
     if(f){ f.value = ''; } p.style.display = 'none'; if(t){ t.textContent = 'Take a photo or upload'; }
@@ -229,6 +233,15 @@
   }
 
   function flash(html){ if(note){ note.innerHTML = html; note.style.color = 'var(--gold-deep)'; note.style.fontWeight = '600'; } }
+
+  // No-frame toggle: disable + clear the frame field when ticked
+  var noFrame = g('apc_no_frame'), frameInput = g('apc_frame_size');
+  if(noFrame){
+    noFrame.addEventListener('change', function(){
+      frameInput.disabled = noFrame.checked;
+      if(noFrame.checked){ frameInput.value = ''; }
+    });
+  }
 
   var saving = false;
   function savePiece(photoUrl){
@@ -243,7 +256,7 @@
       artist: g('apc_artist').value.trim(),
       medium: g('apc_medium').value.trim(),
       art:    g('apc_art_size').value.trim(),
-      frame:  g('apc_frame_size').value.trim(),
+      frame:  (noFrame && noFrame.checked) ? 'No frame' : g('apc_frame_size').value.trim(),
       loc:    g('apc_location').value.trim(),
       status: statuses.join(' '),
       archived: false
