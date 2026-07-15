@@ -118,7 +118,7 @@
       <p class="lead" style="max-width:46ch;">A single master record of every artwork across ArtPro's four galleries — capture each piece once with its photo, details and location, find it in seconds, and export the whole list as a bill of materials.</p>
     </div>
     <div class="hero__meta">
-      <div><div class="stat__num">6</div><div class="stat__label">Pieces catalogued</div></div>
+      <div><div class="stat__num" id="stat-count">6</div><div class="stat__label">Pieces catalogued</div></div>
       <div><div class="stat__num">4</div><div class="stat__label">Gallery locations</div></div>
       <div><div class="stat__num">9</div><div class="stat__label">Details per piece</div></div>
       <div><div class="stat__num">CSV</div><div class="stat__label">One-click BOM export</div></div>
@@ -200,6 +200,7 @@
 </footer>
 
 <script src="assets/artists-data.js"></script>
+<script src="assets/store.js"></script>
 <script src="site.js"></script>
 
 <!-- Edit piece modal -->
@@ -279,6 +280,27 @@
 
   function cells(tr){ return tr.querySelectorAll('td'); }
 
+  // ---- data layer (see assets/store.js) ----
+  // Read one table row back into a plain piece object.
+  function rowToPiece(tr){
+    var c = cells(tr), img = c[0].querySelector('img');
+    var fr = c[6].textContent.trim();
+    return {
+      photo:   img ? img.getAttribute('src') : '',
+      id:      c[1].textContent.trim(),
+      desc:    c[2].textContent.trim(),
+      artist:  c[3].textContent.trim(),
+      medium:  c[4].textContent.trim(),
+      art:     c[5].textContent.trim(),
+      frame:   fr === '—' ? '' : fr,
+      loc:     c[7].textContent.trim(),
+      status:  c[8].textContent.trim(),
+      archived: tr.getAttribute('data-archived') === '1'
+    };
+  }
+  function serialize(){ return Array.prototype.slice.call(tbody.querySelectorAll('tr')).map(rowToPiece); }
+  function persist(){ if(window.ArtProStore){ ArtProStore.saveAll(serialize()); } }
+
   function setSelect(sel, val){
     val = val || '';
     var prev = sel.querySelector('option[data-custom]'); if(prev){ prev.remove(); }
@@ -314,6 +336,19 @@
   function pill(key){ var s = STATUS[key]; return '<span class="apc-status '+s[1]+'">'+s[0]+'</span> '; }
 
   function save(){
+    if(!current){ return; }
+    // If a new photo was picked, store it as a data URL so it survives a reload
+    // (blob: URLs from createObjectURL don't). Text fields save immediately.
+    var f = g('e_photo').files[0];
+    if(f){
+      var rd = new FileReader();
+      rd.onload = function(){ applySave(rd.result); };
+      rd.readAsDataURL(f);
+    } else {
+      applySave(null);
+    }
+  }
+  function applySave(photoDataUrl){
     if(!current){ return; } var c = cells(current);
     c[1].textContent = g('e_id').value.trim();
     c[2].textContent = g('e_desc').value.trim();
@@ -327,21 +362,22 @@
     if(g('e_display').checked) pills += pill('display');
     if(g('e_stock').checked)   pills += pill('stock');
     c[8].innerHTML = pills || '<span style="color:var(--muted);opacity:.7;">—</span>';
-    var f = g('e_photo').files[0], img = c[0].querySelector('img');
-    if(f && img){ img.src = URL.createObjectURL(f); }
+    var img = c[0].querySelector('img');
+    if(photoDataUrl && img){ img.src = photoDataUrl; }
+    persist();
     close();
   }
 
   function del(){
     if(!current){ return; }
-    current.remove(); current = null; refresh(); close();
+    current.remove(); current = null; persist(); refresh(); close();
   }
 
   function archiveToggle(){
     if(!current){ return; }
     if(current.getAttribute('data-archived') === '1'){ current.removeAttribute('data-archived'); }
     else { current.setAttribute('data-archived', '1'); }
-    refresh(); close();
+    persist(); refresh(); close();
   }
 
   var view = 'active';
@@ -355,6 +391,7 @@
     });
     g('n-active').textContent = nA;
     g('n-archived').textContent = nAr;
+    var sc = g('stat-count'); if(sc){ sc.textContent = nA + nAr; }
     var em = g('apc-empty-msg');
     if(em){ em.style.display = ((view === 'archived' ? nAr : nA) === 0) ? '' : 'none'; }
   }
@@ -439,7 +476,8 @@
       '<td class="apc-id">' + esc(d.id) + '</td><td>' + esc(d.desc) + '</td><td>' + esc(d.artist) + '</td><td>' + esc(d.medium) + '</td>' +
       '<td>' + esc(d.art) + '</td><td>' + (esc(d.frame) || '—') + '</td><td>' + esc(d.loc) + '</td>' +
       '<td>' + statusPills(d.status) + '</td>';
-    tbody.appendChild(tr);
+    if(d.archived){ tr.setAttribute('data-archived', '1'); }
+    tbody.appendChild(tr); return tr;
   }
   var msgT;
   function showImport(text){
@@ -459,6 +497,7 @@
       addRow({ id:get('id'), desc:get('desc'), artist:get('artist'), medium:get('medium'), art:get('art'), frame:get('frame'), loc:get('loc'), status:get('status'), photo:get('photo') });
       n++;
     }
+    persist();
     refresh();
     showImport(n ? ('Imported ' + n + ' piece' + (n === 1 ? '' : 's') + ' into the catalog.') : 'No rows found in that CSV.');
   }
@@ -479,6 +518,19 @@
       .forEach(function(n){ var o = document.createElement('option'); o.textContent = n; sel.appendChild(o); });
   })();
 
+  // Load saved pieces if there are any; otherwise the hardcoded sample rows are
+  // the seed — persist them so the very first edit has something to save into.
+  function hydrate(){
+    var saved = window.ArtProStore ? ArtProStore.load() : null;
+    if(saved){                       // seeded before (even if the staff emptied it)
+      tbody.innerHTML = '';
+      saved.forEach(addRow);
+    } else {
+      persist();                     // first ever load — seed from the sample rows
+    }
+  }
+
+  hydrate();
   refresh();
 })();
 </script>
