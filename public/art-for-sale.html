@@ -7,6 +7,10 @@
 <meta name="description" content="Browse South African art for sale by medium — oil, acrylic, watercolour, works on paper, prints, ceramics and more.">
 <link rel="icon" href="assets/images/favicon.jpg">
 <link rel="stylesheet" href="styles.css">
+<style>
+  .card__artist a { color:inherit; text-decoration:none; transition:color .2s; }
+  .card__artist a:hover { color:var(--gold-deep,#8a6d1f); text-decoration:underline; }
+</style>
 </head>
 <body>
 
@@ -100,8 +104,16 @@
     return s.indexOf('display') !== -1 || s.indexOf('stock') !== -1;
   }
 
-  fetch('/api/public/pieces').then(function(r){ return r.json(); }).then(function(data){
-    var pieces = ((data && data.pieces) || []).filter(forSale);
+  Promise.all([
+    fetch('/api/public/pieces').then(function(r){ return r.json(); }),
+    fetch('/api/public/artists').then(function(r){ return r.ok ? r.json() : null; }).catch(function(){ return null; })
+  ]).then(function(res){
+    var pieces = ((res[0] && res[0].pieces) || []).filter(forSale);
+    var ARTMAP = {}; ((res[1] && res[1].artists) || []).forEach(function(a){ ARTMAP[(a.name || '').toLowerCase()] = a.slug; });
+    function artistLink(name){
+      var slug = ARTMAP[(name || '').toLowerCase()];
+      return slug ? '<a href="artist.html?a=' + encodeURIComponent(slug) + '">' + esc(name) + '</a>' : esc(name || 'ArtPro Gallery');
+    }
     if(!pieces.length){
       grid.innerHTML = '<p class="muted" style="grid-column:1/-1;">New works are being added — <a class="tlink" href="contact.html">ask us what’s available →</a></p>';
       return;
@@ -114,13 +126,13 @@
         '<a class="card__media" href="#" role="button">' + tag +
           '<img src="' + img + '" alt="' + esc(p.desc) + '" loading="lazy"></a>' +
         '<div class="card__body"><span class="card__title">' + esc(p.desc || 'Untitled') + '</span>' +
-        '<span class="card__artist">' + esc(p.artist || 'ArtPro Gallery') + '</span>' +
+        '<span class="card__artist">' + artistLink(p.artist) + '</span>' +
         '<div class="card__foot"><span class="card__price">POA</span>' +
         '<a class="tlink" href="' + esc(enquire) + '" style="font-size:11px;">Enquire</a></div></div></article>';
     }).join('');
 
     // Open the shared lightbox instead of navigating away.
-    var LBITEMS = pieces.map(function(p){ return { url: p.photo, title: p.desc, meta: p.medium, artist: p.artist }; });
+    var LBITEMS = pieces.map(function(p){ return { url: p.photo, title: p.desc, meta: p.medium, artist: p.artist, artistSlug: ARTMAP[(p.artist || '').toLowerCase()] }; });
     Array.prototype.forEach.call(grid.querySelectorAll('.card__media'), function(el, i){
       el.addEventListener('click', function(e){
         e.preventDefault();

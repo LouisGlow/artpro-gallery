@@ -174,7 +174,7 @@
       var wrap = document.getElementById('bio-works-wrap');
       var grid = document.getElementById('bio-works');
       wrap.hidden = false;
-      var LBITEMS = works.map(function(w){ return { url:w.img, title:w.title, meta:w.medium, artist:artist.name }; });
+      var LBITEMS = works.map(function(w){ return { url:w.img, title:w.title, meta:w.medium, artist:artist.name, artistSlug:artist.slug }; });
       works.forEach(function(w, i){
         var a = document.createElement('a'); a.className='artwork'; a.href='#'; a.setAttribute('role','button');
         a.addEventListener('click', function(e){ e.preventDefault(); if(window.ArtProLightbox){ ArtProLightbox.open(LBITEMS, i); } });

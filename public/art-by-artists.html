@@ -27,6 +27,8 @@
     font-family:var(--font-display); font-size:22px;
   }
   .artist-block__name { margin:0; line-height:1; }
+  .artist-block__namelink { color:inherit; text-decoration:none; transition:color .2s; }
+  .artist-block__namelink:hover { color:var(--gold-deep); }
   .artist-block__meta {
     font-family:var(--font-display); text-transform:uppercase; letter-spacing:.16em;
     font-size:12px; color:var(--muted); margin:6px 0 0;
@@ -153,7 +155,7 @@
       // Wire each artwork to open the shared lightbox (same order as the DOM).
       var LBITEMS = [];
       groups.forEach(function(g){ g.items.forEach(function(p){
-        LBITEMS.push({ url: p.photo, title: p.desc, meta: p.medium, artist: p.artist });
+        LBITEMS.push({ url: p.photo, title: p.desc, meta: p.medium, artist: p.artist, artistSlug: (ARTISTS[(p.artist || '').toLowerCase()] || {}).slug });
       }); });
       Array.prototype.forEach.call(host.querySelectorAll('.artwork'), function(el, i){
         el.addEventListener('click', function(e){
@@ -175,10 +177,13 @@
     var link = meta
       ? '<a class="tlink" href="artist.html?a=' + encodeURIComponent(meta.slug) + '">See more from the artist →</a>'
       : '';
+    var nameHtml = meta
+      ? '<a class="artist-block__namelink" href="artist.html?a=' + encodeURIComponent(meta.slug) + '">' + esc(g.artist) + '</a>'
+      : esc(g.artist);
     return '<div class="artist-block">' +
       '<div class="artist-block__head">' +
         '<div class="artist-block__id">' + idHtml +
-          '<div><h2 class="artist-block__name display display--m">' + esc(g.artist) + '</h2>' +
+          '<div><h2 class="artist-block__name display display--m">' + nameHtml + '</h2>' +
           '<p class="artist-block__meta">' + esc(tagline) + '</p></div>' +
         '</div>' + link +
       '</div>' +

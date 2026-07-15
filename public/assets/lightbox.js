@@ -18,6 +18,8 @@
     '.lb-stage__title{font-family:"Barlow Condensed","Oswald",sans-serif;font-weight:600;font-size:clamp(28px,3vw,44px);letter-spacing:.03em;text-transform:uppercase;line-height:1;margin:0 0 12px;color:#f4efe6;}' +
     '.lb-stage__meta{font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:#c9c0b1;margin:0 0 18px;}' +
     '.lb-stage__artist{font-size:14px;line-height:1.6;color:#d8cfbf;margin:0 0 24px;}' +
+    '.lb-stage__artist a{color:#f4efe6;text-decoration:underline;text-underline-offset:3px;transition:color .2s;}' +
+    '.lb-stage__artist a:hover{color:#b8912f;}' +
     '.lb-stage__cta{display:inline-block;font-family:"Barlow Condensed","Oswald",sans-serif;font-weight:600;letter-spacing:.14em;text-transform:uppercase;font-size:13px;text-decoration:none;padding:13px 24px;background:#b8912f;color:#14110d;border-radius:2px;transition:background .2s;}' +
     '.lb-stage__cta:hover{background:#cda43a;}' +
     '.lb-stage__btn{position:absolute;z-index:2;cursor:pointer;background:rgba(255,255,255,.1);color:#f4efe6;border:1px solid rgba(255,255,255,.35);-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);transition:background .2s,color .2s;}' +
@@ -30,6 +32,8 @@
 
   var stage, img, indexEl, titleEl, metaEl, artistEl, cta, prevBtn, nextBtn;
   var items = [], idx = 0;
+
+  function esc(s) { var d = document.createElement('div'); d.textContent = String(s == null ? '' : s); return d.innerHTML; }
 
   function build() {
     if (stage) { return; }
@@ -94,7 +98,11 @@
     indexEl.textContent = (idx + 1) + ' / ' + items.length;
     titleEl.textContent = it.title || 'Untitled';
     metaEl.textContent = it.meta || 'ArtPro Gallery';
-    artistEl.textContent = it.artist ? ('By ' + it.artist) : 'ArtPro Collection';
+    if (it.artist && it.artistSlug) {
+      artistEl.innerHTML = 'By <a href="artist.html?a=' + encodeURIComponent(it.artistSlug) + '">' + esc(it.artist) + '</a>';
+    } else {
+      artistEl.textContent = it.artist ? ('By ' + it.artist) : 'ArtPro Collection';
+    }
     cta.setAttribute('href', 'contact.html?artist=' + encodeURIComponent(it.artist || '') + '&piece=' + encodeURIComponent(it.title || ''));
     var multi = items.length > 1;
     prevBtn.hidden = !multi;
