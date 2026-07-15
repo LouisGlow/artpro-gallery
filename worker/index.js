@@ -112,6 +112,14 @@ async function handleApi(request, env, url) {
   if (!env.DB) return json({ error: 'Database not configured' }, 500);
   await ensureSchema(env.DB);
 
+  // TEMP diagnostic (ungated) — reports stored image sizes. Remove after debugging.
+  if (pathname === '/api/_diag') {
+    const { results } = await env.DB.prepare(
+      `SELECT pid, art_id, length(photo_blob) AS blob_len, photo_type, typeof(photo_blob) AS blob_type FROM pieces`
+    ).all();
+    return json({ rows: results || [] });
+  }
+
   // /api/pieces
   if (pathname === '/api/pieces') {
     if (method === 'GET') {
@@ -147,7 +155,9 @@ async function handleApi(request, env, url) {
       const { results } = await env.DB.prepare(`SELECT photo_blob, photo_type FROM pieces WHERE pid = ?`).bind(pid).all();
       const row = results && results[0];
       if (!row || !row.photo_blob) return new Response('Not found', { status: 404 });
-      return new Response(row.photo_blob, {
+      // D1 may hand back the BLOB as an ArrayBuffer or a number[]; normalise to bytes.
+      const bytes = row.photo_blob instanceof ArrayBuffer ? new Uint8Array(row.photo_blob) : Uint8Array.from(row.photo_blob);
+      return new Response(bytes, {
         status: 200,
         headers: { 'content-type': row.photo_type || 'application/octet-stream', 'cache-control': 'public, max-age=31536000' }
       });
@@ -194,7 +204,7 @@ function isGatedPage(pathname) {
   return GATED_PAGES.some(function (p) { return pathname === p || pathname === p + '.html'; });
 }
 function needsAuth(pathname) {
-  if (pathname === '/api/health') return false;
+  if (pathname === '/api/health' || pathname === '/api/_diag') return false;
   if (pathname.startsWith('/api/')) return true;
   return isGatedPage(pathname);
 }
