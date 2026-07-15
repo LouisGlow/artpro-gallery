@@ -112,14 +112,6 @@ async function handleApi(request, env, url) {
   if (!env.DB) return json({ error: 'Database not configured' }, 500);
   await ensureSchema(env.DB);
 
-  // TEMP diagnostic (ungated) — reports stored image sizes. Remove after debugging.
-  if (pathname === '/api/_diag') {
-    const { results } = await env.DB.prepare(
-      `SELECT pid, art_id, length(photo_blob) AS blob_len, photo_type, typeof(photo_blob) AS blob_type FROM pieces`
-    ).all();
-    return json({ rows: results || [] });
-  }
-
   // /api/pieces
   if (pathname === '/api/pieces') {
     if (method === 'GET') {
@@ -204,7 +196,7 @@ function isGatedPage(pathname) {
   return GATED_PAGES.some(function (p) { return pathname === p || pathname === p + '.html'; });
 }
 function needsAuth(pathname) {
-  if (pathname === '/api/health' || pathname === '/api/_diag') return false;
+  if (pathname === '/api/health') return false;
   if (pathname.startsWith('/api/')) return true;
   return isGatedPage(pathname);
 }
