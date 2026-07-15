@@ -40,6 +40,45 @@
   .apc-search input{flex:1;min-width:0;}
   .apc-btn{width:100%;}
 }
+/* ---- editable rows ---- */
+.apc-table tbody tr{cursor:pointer;transition:background .15s ease;}
+.apc-table tbody tr:hover{background:#fbf6ea;}
+/* ---- form fields (edit modal) ---- */
+.apc-field{display:flex;flex-direction:column;gap:7px;}
+.apc-field label{font-family:'Barlow Condensed','Oswald',sans-serif;text-transform:uppercase;letter-spacing:.12em;font-size:13px;color:var(--ink);}
+.apc-field input[type=text],.apc-field textarea{width:100%;min-height:50px;padding:12px 14px;border:1px solid var(--border);background:#fbfaf7;font:inherit;font-size:16px;color:var(--ink);border-radius:3px;}
+.apc-field textarea{min-height:84px;line-height:1.5;resize:vertical;}
+.apc-field input[type=text]:focus,.apc-field textarea:focus{outline:none;border-color:var(--gold);box-shadow:0 0 0 3px rgba(184,145,47,.16);}
+.apc-cols{display:grid;grid-template-columns:1.6fr 1fr;gap:20px;align-items:start;}
+.apc-col-main{display:flex;flex-direction:column;gap:14px;}
+.apc-pair{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+.apc-side{border:1px solid var(--border);background:#fbfaf7;border-radius:4px;padding:16px;display:flex;flex-direction:column;gap:20px;}
+.apc-side__label{display:block;font-family:'Barlow Condensed','Oswald',sans-serif;text-transform:uppercase;letter-spacing:.12em;font-size:13px;color:var(--ink);margin:0 0 8px;}
+.apc-select{width:100%;min-height:50px;padding:11px 13px;border:1px solid var(--border);background:#fff;font:inherit;font-size:16px;color:var(--ink);border-radius:3px;}
+.apc-select:focus{outline:none;border-color:var(--gold);}
+.apc-checks{display:flex;flex-direction:column;}
+.apc-check{display:flex;align-items:center;gap:12px;padding:11px 4px;border-top:1px solid var(--border);cursor:pointer;font-size:15px;}
+.apc-check:first-child{border-top:0;}
+.apc-check input{width:22px;height:22px;accent-color:var(--gold);flex:0 0 auto;}
+.apc-file{display:flex;align-items:center;gap:14px;min-height:80px;border:2px dashed var(--border);background:#fbfaf7;border-radius:5px;cursor:pointer;padding:12px 16px;color:var(--muted);font-family:'Barlow Condensed','Oswald',sans-serif;text-transform:uppercase;letter-spacing:.08em;font-size:13px;transition:border-color .2s,color .2s;}
+.apc-file:hover{border-color:var(--gold);color:var(--ink);}
+.apc-file img{width:60px;height:60px;object-fit:cover;border:1px solid var(--border);display:none;}
+.apc-file img.has{display:block;}
+/* ---- edit modal ---- */
+.apc-modal{position:fixed;inset:0;z-index:200;display:none;align-items:flex-start;justify-content:center;padding:clamp(12px,4vw,40px);overflow-y:auto;}
+.apc-modal.is-open{display:flex;}
+.apc-modal__scrim{position:fixed;inset:0;background:rgba(20,17,13,.55);-webkit-backdrop-filter:blur(3px);backdrop-filter:blur(3px);}
+.apc-modal__dialog{position:relative;z-index:1;width:100%;max-width:840px;background:var(--surface);border:1px solid var(--border);border-radius:5px;box-shadow:0 40px 90px -30px rgba(20,17,13,.6);}
+.apc-modal__head{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;padding:22px 24px 6px;}
+.apc-modal__head h3{font-family:'Barlow Condensed','Oswald',sans-serif;text-transform:uppercase;letter-spacing:.02em;font-size:26px;line-height:1;margin:0;color:var(--ink);}
+.apc-modal__head .apc__kicker{margin:0 0 6px;}
+.apc-modal__close{background:none;border:1px solid var(--border);width:40px;height:40px;border-radius:3px;cursor:pointer;font-size:18px;color:var(--ink);flex:0 0 auto;}
+.apc-modal__close:hover{background:var(--ink);color:var(--paper);border-color:var(--ink);}
+.apc-modal__body{padding:16px 24px;}
+.apc-modal__foot{display:flex;gap:12px;flex-wrap:wrap;align-items:center;padding:6px 24px 24px;}
+.apc-modal__del{margin-left:auto;color:#7a2020;background:none;border:1px solid #e3bcbc;font-family:'Barlow Condensed','Oswald',sans-serif;text-transform:uppercase;letter-spacing:.1em;font-size:12px;padding:12px 18px;border-radius:3px;cursor:pointer;}
+.apc-modal__del:hover{background:#7a2020;color:#fff;border-color:#7a2020;}
+@media(max-width:680px){.apc-cols{grid-template-columns:1fr;}.apc-pair{grid-template-columns:1fr;}.apc-modal__foot{flex-direction:column;align-items:stretch;}.apc-modal__del{margin-left:0;}}
 </style>
 </head>
 <body>
@@ -126,7 +165,7 @@
         </table>
       </div>
 
-      <p class="apc-note">Preview with sample data — the live catalog fills automatically as staff capture pieces, and "Export BOM (CSV)" downloads the full list.</p>
+      <p class="apc-note">Preview with sample data — <b>click any row to edit its fields</b>. The live catalog fills automatically as staff capture pieces, and "Export BOM (CSV)" downloads the full list.</p>
     </div>
   </section>
 </main>
@@ -148,5 +187,149 @@
 </footer>
 
 <script src="site.js"></script>
+
+<!-- Edit piece modal -->
+<div class="apc-modal" id="apc-modal" role="dialog" aria-modal="true" aria-label="Edit piece">
+  <div class="apc-modal__scrim" data-close></div>
+  <div class="apc-modal__dialog apc">
+    <div class="apc-modal__head">
+      <div>
+        <p class="apc__kicker">Edit piece</p>
+        <h3 id="e_heading">Piece</h3>
+      </div>
+      <button class="apc-modal__close" type="button" data-close aria-label="Close">&#10005;</button>
+    </div>
+    <div class="apc-modal__body">
+      <form id="e_form" onsubmit="return false;">
+        <div class="apc-field" style="margin-bottom:16px;">
+          <label>Image</label>
+          <label class="apc-file" for="e_photo">
+            <img id="e_photo_img" alt="">
+            <span id="e_photo_text">Change photo</span>
+          </label>
+          <input type="file" id="e_photo" accept="image/*" hidden>
+        </div>
+        <div class="apc-cols">
+          <div class="apc-col-main">
+            <div class="apc-field"><label for="e_desc">Description</label><textarea id="e_desc"></textarea></div>
+            <div class="apc-pair">
+              <div class="apc-field"><label for="e_id">ID</label><input type="text" id="e_id"></div>
+              <div class="apc-field"><label for="e_medium">Medium</label><input type="text" id="e_medium"></div>
+            </div>
+            <div class="apc-pair">
+              <div class="apc-field"><label for="e_art">Art size</label><input type="text" id="e_art"></div>
+              <div class="apc-field"><label for="e_frame">Frame size</label><input type="text" id="e_frame"></div>
+            </div>
+          </div>
+          <aside class="apc-side">
+            <div>
+              <span class="apc-side__label">Gallery / location</span>
+              <select class="apc-select" id="e_location">
+                <option value="">Select a gallery&hellip;</option>
+                <option>Sunninghill Village</option>
+                <option>Prison Break Market</option>
+                <option>ArtPro @ Lifestyle</option>
+                <option>Maggies Farm</option>
+              </select>
+            </div>
+            <div>
+              <span class="apc-side__label">Status</span>
+              <div class="apc-checks">
+                <label class="apc-check"><input type="checkbox" id="e_sold"> Sold</label>
+                <label class="apc-check"><input type="checkbox" id="e_display"> On display in store</label>
+                <label class="apc-check"><input type="checkbox" id="e_stock"> In stockroom in store</label>
+              </div>
+            </div>
+          </aside>
+        </div>
+      </form>
+    </div>
+    <div class="apc-modal__foot">
+      <button class="apc-btn" type="button" id="e_save">Save changes</button>
+      <button class="apc-btn apc-btn--ghost" type="button" data-close>Cancel</button>
+      <button class="apc-modal__del" type="button" id="e_del">Delete piece</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  var modal = document.getElementById('apc-modal');
+  var tbody = document.querySelector('.apc-table tbody');
+  if(!modal || !tbody){ return; }
+  var g = function(id){ return document.getElementById(id); };
+  var current = null;
+  var STATUS = { sold:['Sold','apc-status--sold'], display:['On display','apc-status--display'], stock:['In stockroom','apc-status--stock'] };
+
+  function cells(tr){ return tr.querySelectorAll('td'); }
+
+  function openRow(tr){
+    current = tr; var c = cells(tr);
+    // 0 photo | 1 id | 2 desc | 3 medium | 4 art | 5 frame | 6 location | 7 status
+    g('e_heading').textContent = c[2].textContent.trim() || 'Piece';
+    g('e_id').value     = c[1].textContent.trim();
+    g('e_desc').value   = c[2].textContent.trim();
+    g('e_medium').value = c[3].textContent.trim();
+    g('e_art').value    = c[4].textContent.trim();
+    var fr = c[5].textContent.trim(); g('e_frame').value = (fr === '—' ? '' : fr);
+    g('e_location').value = c[6].textContent.trim();
+    var st = c[7].textContent.toLowerCase();
+    g('e_sold').checked    = st.indexOf('sold') !== -1;
+    g('e_display').checked = st.indexOf('display') !== -1;
+    g('e_stock').checked   = st.indexOf('stockroom') !== -1;
+    var img = c[0].querySelector('img'), eimg = g('e_photo_img');
+    if(img){ eimg.src = img.src; eimg.classList.add('has'); } else { eimg.classList.remove('has'); }
+    g('e_photo').value = ''; g('e_photo_text').textContent = 'Change photo';
+    modal.classList.add('is-open'); document.body.style.overflow = 'hidden';
+  }
+
+  function pill(key){ var s = STATUS[key]; return '<span class="apc-status '+s[1]+'">'+s[0]+'</span> '; }
+
+  function save(){
+    if(!current){ return; } var c = cells(current);
+    c[1].textContent = g('e_id').value.trim();
+    c[2].textContent = g('e_desc').value.trim();
+    c[3].textContent = g('e_medium').value.trim();
+    c[4].textContent = g('e_art').value.trim();
+    c[5].textContent = g('e_frame').value.trim() || '—';
+    c[6].textContent = g('e_location').value.trim() || '—';
+    var pills = '';
+    if(g('e_sold').checked)    pills += pill('sold');
+    if(g('e_display').checked) pills += pill('display');
+    if(g('e_stock').checked)   pills += pill('stock');
+    c[7].innerHTML = pills || '<span style="color:var(--muted);opacity:.7;">—</span>';
+    var f = g('e_photo').files[0], img = c[0].querySelector('img');
+    if(f && img){ img.src = URL.createObjectURL(f); }
+    close();
+  }
+
+  function del(){
+    if(!current){ return; }
+    current.remove(); current = null; updateCount(); close();
+  }
+
+  function updateCount(){
+    var n = tbody.querySelectorAll('tr').length;
+    var el = document.querySelector('.apc-count');
+    if(el){ el.textContent = n + (n === 1 ? ' piece' : ' pieces'); }
+  }
+
+  function close(){ modal.classList.remove('is-open'); document.body.style.overflow = ''; }
+
+  // events
+  tbody.addEventListener('click', function(e){
+    var tr = e.target.closest('tr');
+    if(tr && tbody.contains(tr)){ openRow(tr); }
+  });
+  g('e_save').addEventListener('click', save);
+  g('e_del').addEventListener('click', del);
+  Array.prototype.forEach.call(modal.querySelectorAll('[data-close]'), function(el){ el.addEventListener('click', close); });
+  document.addEventListener('keydown', function(e){ if(e.key === 'Escape' && modal.classList.contains('is-open')){ close(); } });
+  g('e_photo').addEventListener('change', function(){
+    var f = this.files[0], img = g('e_photo_img'), t = g('e_photo_text');
+    if(f){ img.src = URL.createObjectURL(f); img.classList.add('has'); t.textContent = 'New photo selected'; }
+  });
+})();
+</script>
 </body>
 </html>
