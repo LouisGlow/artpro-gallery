@@ -1,0 +1,8 @@
+# Cloudflare Workers — static assets only.
+# Serves the ./public folder as the site root, so wordpress-plugin/ and the
+# internal notes at the repo root are NOT published.
+name = "artpro-gallery"
+compatibility_date = "2026-07-01"
+
+[assets]
+directory = "./public"
