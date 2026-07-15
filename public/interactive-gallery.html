@@ -266,6 +266,8 @@ body { background: #ece7df; font-family: 'Montserrat', -apple-system, 'Segoe UI'
 	font-family:var(--font-display); font-weight:600; font-size:26px;
 	letter-spacing:.04em; text-transform:uppercase; margin:0 0 8px; line-height:1;
 }
+.vg-artist__namelink { color:inherit; text-decoration:none; transition:color .2s; }
+.vg-artist__namelink:hover { color:var(--gold); }
 .vg-artist__bio { font-size:13px; line-height:1.6; color:var(--muted); margin:0 0 14px; }
 .vg-artist__link {
 	font-size:12px; letter-spacing:.1em; text-transform:uppercase;
@@ -394,6 +396,8 @@ body { background: #ece7df; font-family: 'Montserrat', -apple-system, 'Segoe UI'
 }
 .vg-stage__meta { font-size:12px; letter-spacing:.14em; text-transform:uppercase; color:#c9c0b1; margin:0 0 18px; }
 .vg-stage__artist { font-size:14px; line-height:1.6; color:#d8cfbf; margin:0; }
+.vg-stage__artist a { color:#f4efe6; text-decoration:underline; text-underline-offset:3px; transition:color .2s; }
+.vg-stage__artist a:hover { color:var(--gold); }
 .vg-stage__btn {
 	position:absolute; z-index:2; cursor:pointer;
 	background:rgba(255,255,255,.1); color:#f4efe6;
@@ -780,6 +784,18 @@ body { background: #ece7df; font-family: 'Montserrat', -apple-system, 'Segoe UI'
 
 	countNum.textContent = GALLERY.length;
 
+	/* Artist name → bio slug, from the artists DB (names don't always slugify
+	 * to their slug). Once loaded, re-render the spotlight + any open viewer. */
+	var artistLink = root.querySelector('.vg-artist__link');
+	var ARTSLUG = {};
+	function escHtml(s){ var d = document.createElement('div'); d.textContent = String(s == null ? '' : s); return d.innerHTML; }
+	function bioSlug(name){ return ARTSLUG[(name || '').toLowerCase()] || null; }
+	fetch('/api/public/artists').then(function(r){ return r.ok ? r.json() : null; }).then(function(d){
+		if (d && d.artists) { d.artists.forEach(function(a){ ARTSLUG[(a.name || '').toLowerCase()] = a.slug; }); }
+		if (typeof artistIdx === 'number' && artistIdx >= 0) { showArtist(artistIdx); }
+		if (stage && !stage.hidden) { renderStage(stageIdx); }
+	}).catch(function(){});
+
 	/* ------------------------------------------------------------------
 	 * Build the thumbnail grid from the array.
 	 * --------------------------------------------------------------- */
@@ -950,7 +966,10 @@ body { background: #ece7df; font-family: 'Montserrat', -apple-system, 'Segoe UI'
 		pre.onload = function () { artistImg.src = a.photo; };
 		pre.src = a.photo;
 		artistImg.alt = a.name;
-		artistName.textContent = a.name;
+		var slug = bioSlug(a.name);
+		if (slug) { artistName.innerHTML = '<a class="vg-artist__namelink" href="artist.html?a=' + encodeURIComponent(slug) + '">' + escHtml(a.name) + '</a>'; }
+		else { artistName.textContent = a.name; }
+		if (artistLink) { artistLink.setAttribute('href', slug ? 'artist.html?a=' + encodeURIComponent(slug) : 'artists.html'); }
 		artistBio.textContent  = ARTIST_BLURBS[i % ARTIST_BLURBS.length];
 	}
 	function nextArtist() { showArtist((artistIdx + 1) % ARTISTS.length); }
@@ -999,7 +1018,13 @@ body { background: #ece7df; font-family: 'Montserrat', -apple-system, 'Segoe UI'
 		stageImg.alt = item.title || 'Artwork';
 		stageTitle.textContent  = item.title || 'Untitled';
 		stageMeta.textContent   = item.caption || 'ArtPro Gallery';
-		stageArtist.textContent = item.artist ? 'By ' + item.artist : 'ArtPro Collection · virtual exhibition';
+		if (item.artist) {
+			var aslug = bioSlug(item.artist);
+			if (aslug) { stageArtist.innerHTML = 'By <a href="artist.html?a=' + encodeURIComponent(aslug) + '">' + escHtml(item.artist) + '</a>'; }
+			else { stageArtist.textContent = 'By ' + item.artist; }
+		} else {
+			stageArtist.textContent = 'ArtPro Collection · virtual exhibition';
+		}
 		stageIndex.textContent  = (i + 1) + ' / ' + GALLERY.length;
 		setActive(i);                          // keep centre + spotlight in sync
 	}
