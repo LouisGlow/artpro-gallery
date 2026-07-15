@@ -265,13 +265,16 @@
     fetch('/api/public/pieces').then(function(r){ return r.json(); }),
     fetch('/api/public/artists').then(function(r){ return r.ok ? r.json() : null; }).catch(function(){ return null; })
   ]).then(function(res){
-    var pieces = ((res[0] && res[0].pieces) || []).filter(forSale);
+    var available = ((res[0] && res[0].pieces) || []).filter(forSale);
     var ARTMAP = {}; ((res[1] && res[1].artists) || []).forEach(function(a){ ARTMAP[(a.name || '').toLowerCase()] = a.slug; });
-    if(!pieces.length){
+    if(!available.length){
       grid.innerHTML = '<p class="muted" style="grid-column:1/-1;">New works are coming soon — <a class="tlink" href="art-for-sale.html">see the shop →</a></p>';
       return;
     }
-    // Shuffle for a rotating "featured" selection, then take a handful.
+    // Prefer pieces staff flagged as featured; if none, show a rotating mix.
+    var flagged = available.filter(function(p){ return p.featured; });
+    var pieces = flagged.length ? flagged : available;
+    // Shuffle, then take a handful.
     for(var i = pieces.length - 1; i > 0; i--){ var j = Math.floor(Math.random() * (i + 1)); var t = pieces[i]; pieces[i] = pieces[j]; pieces[j] = t; }
     var feat = pieces.slice(0, MAX);
     function artistLink(name){

@@ -64,6 +64,7 @@
 .apc-select:focus{outline:none;border-color:var(--gold);}
 .apc-checks{display:flex;flex-direction:column;}
 .apc-check{display:flex;align-items:center;gap:12px;padding:11px 4px;border-top:1px solid var(--border);cursor:pointer;font-size:15px;}
+.apc-table tr[data-featured="1"] .apc-id::after{content:" \2605";color:var(--gold);}
 .apc-nf{display:flex;align-items:center;gap:9px;font-size:13.5px;color:var(--muted);cursor:pointer;margin-top:6px;}
 .apc-nf input{width:18px;height:18px;accent-color:var(--gold);}
 .apc-check:first-child{border-top:0;}
@@ -235,6 +236,10 @@
                 <label class="apc-check"><input type="checkbox" id="e_stock"> In stockroom in store</label>
               </div>
             </div>
+            <div>
+              <span class="apc-side__label">Homepage</span>
+              <label class="apc-check" style="border-top:0;"><input type="checkbox" id="e_featured"> &#9733; Feature on homepage</label>
+            </div>
           </aside>
         </div>
       </form>
@@ -275,7 +280,8 @@
       frame:   fr === '—' ? '' : fr,
       loc:     c[7].textContent.trim(),
       status:  c[8].textContent.trim(),
-      archived: tr.getAttribute('data-archived') === '1'
+      archived: tr.getAttribute('data-archived') === '1',
+      featured: tr.getAttribute('data-featured') === '1'
     };
   }
   // Re-render the whole table from the store (the source of truth).
@@ -322,6 +328,7 @@
     var img = c[0].querySelector('img'), eimg = g('e_photo_img');
     if(img){ eimg.src = img.src; eimg.classList.add('has'); } else { eimg.classList.remove('has'); }
     g('e_photo').value = ''; g('e_photo_text').textContent = 'Change photo';
+    g('e_featured').checked = current.getAttribute('data-featured') === '1';
     g('e_archive').textContent = current.getAttribute('data-archived') === '1' ? 'Restore' : 'Archive';
     modal.classList.add('is-open'); document.body.style.overflow = 'hidden';
   }
@@ -353,7 +360,8 @@
       frame:  g('e_no_frame').checked ? 'No frame' : g('e_frame').value.trim(),
       loc:    g('e_location').value.trim(),
       status: statusText(),
-      archived: current.getAttribute('data-archived') === '1'
+      archived: current.getAttribute('data-archived') === '1',
+      featured: g('e_featured').checked
     };
     close();
     ArtProStore.update(piece.pid, piece).then(reload);
@@ -476,6 +484,7 @@
       '<td>' + statusPills(d.status) + '</td>';
     if(d.pid){ tr.setAttribute('data-pid', d.pid); }
     if(d.archived){ tr.setAttribute('data-archived', '1'); }
+    if(d.featured){ tr.setAttribute('data-featured', '1'); }
     tbody.appendChild(tr); return tr;
   }
   var msgT;

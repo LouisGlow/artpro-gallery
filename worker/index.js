@@ -39,7 +39,8 @@ function rowToPiece(r) {
     frame: r.frame || '',
     loc: r.loc || '',
     status: r.status || '',
-    archived: !!r.archived
+    archived: !!r.archived,
+    featured: !!r.featured
   };
 }
 
@@ -52,7 +53,8 @@ function publicPiece(r) {
   return {
     pid: r.pid, photo: photo,
     id: r.art_id || '', desc: r.descr || '', artist: r.artist || '',
-    medium: r.medium || '', art: r.art_size || '', frame: r.frame || '', status: r.status || ''
+    medium: r.medium || '', art: r.art_size || '', frame: r.frame || '', status: r.status || '',
+    featured: !!r.featured
   };
 }
 
@@ -94,6 +96,7 @@ function pieceColumns(body, pid, now) {
     loc: (body.loc || '').toString(),
     status: (body.status || '').toString(),
     archived: body.archived ? 1 : 0,
+    featured: body.featured ? 1 : 0,
     now
   };
 }
@@ -112,7 +115,7 @@ async function ensureSchema(db) {
          artist TEXT NOT NULL DEFAULT '', medium TEXT NOT NULL DEFAULT '',
          art_size TEXT NOT NULL DEFAULT '', frame TEXT NOT NULL DEFAULT '',
          loc TEXT NOT NULL DEFAULT '', status TEXT NOT NULL DEFAULT '',
-         archived INTEGER NOT NULL DEFAULT 0,
+         archived INTEGER NOT NULL DEFAULT 0, featured INTEGER NOT NULL DEFAULT 0,
          created INTEGER NOT NULL DEFAULT 0, updated INTEGER NOT NULL DEFAULT 0
        )`
     ),
@@ -131,6 +134,8 @@ async function ensureSchema(db) {
     ),
     db.prepare(`CREATE INDEX IF NOT EXISTS idx_artists_sort ON artists(sort_order, name)`)
   ]);
+  // Add columns to a pre-existing pieces table (idempotent — ignore if present).
+  try { await db.prepare(`ALTER TABLE pieces ADD COLUMN featured INTEGER NOT NULL DEFAULT 0`).run(); } catch (e) {}
   schemaReady = true;
 }
 
@@ -179,7 +184,7 @@ async function handleApi(request, env, url) {
   // Public read for the website's own pages — non-archived pieces, no location.
   if (pathname === '/api/public/pieces') {
     const { results } = await env.DB.prepare(
-      `SELECT pid, photo, art_id, descr, artist, medium, art_size, frame, status, updated
+      `SELECT pid, photo, art_id, descr, artist, medium, art_size, frame, status, featured, updated
          FROM pieces WHERE archived = 0 ORDER BY artist ASC, created ASC, rowid ASC`
     ).all();
     return json({ pieces: (results || []).map(publicPiece) });
@@ -264,7 +269,7 @@ async function handleApi(request, env, url) {
   if (pathname === '/api/pieces') {
     if (method === 'GET') {
       const { results } = await env.DB.prepare(
-        `SELECT pid, photo, art_id, descr, artist, medium, art_size, frame, loc, status, archived, updated
+        `SELECT pid, photo, art_id, descr, artist, medium, art_size, frame, loc, status, archived, featured, updated
            FROM pieces ORDER BY created ASC, rowid ASC`
       ).all();
       return json({ pieces: (results || []).map(rowToPiece) });
@@ -275,10 +280,10 @@ async function handleApi(request, env, url) {
       const now = Date.now();
       const c = pieceColumns(body, pid, now);
       await env.DB.prepare(
-        `INSERT INTO pieces (pid, photo, photo_blob, photo_type, art_id, descr, artist, medium, art_size, frame, loc, status, archived, created, updated)
-         VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`
-      ).bind(pid, c.photo, c.photo_blob, c.photo_type, c.art_id, c.descr, c.artist, c.medium, c.art_size, c.frame, c.loc, c.status, c.archived, now, now).run();
-      const { results } = await env.DB.prepare(`SELECT pid, photo, art_id, descr, artist, medium, art_size, frame, loc, status, archived, updated FROM pieces WHERE pid = ?`).bind(pid).all();
+        `INSERT INTO pieces (pid, photo, photo_blob, photo_type, art_id, descr, artist, medium, art_size, frame, loc, status, archived, featured, created, updated)
+         VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`
+      ).bind(pid, c.photo, c.photo_blob, c.photo_type, c.art_id, c.descr, c.artist, c.medium, c.art_size, c.frame, c.loc, c.status, c.archived, c.featured, now, now).run();
+      const { results } = await env.DB.prepare(`SELECT pid, photo, art_id, descr, artist, medium, art_size, frame, loc, status, archived, featured, updated FROM pieces WHERE pid = ?`).bind(pid).all();
       return json({ piece: rowToPiece(results[0]) }, 201);
     }
     return json({ error: 'Method not allowed' }, 405);
@@ -311,14 +316,14 @@ async function handleApi(request, env, url) {
       // /api/pieces/:pid/photo), keep the stored blob untouched.
       if (c.hasImage) {
         await env.DB.prepare(
-          `UPDATE pieces SET photo=?, photo_blob=?, photo_type=?, art_id=?, descr=?, artist=?, medium=?, art_size=?, frame=?, loc=?, status=?, archived=?, updated=? WHERE pid=?`
-        ).bind(c.photo, c.photo_blob, c.photo_type, c.art_id, c.descr, c.artist, c.medium, c.art_size, c.frame, c.loc, c.status, c.archived, now, pid).run();
+          `UPDATE pieces SET photo=?, photo_blob=?, photo_type=?, art_id=?, descr=?, artist=?, medium=?, art_size=?, frame=?, loc=?, status=?, archived=?, featured=?, updated=? WHERE pid=?`
+        ).bind(c.photo, c.photo_blob, c.photo_type, c.art_id, c.descr, c.artist, c.medium, c.art_size, c.frame, c.loc, c.status, c.archived, c.featured, now, pid).run();
       } else {
         await env.DB.prepare(
-          `UPDATE pieces SET photo=?, art_id=?, descr=?, artist=?, medium=?, art_size=?, frame=?, loc=?, status=?, archived=?, updated=? WHERE pid=?`
-        ).bind(c.photo, c.art_id, c.descr, c.artist, c.medium, c.art_size, c.frame, c.loc, c.status, c.archived, now, pid).run();
+          `UPDATE pieces SET photo=?, art_id=?, descr=?, artist=?, medium=?, art_size=?, frame=?, loc=?, status=?, archived=?, featured=?, updated=? WHERE pid=?`
+        ).bind(c.photo, c.art_id, c.descr, c.artist, c.medium, c.art_size, c.frame, c.loc, c.status, c.archived, c.featured, now, pid).run();
       }
-      const { results } = await env.DB.prepare(`SELECT pid, photo, art_id, descr, artist, medium, art_size, frame, loc, status, archived, updated FROM pieces WHERE pid = ?`).bind(pid).all();
+      const { results } = await env.DB.prepare(`SELECT pid, photo, art_id, descr, artist, medium, art_size, frame, loc, status, archived, featured, updated FROM pieces WHERE pid = ?`).bind(pid).all();
       if (!results || !results.length) return json({ error: 'Not found' }, 404);
       return json({ piece: rowToPiece(results[0]) });
     }
