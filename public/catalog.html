@@ -22,12 +22,16 @@
 .apc-search input{min-height:48px;padding:10px 14px;border:1px solid var(--border);background:#fbfaf7;font:inherit;font-size:16px;min-width:220px;border-radius:3px;}
 .apc-count{font-family:'Barlow Condensed','Oswald',sans-serif;text-transform:uppercase;letter-spacing:.14em;font-size:12px;color:var(--muted);}
 .apc-table-wrap{overflow-x:auto;border:1px solid var(--border);}
-.apc-table{width:100%;border-collapse:collapse;background:var(--surface);font-size:14px;min-width:760px;}
+.apc-table{width:100%;border-collapse:collapse;background:var(--surface);font-size:14px;min-width:940px;}
 .apc-table th{background:var(--paper);text-align:left;font-family:'Barlow Condensed','Oswald',sans-serif;text-transform:uppercase;letter-spacing:.1em;font-size:12px;color:var(--ink);padding:12px 14px;border-bottom:1px solid var(--border);}
 .apc-table td{padding:10px 14px;border-bottom:1px solid var(--border);vertical-align:middle;}
 .apc-table tr:last-child td{border-bottom:0;}
 .apc-table img{width:54px;height:54px;object-fit:cover;border:1px solid var(--border);display:block;}
 .apc-id{font-variant-numeric:tabular-nums;letter-spacing:.04em;}
+.apc-status{display:inline-flex;align-items:center;font-family:'Barlow Condensed','Oswald',sans-serif;text-transform:uppercase;letter-spacing:.08em;font-size:11px;line-height:1;padding:5px 10px;border-radius:100px;border:1px solid;white-space:nowrap;}
+.apc-status--sold{color:#7a2020;background:#fbeeee;border-color:#e3bcbc;}
+.apc-status--display{color:#5e6b2a;background:#f1f4e6;border-color:#cfdaa6;}
+.apc-status--stock{color:#5b5346;background:#f0ece3;border-color:#ddd5c7;}
 .apc-note{font-size:12.5px;color:var(--muted);margin:16px 0 0;letter-spacing:.02em;}
 @media(max-width:680px){
   .apc__title{font-size:32px;}
@@ -71,7 +75,7 @@
     <div class="hero__meta">
       <div><div class="stat__num">6</div><div class="stat__label">Pieces catalogued</div></div>
       <div><div class="stat__num">4</div><div class="stat__label">Gallery locations</div></div>
-      <div><div class="stat__num">7</div><div class="stat__label">Details per piece</div></div>
+      <div><div class="stat__num">8</div><div class="stat__label">Details per piece</div></div>
       <div><div class="stat__num">CSV</div><div class="stat__label">One-click BOM export</div></div>
     </div>
   </section>
@@ -92,31 +96,31 @@
 
       <div class="apc-table-wrap">
         <table class="apc-table">
-          <thead><tr><th>Photo</th><th>Catalogue ID</th><th>Piece name</th><th>Artist</th><th>Art size</th><th>Frame size</th><th>Location</th><th>Captured</th></tr></thead>
+          <thead><tr><th>Photo</th><th>ID</th><th>Description</th><th>Medium</th><th>Art size</th><th>Frame size</th><th>Location</th><th>Status</th></tr></thead>
           <tbody>
             <tr>
-              <td><img src="assets/images/art/481133857_1465525504406408_361695882614013422_n.jpg" alt="The Sentinel" loading="lazy"></td>
-              <td class="apc-id">AP-0101</td><td>The Sentinel</td><td>Deon Stolz</td><td>900 &times; 600 mm</td><td>1010 &times; 710 mm</td><td>Sunninghill Village</td><td>2026-07-12</td>
+              <td><img src="assets/images/art/481133857_1465525504406408_361695882614013422_n.jpg" alt="Lion at first light" loading="lazy"></td>
+              <td class="apc-id">AP-0101</td><td>Lone lion at first light</td><td>Oil on canvas</td><td>900 &times; 600 mm</td><td>1010 &times; 710 mm</td><td>Sunninghill Village</td><td><span class="apc-status apc-status--display">On display</span></td>
             </tr>
             <tr>
-              <td><img src="assets/images/art/481134307_1465525647739727_8130890387216363959_n.jpg" alt="At the Waterhole" loading="lazy"></td>
-              <td class="apc-id">AP-0102</td><td>At the Waterhole</td><td>Deon Stolz</td><td>1200 &times; 800 mm</td><td>1310 &times; 910 mm</td><td>Maggies Farm</td><td>2026-07-12</td>
+              <td><img src="assets/images/art/481134307_1465525647739727_8130890387216363959_n.jpg" alt="Two lions at a waterhole" loading="lazy"></td>
+              <td class="apc-id">AP-0102</td><td>Two lions at a waterhole</td><td>Oil on canvas</td><td>1200 &times; 800 mm</td><td>1310 &times; 910 mm</td><td>Maggies Farm</td><td><span class="apc-status apc-status--stock">In stockroom</span></td>
             </tr>
             <tr>
-              <td><img src="assets/images/art/481076952_1467795767512715_7350483388941025729_n.jpg" alt="Evening Sail" loading="lazy"></td>
-              <td class="apc-id">AP-0110</td><td>Evening Sail</td><td>Gaynor</td><td>500 &times; 500 mm</td><td>600 &times; 600 mm</td><td>ArtPro @ Lifestyle</td><td>2026-07-11</td>
+              <td><img src="assets/images/art/481076952_1467795767512715_7350483388941025729_n.jpg" alt="Yachts at dusk" loading="lazy"></td>
+              <td class="apc-id">AP-0110</td><td>Yachts under an evening sky</td><td>Oil &middot; palette knife</td><td>500 &times; 500 mm</td><td>600 &times; 600 mm</td><td>ArtPro @ Lifestyle</td><td><span class="apc-status apc-status--sold">Sold</span></td>
             </tr>
             <tr>
-              <td><img src="assets/images/art/482268372_1467795534179405_7633487693280745775_n.jpg" alt="City Marina" loading="lazy"></td>
-              <td class="apc-id">AP-0111</td><td>City Marina</td><td>Gaynor</td><td>760 &times; 760 mm</td><td>860 &times; 860 mm</td><td>ArtPro @ Lifestyle</td><td>2026-07-11</td>
+              <td><img src="assets/images/art/482268372_1467795534179405_7633487693280745775_n.jpg" alt="City marina" loading="lazy"></td>
+              <td class="apc-id">AP-0111</td><td>Sailboats at the city marina</td><td>Oil &middot; palette knife</td><td>760 &times; 760 mm</td><td>860 &times; 860 mm</td><td>ArtPro @ Lifestyle</td><td><span class="apc-status apc-status--display">On display</span></td>
             </tr>
             <tr>
-              <td><img src="assets/images/artworks/daniel-novela-african-landscape.jpg" alt="African Landscape" loading="lazy"></td>
-              <td class="apc-id">AP-0120</td><td>African Landscape</td><td>Daniel Novela</td><td>900 &times; 600 mm</td><td>&mdash;</td><td>Prison Break Market</td><td>2026-07-10</td>
+              <td><img src="assets/images/artworks/daniel-novela-african-landscape.jpg" alt="African landscape" loading="lazy"></td>
+              <td class="apc-id">AP-0120</td><td>African landscape with distant hills</td><td>Oil on canvas</td><td>900 &times; 600 mm</td><td>&mdash;</td><td>Prison Break Market</td><td><span class="apc-status apc-status--stock">In stockroom</span></td>
             </tr>
             <tr>
               <td><img src="assets/images/artworks/wakaba-mutheki-musician.jpg" alt="Musician" loading="lazy"></td>
-              <td class="apc-id">AP-0130</td><td>Musician</td><td>Wakaba Mutheki</td><td>400 &times; 600 mm</td><td>500 &times; 700 mm</td><td>Sunninghill Village</td><td>2026-07-09</td>
+              <td class="apc-id">AP-0130</td><td>Township musician with trumpet</td><td>Mixed media</td><td>400 &times; 600 mm</td><td>500 &times; 700 mm</td><td>Sunninghill Village</td><td><span class="apc-status apc-status--display">On display</span></td>
             </tr>
           </tbody>
         </table>
