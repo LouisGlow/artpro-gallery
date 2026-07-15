@@ -14,13 +14,25 @@
 .apc__kicker{font-family:'Barlow Condensed','Oswald',sans-serif;text-transform:uppercase;letter-spacing:.28em;font-size:12px;color:var(--gold-deep);margin:0 0 10px;}
 .apc__title{font-family:'Barlow Condensed','Oswald',sans-serif;text-transform:uppercase;letter-spacing:.02em;line-height:1;font-size:clamp(28px,4vw,46px);margin:0 0 8px;color:var(--ink);}
 .apc__hint{color:var(--muted);font-size:14px;margin:0 0 20px;max-width:52ch;}
-.apc-form{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px 22px;background:var(--surface);border:1px solid var(--border);padding:clamp(16px,3vw,32px);}
+.apc-form{display:flex;flex-direction:column;gap:18px;background:var(--surface);border:1px solid var(--border);padding:clamp(16px,3vw,32px);}
 .apc-field{display:flex;flex-direction:column;gap:7px;}
-.apc-field--full{grid-column:1/-1;}
 .apc-field label{font-family:'Barlow Condensed','Oswald',sans-serif;text-transform:uppercase;letter-spacing:.12em;font-size:13px;color:var(--ink);}
 .apc-field .req{color:var(--gold-deep);}
-.apc-field input[type=text]{width:100%;min-height:52px;padding:13px 16px;border:1px solid var(--border);background:#fbfaf7;font:inherit;font-size:16px;color:var(--ink);border-radius:3px;}
-.apc-field input[type=text]:focus{outline:none;border-color:var(--gold);box-shadow:0 0 0 3px rgba(184,145,47,.16);}
+.apc-field input[type=text],.apc-field textarea{width:100%;min-height:52px;padding:13px 16px;border:1px solid var(--border);background:#fbfaf7;font:inherit;font-size:16px;color:var(--ink);border-radius:3px;}
+.apc-field textarea{min-height:92px;line-height:1.5;resize:vertical;}
+.apc-field input[type=text]:focus,.apc-field textarea:focus{outline:none;border-color:var(--gold);box-shadow:0 0 0 3px rgba(184,145,47,.16);}
+/* body: main fields (left) + location/status side panel (right) */
+.apc-cols{display:grid;grid-template-columns:1.7fr 1fr;gap:22px;align-items:start;}
+.apc-col-main{display:flex;flex-direction:column;gap:16px;}
+.apc-pair{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+.apc-side{border:1px solid var(--border);background:#fbfaf7;border-radius:4px;padding:18px 18px 20px;display:flex;flex-direction:column;gap:22px;}
+.apc-side__label{display:block;font-family:'Barlow Condensed','Oswald',sans-serif;text-transform:uppercase;letter-spacing:.12em;font-size:13px;color:var(--ink);margin:0 0 8px;}
+.apc-select{width:100%;min-height:52px;padding:12px 14px;border:1px solid var(--border);background:#fff;font:inherit;font-size:16px;color:var(--ink);border-radius:3px;}
+.apc-select:focus{outline:none;border-color:var(--gold);box-shadow:0 0 0 3px rgba(184,145,47,.16);}
+.apc-checks{display:flex;flex-direction:column;}
+.apc-check{display:flex;align-items:center;gap:12px;padding:12px 4px;border-top:1px solid var(--border);cursor:pointer;font-size:15px;-webkit-tap-highlight-color:transparent;}
+.apc-check:first-child{border-top:0;}
+.apc-check input{width:22px;height:22px;accent-color:var(--gold);flex:0 0 auto;}
 .apc-file{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;min-height:120px;border:2px dashed var(--border);background:#fbfaf7;border-radius:5px;cursor:pointer;font-family:'Barlow Condensed','Oswald',sans-serif;text-transform:uppercase;letter-spacing:.1em;font-size:15px;color:var(--muted);padding:18px;text-align:center;transition:border-color .2s,background .2s,color .2s;-webkit-tap-highlight-color:transparent;}
 .apc-file:hover,.apc-file:active{border-color:var(--gold);background:#fff;color:var(--ink);}
 .apc-file__icon{font-size:30px;line-height:1;}
@@ -32,7 +44,9 @@
 .apc-btn--ghost:hover{background:var(--ink);color:var(--paper);border-color:var(--ink);}
 .apc-note{font-size:12.5px;color:var(--muted);margin:16px 0 0;letter-spacing:.02em;}
 @media(max-width:680px){
-  .apc-form{grid-template-columns:1fr;gap:16px;padding:16px;}
+  .apc-form{gap:16px;padding:16px;}
+  .apc-cols{grid-template-columns:1fr;}
+  .apc-pair{grid-template-columns:1fr;}
   .apc-actions{flex-direction:column;align-items:stretch;}
   .apc-btn{width:100%;}
   .apc-file{min-height:150px;font-size:16px;}
@@ -67,11 +81,11 @@
     <div class="apc">
       <p class="apc__kicker">Staff · Art catalog</p>
       <h2 class="apc__title">Add a piece</h2>
-      <p class="apc__hint">Snap or upload a photo, fill in the details, and tap <b>Save &amp; add next</b>. The form clears each time so you can capture piece after piece — the artist name stays filled in.</p>
+      <p class="apc__hint">Add a photo and the piece details, choose the gallery it's in and its status, then tap <b>Save &amp; add next</b>. The form clears each time so you can capture piece after piece.</p>
 
       <form class="apc-form" onsubmit="return false;">
-        <div class="apc-field apc-field--full">
-          <label>Photo</label>
+        <div class="apc-field">
+          <label>Image <span class="req">*</span></label>
           <label class="apc-file" for="apc_photo">
             <span class="apc-file__icon" aria-hidden="true">&#128247;</span>
             <span class="apc-file__text" id="apc_file_text">Take a photo or upload</span>
@@ -80,27 +94,54 @@
           <img class="apc-preview" id="apc_preview" alt="Preview">
         </div>
 
-        <div class="apc-field apc-field--full">
-          <label for="apc_title">Piece name <span class="req">*</span></label>
-          <input type="text" id="apc_title" autocapitalize="words" autocomplete="off">
-        </div>
+        <div class="apc-cols">
+          <div class="apc-col-main">
+            <div class="apc-field">
+              <label for="apc_desc">Description <span class="req">*</span></label>
+              <textarea id="apc_desc" placeholder="Title / short description of the piece"></textarea>
+            </div>
+            <div class="apc-pair">
+              <div class="apc-field">
+                <label for="apc_id">ID</label>
+                <input type="text" id="apc_id" placeholder="e.g. AP-0142" autocomplete="off">
+              </div>
+              <div class="apc-field">
+                <label for="apc_medium">Medium</label>
+                <input type="text" id="apc_medium" placeholder="e.g. Oil on canvas" autocomplete="off">
+              </div>
+            </div>
+            <div class="apc-pair">
+              <div class="apc-field">
+                <label for="apc_art_size">Art size</label>
+                <input type="text" id="apc_art_size" placeholder="e.g. 600 &times; 900 mm" autocomplete="off">
+              </div>
+              <div class="apc-field">
+                <label for="apc_frame_size">Frame size</label>
+                <input type="text" id="apc_frame_size" placeholder="e.g. 700 &times; 1000 mm" autocomplete="off">
+              </div>
+            </div>
+          </div>
 
-        <div class="apc-field">
-          <label for="apc_artist">Artist name</label>
-          <input type="text" id="apc_artist" autocapitalize="words" autocomplete="off">
-        </div>
-        <div class="apc-field">
-          <label for="apc_cat_id">Catalogue ID</label>
-          <input type="text" id="apc_cat_id" placeholder="e.g. AP-0142" autocomplete="off">
-        </div>
-
-        <div class="apc-field">
-          <label for="apc_art_size">Size of art</label>
-          <input type="text" id="apc_art_size" placeholder="e.g. 600 &times; 900 mm" autocomplete="off">
-        </div>
-        <div class="apc-field">
-          <label for="apc_frame_size">Size of frame</label>
-          <input type="text" id="apc_frame_size" placeholder="e.g. 700 &times; 1000 mm" autocomplete="off">
+          <aside class="apc-side">
+            <div>
+              <span class="apc-side__label">Gallery / location</span>
+              <select class="apc-select" id="apc_location">
+                <option value="">Select a gallery…</option>
+                <option>Sunninghill Village</option>
+                <option>Prison Break Market</option>
+                <option>ArtPro @ Lifestyle</option>
+                <option>Maggies Farm</option>
+              </select>
+            </div>
+            <div>
+              <span class="apc-side__label">Status</span>
+              <div class="apc-checks">
+                <label class="apc-check"><input type="checkbox" name="apc_status" value="sold"> Sold</label>
+                <label class="apc-check"><input type="checkbox" name="apc_status" value="on-display"> On display in store</label>
+                <label class="apc-check"><input type="checkbox" name="apc_status" value="stockroom"> In stockroom in store</label>
+              </div>
+            </div>
+          </aside>
         </div>
 
         <div class="apc-actions">
