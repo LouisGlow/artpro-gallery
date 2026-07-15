@@ -7,6 +7,10 @@
 <meta name="description" content="ArtPro Gallery represents a wide spectrum of South African artists across four galleries in and around Johannesburg. Browse masterpieces, decorative art and investment pieces — delivered with care.">
 <link rel="icon" href="assets/images/favicon.jpg">
 <link rel="stylesheet" href="styles.css">
+<style>
+  #featured-art .card__artist a { color:inherit; text-decoration:none; transition:color .2s; }
+  #featured-art .card__artist a:hover { color:var(--gold-deep,#8a6d1f); text-decoration:underline; }
+</style>
 </head>
 <body>
 
@@ -71,6 +75,18 @@
       <a class="tlink" href="about.html" style="margin-top:22px;display:inline-block;">Our story</a>
     </div>
   </div>
+</section>
+
+<!-- ============ FEATURED ART ============ -->
+<section class="section section--tight wrap wrap--wide" id="featured-art">
+  <div class="section-head">
+    <div class="section-head__text reveal">
+      <p class="kicker">Now on the walls</p>
+      <h2 class="display display--m">Featured art</h2>
+    </div>
+    <a class="tlink reveal" href="art-for-sale.html">All work for sale →</a>
+  </div>
+  <div class="shop-grid" id="feat-grid"><p class="muted" style="grid-column:1/-1;">Loading featured works…</p></div>
 </section>
 
 <!-- ============ MEDIUMS ============ -->
@@ -232,6 +248,57 @@
   </div>
 </footer>
 
+<script src="assets/lightbox.js"></script>
 <script src="site.js"></script>
+<script>
+(function(){
+  var grid = document.getElementById('feat-grid');
+  if(!grid){ return; }
+  var MAX = 8;
+  function esc(s){ var d = document.createElement('div'); d.textContent = String(s == null ? '' : s); return d.innerHTML; }
+  function forSale(p){
+    var s = (p.status || '').toLowerCase();
+    if(s.indexOf('sold') !== -1){ return false; }
+    return s.indexOf('display') !== -1 || s.indexOf('stock') !== -1;
+  }
+  Promise.all([
+    fetch('/api/public/pieces').then(function(r){ return r.json(); }),
+    fetch('/api/public/artists').then(function(r){ return r.ok ? r.json() : null; }).catch(function(){ return null; })
+  ]).then(function(res){
+    var pieces = ((res[0] && res[0].pieces) || []).filter(forSale);
+    var ARTMAP = {}; ((res[1] && res[1].artists) || []).forEach(function(a){ ARTMAP[(a.name || '').toLowerCase()] = a.slug; });
+    if(!pieces.length){
+      grid.innerHTML = '<p class="muted" style="grid-column:1/-1;">New works are coming soon — <a class="tlink" href="art-for-sale.html">see the shop →</a></p>';
+      return;
+    }
+    // Shuffle for a rotating "featured" selection, then take a handful.
+    for(var i = pieces.length - 1; i > 0; i--){ var j = Math.floor(Math.random() * (i + 1)); var t = pieces[i]; pieces[i] = pieces[j]; pieces[j] = t; }
+    var feat = pieces.slice(0, MAX);
+    function artistLink(name){
+      var slug = ARTMAP[(name || '').toLowerCase()];
+      return slug ? '<a href="artist.html?a=' + encodeURIComponent(slug) + '">' + esc(name) + '</a>' : esc(name || 'ArtPro Gallery');
+    }
+    grid.innerHTML = feat.map(function(p){
+      var img = p.photo ? esc(p.photo) : 'assets/images/artists/_placeholder.jpg';
+      var tag = p.medium ? '<span class="card__tag">' + esc(p.medium) + '</span>' : '';
+      var enquire = 'contact.html?artist=' + encodeURIComponent(p.artist || '') + '&piece=' + encodeURIComponent(p.desc || '');
+      return '<article class="card">' +
+        '<a class="card__media" href="#" role="button">' + tag +
+          '<img src="' + img + '" alt="' + esc(p.desc) + '" loading="lazy"></a>' +
+        '<div class="card__body"><span class="card__title">' + esc(p.desc || 'Untitled') + '</span>' +
+        '<span class="card__artist">' + artistLink(p.artist) + '</span>' +
+        '<div class="card__foot"><span class="card__price">POA</span>' +
+        '<a class="tlink" href="' + esc(enquire) + '" style="font-size:11px;">Enquire</a></div></div></article>';
+    }).join('');
+
+    var LBITEMS = feat.map(function(p){ return { url: p.photo, title: p.desc, meta: p.medium, artist: p.artist, artistSlug: ARTMAP[(p.artist || '').toLowerCase()] }; });
+    Array.prototype.forEach.call(grid.querySelectorAll('.card__media'), function(el, i){
+      el.addEventListener('click', function(e){ e.preventDefault(); if(window.ArtProLightbox){ ArtProLightbox.open(LBITEMS, i); } });
+    });
+  }).catch(function(){
+    grid.innerHTML = '<p class="muted" style="grid-column:1/-1;">Couldn’t load featured works — <a class="tlink" href="art-for-sale.html">visit the shop →</a></p>';
+  });
+})();
+</script>
 </body>
 </html>
