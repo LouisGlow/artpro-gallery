@@ -134,10 +134,10 @@
   document.getElementById('g-art-title').textContent = 'Art at ' + g.name;
 
   // ---- physical-space photos (open in the shared lightbox) ----
-  var photos = g.photos || [];
   var hero = document.getElementById('g-hero');
   var grid = document.getElementById('g-photos');
-  if(photos.length){
+  function renderPhotos(photos){
+    if(!photos.length){ document.getElementById('g-photos-empty').hidden = false; return; }
     var LB = photos.map(function(p){ return { url: p, title: g.name, meta: g.area || 'ArtPro Gallery', artist: '' }; });
     hero.src = photos[0]; hero.alt = g.name + ' gallery'; hero.hidden = false;
     hero.addEventListener('click', function(){ if(window.ArtProLightbox){ ArtProLightbox.open(LB, 0); } });
@@ -149,8 +149,24 @@
         el.addEventListener('click', function(){ if(window.ArtProLightbox){ ArtProLightbox.open(LB, i + 1); } });
       });
     }
+  }
+  // Use the listed photos, or auto-discover NN.jpg in the gallery's folder.
+  // DROP-IN: just add 01.jpg, 02.jpg… to assets/images/galleries/<slug>/ — no code edit needed.
+  if((g.photos || []).length){
+    renderPhotos(g.photos);
   } else {
-    document.getElementById('g-photos-empty').hidden = false;
+    (function discover(){
+      var base = 'assets/images/galleries/' + g.slug + '/';
+      var found = [], i = 1, misses = 0;
+      (function next(){
+        if(i > 80 || misses >= 3){ renderPhotos(found); return; }
+        var n = (i < 10 ? '0' : '') + i;
+        fetch(base + n + '.jpg', { method: 'HEAD' })
+          .then(function(r){ if(r.ok){ found.push(base + n + '.jpg'); misses = 0; } else { misses++; } })
+          .catch(function(){ misses++; })
+          .then(function(){ i++; next(); });
+      })();
+    })();
   }
 
   // ---- art currently at this gallery (from the catalogue, by location) ----
