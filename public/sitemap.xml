@@ -9,6 +9,10 @@
   <url><loc>https://artpro-gallery.louisvent.workers.dev/services</loc><changefreq>monthly</changefreq><priority>0.7</priority></url>
   <url><loc>https://artpro-gallery.louisvent.workers.dev/about</loc><changefreq>monthly</changefreq><priority>0.6</priority></url>
   <url><loc>https://artpro-gallery.louisvent.workers.dev/contact</loc><changefreq>monthly</changefreq><priority>0.6</priority></url>
+  <url><loc>https://artpro-gallery.louisvent.workers.dev/gallery?g=maggies-farm</loc><changefreq>monthly</changefreq><priority>0.6</priority></url>
+  <url><loc>https://artpro-gallery.louisvent.workers.dev/gallery?g=sunninghill-village</loc><changefreq>monthly</changefreq><priority>0.5</priority></url>
+  <url><loc>https://artpro-gallery.louisvent.workers.dev/gallery?g=prison-break-market</loc><changefreq>monthly</changefreq><priority>0.5</priority></url>
+  <url><loc>https://artpro-gallery.louisvent.workers.dev/gallery?g=artpro-lifestyle</loc><changefreq>monthly</changefreq><priority>0.5</priority></url>
   <url><loc>https://artpro-gallery.louisvent.workers.dev/framing</loc><changefreq>monthly</changefreq><priority>0.5</priority></url>
   <url><loc>https://artpro-gallery.louisvent.workers.dev/hanging-of-paintings</loc><changefreq>monthly</changefreq><priority>0.5</priority></url>
   <url><loc>https://artpro-gallery.louisvent.workers.dev/commission</loc><changefreq>monthly</changefreq><priority>0.5</priority></url>

@@ -15,3 +15,6 @@ desktop.ini
 node_modules/
 .wrangler/
 .dev.vars
+
+# Raw camera/WhatsApp uploads — cleaned copies live in assets/images/galleries/
+public/assets/images/Gallery/

@@ -1,0 +1,184 @@
+<!doctype html>
+<html lang="en">
+<head>
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-0P4BWM3VNY"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag("js", new Date());
+  gtag("config", "G-0P4BWM3VNY");
+</script>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Our Galleries — ArtPro Gallery</title>
+<meta name="description" content="Visit ArtPro Gallery — four galleries in and around Johannesburg. See the space and the art currently on show at each store.">
+<link rel="icon" href="assets/images/favicon.jpg">
+<link rel="canonical" href="https://artpro-gallery.louisvent.workers.dev/gallery">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="ArtPro Gallery">
+<meta property="og:title" content="Our Galleries — ArtPro Gallery">
+<meta property="og:description" content="Visit ArtPro Gallery — four galleries in and around Johannesburg. See the space and the art on show at each store.">
+<meta property="og:image" content="https://artpro-gallery.louisvent.workers.dev/assets/images/galleries/maggies-farm/01.jpg">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="stylesheet" href="styles.css">
+<style>
+  .gal-hero__img { width:100%; aspect-ratio:16/9; max-height:62vh; object-fit:cover; border:1px solid var(--border); background:var(--surface); cursor:zoom-in; display:block; }
+  .gal-meta { display:flex; flex-wrap:wrap; gap:clamp(16px,3vw,40px); align-items:flex-start; justify-content:space-between; margin-top:clamp(22px,3vw,34px); }
+  .gal-meta__role { font-family:var(--font-display); text-transform:uppercase; letter-spacing:.18em; font-size:12px; color:var(--gold-deep); margin:0 0 8px; }
+  .gal-meta__addr { max-width:46ch; }
+  .gal-meta__addr p { margin:0; color:var(--muted); line-height:1.65; }
+  .gal-meta__actions { display:flex; gap:12px; flex-wrap:wrap; }
+  .gal-photos { display:grid; grid-template-columns:repeat(auto-fill, minmax(200px, 1fr)); gap:12px; margin-top:clamp(24px,3vw,40px); }
+  .gal-photo { aspect-ratio:4/3; overflow:hidden; border:1px solid var(--border); background:var(--surface); cursor:zoom-in; padding:0; }
+  .gal-photo img { width:100%; height:100%; object-fit:cover; transition:transform .5s ease; display:block; }
+  .gal-photo:hover img { transform:scale(1.05); }
+  .gal-empty { color:var(--muted); font-size:14px; margin-top:24px; }
+</style>
+</head>
+<body>
+
+<header class="site-header">
+  <div class="wrap site-header__inner">
+    <a class="brand" href="index.html" aria-label="ArtPro Gallery — home"><img src="assets/images/logo.png" alt="ArtPro Gallery"></a>
+    <nav class="nav" id="primary-nav" aria-label="Primary">
+      <a href="index.html">Home</a>
+      <a href="about.html">About</a>
+      <a href="services.html">Services</a>
+      <a href="artists.html">Artists</a>
+      <a href="art-by-artists.html">Art by Artists</a>
+      <a href="art-for-sale.html">Art for Sale</a>
+      <a href="interactive-gallery.html">Virtual Gallery</a>
+      <a href="contact.html">Contact</a>
+    </nav>
+    <a class="btn btn--gold header-cta" href="art-for-sale.html">Browse art <span class="btn__arrow">→</span></a>
+    <button class="nav-toggle" aria-label="Menu" aria-controls="primary-nav" aria-expanded="false"><span></span></button>
+  </div>
+</header>
+
+<main>
+  <section class="page-hero wrap">
+    <p class="breadcrumb"><a href="index.html">Home</a> / <a href="contact.html">Galleries</a> / <span id="g-name">Gallery</span></p>
+    <div class="page-hero__row" style="margin-top:20px;">
+      <h1 class="display display--l" id="g-title" style="max-width:16ch;">Gallery</h1>
+      <p class="muted" id="g-tagline" style="max-width:34ch;"></p>
+    </div>
+  </section>
+
+  <section class="section section--tight wrap wrap--wide" style="padding-top:8px;">
+    <img class="gal-hero__img" id="g-hero" src="" alt="" fetchpriority="high" decoding="async" hidden>
+    <div class="gal-meta">
+      <div class="gal-meta__addr">
+        <p class="gal-meta__role" id="g-role"></p>
+        <p id="g-address"></p>
+      </div>
+      <div class="gal-meta__actions">
+        <a class="btn btn--gold" id="g-directions" href="#" target="_blank" rel="noopener">Get directions <span class="btn__arrow">→</span></a>
+        <a class="btn btn--ghost" href="contact.html">All galleries</a>
+      </div>
+    </div>
+    <div class="gal-photos" id="g-photos"></div>
+    <p class="gal-empty" id="g-photos-empty" hidden>Photos of this gallery are coming soon.</p>
+  </section>
+
+  <section class="section section--tight wrap wrap--wide" id="g-art-section">
+    <div class="section-head">
+      <div class="section-head__text reveal">
+        <p class="kicker">On the walls here</p>
+        <h2 class="display display--m" id="g-art-title">Art at this gallery</h2>
+      </div>
+      <a class="tlink reveal" href="art-for-sale.html">All work for sale →</a>
+    </div>
+    <div class="shop-grid" id="g-art"><p class="muted" style="grid-column:1/-1;">Loading…</p></div>
+  </section>
+</main>
+
+<footer class="site-footer">
+  <div class="wrap wrap--wide">
+    <div class="footer-top">
+      <div class="footer-brand"><div class="footer-brand__word">ArtPro Gallery</div><p>South African art across four galleries in and around Johannesburg. Delivered with care.</p></div>
+      <div class="footer-col"><h4>Explore</h4><ul><li><a href="art-for-sale.html">Art for Sale</a></li><li><a href="artists.html">Artists</a></li><li><a href="art-by-artists.html">Art by Artists</a></li><li><a href="services.html">Services</a></li><li><a href="catalog.html">Staff login</a></li></ul></div>
+      <div class="footer-col"><h4>Contact</h4><ul><li><a href="tel:+27825554272">+27 82 555 4272</a></li><li><a href="mailto:lee@artprogallery.co.za">lee@artprogallery.co.za</a></li><li><a href="mailto:admin@artprogallery.co.za">admin@artprogallery.co.za</a></li><li><a href="contact.html">Find a gallery</a></li></ul></div>
+      <div class="footer-col footer-newsletter"><h4>Newsletter</h4><p style="color:color-mix(in oklab,var(--paper) 60%,transparent);font-size:14px;margin:0 0 12px;">New arrivals and gallery events, occasionally.</p><form onsubmit="return false;"><input type="email" placeholder="Email address" aria-label="Email address"><button class="btn btn--gold" type="submit">Subscribe</button></form></div>
+    </div>
+    <div class="footer-bottom">
+      <p>© 2026 ArtPro Gallery · Lee Holloway. All rights reserved.</p>
+      <div class="footer-social"><a href="https://web.facebook.com/ArtProGalleries" target="_blank" rel="noopener">Facebook</a><a href="https://www.instagram.com/artprogallery/" target="_blank" rel="noopener">Instagram</a><a href="https://www.youtube.com/@ArtProGallery" target="_blank" rel="noopener">YouTube</a></div>
+    </div>
+  </div>
+</footer>
+
+<script src="assets/galleries-data.js"></script>
+<script src="assets/lightbox.js"></script>
+<script src="site.js"></script>
+<script>
+(function(){
+  var params = new URLSearchParams(location.search);
+  var slug = (params.get('g') || '').toLowerCase();
+  var GALS = window.ARTPRO_GALLERIES || [];
+  // requested gallery, else the first one that has photos, else the first
+  var g = GALS.filter(function(x){ return x.slug === slug; })[0]
+        || GALS.filter(function(x){ return (x.photos || []).length; })[0]
+        || GALS[0];
+  if(!g){ return; }
+
+  function esc(s){ var d = document.createElement('div'); d.textContent = String(s == null ? '' : s); return d.innerHTML; }
+
+  document.title = g.name + ' Gallery — ArtPro Gallery';
+  document.getElementById('g-name').textContent = g.name;
+  document.getElementById('g-title').textContent = g.name;
+  document.getElementById('g-tagline').textContent = g.tagline || '';
+  document.getElementById('g-role').textContent = (g.role || '') + (g.area ? ' · ' + g.area : '');
+  document.getElementById('g-address').textContent = g.address || '';
+  document.getElementById('g-directions').href = g.map || '#';
+  document.getElementById('g-art-title').textContent = 'Art at ' + g.name;
+
+  // ---- physical-space photos (open in the shared lightbox) ----
+  var photos = g.photos || [];
+  var hero = document.getElementById('g-hero');
+  var grid = document.getElementById('g-photos');
+  if(photos.length){
+    var LB = photos.map(function(p){ return { url: p, title: g.name, meta: g.area || 'ArtPro Gallery', artist: '' }; });
+    hero.src = photos[0]; hero.alt = g.name + ' gallery'; hero.hidden = false;
+    hero.addEventListener('click', function(){ if(window.ArtProLightbox){ ArtProLightbox.open(LB, 0); } });
+    if(photos.length > 1){
+      grid.innerHTML = photos.slice(1).map(function(p){
+        return '<button class="gal-photo" type="button"><img src="' + esc(p) + '" alt="' + esc(g.name) + ' gallery" loading="lazy" decoding="async"></button>';
+      }).join('');
+      Array.prototype.forEach.call(grid.querySelectorAll('.gal-photo'), function(el, i){
+        el.addEventListener('click', function(){ if(window.ArtProLightbox){ ArtProLightbox.open(LB, i + 1); } });
+      });
+    }
+  } else {
+    document.getElementById('g-photos-empty').hidden = false;
+  }
+
+  // ---- art currently at this gallery (from the catalogue, by location) ----
+  var artGrid = document.getElementById('g-art');
+  Promise.all([
+    fetch('/api/public/pieces').then(function(r){ return r.json(); }),
+    fetch('/api/public/artists').then(function(r){ return r.ok ? r.json() : null; }).catch(function(){ return null; })
+  ]).then(function(res){
+    var ARTMAP = {}; ((res[1] && res[1].artists) || []).forEach(function(a){ ARTMAP[(a.name || '').toLowerCase()] = a.slug; });
+    var pieces = ((res[0] && res[0].pieces) || []).filter(function(p){ return (p.loc || '') === g.loc; });
+    if(!pieces.length){ document.getElementById('g-art-section').style.display = 'none'; return; }
+    function artistLink(name){ var s = ARTMAP[(name || '').toLowerCase()]; return s ? '<a href="artist.html?a=' + encodeURIComponent(s) + '">' + esc(name) + '</a>' : esc(name || 'ArtPro Gallery'); }
+    artGrid.innerHTML = pieces.map(function(p){
+      var img = p.photo ? esc(p.photo) : 'assets/images/artists/_placeholder.jpg';
+      var tag = p.medium ? '<span class="card__tag">' + esc(p.medium) + '</span>' : '';
+      var enquire = 'contact.html?artist=' + encodeURIComponent(p.artist || '') + '&piece=' + encodeURIComponent(p.desc || '');
+      return '<article class="card"><a class="card__media" href="#" role="button">' + tag +
+        '<img src="' + img + '" alt="' + esc(p.desc) + '" loading="lazy"></a>' +
+        '<div class="card__body"><span class="card__title">' + esc(p.desc || 'Untitled') + '</span>' +
+        '<span class="card__artist">' + artistLink(p.artist) + '</span>' +
+        '<div class="card__foot"><span class="card__price">POA</span><a class="tlink" href="' + esc(enquire) + '" style="font-size:11px;">Enquire</a></div></div></article>';
+    }).join('');
+    var LBITEMS = pieces.map(function(p){ return { url: p.photo, title: p.desc, meta: p.medium, artist: p.artist, artistSlug: ARTMAP[(p.artist || '').toLowerCase()] }; });
+    Array.prototype.forEach.call(artGrid.querySelectorAll('.card__media'), function(el, i){
+      el.addEventListener('click', function(e){ e.preventDefault(); if(window.ArtProLightbox){ ArtProLightbox.open(LBITEMS, i); } });
+    });
+  }).catch(function(){ document.getElementById('g-art-section').style.display = 'none'; });
+})();
+</script>
+</body>
+</html>
