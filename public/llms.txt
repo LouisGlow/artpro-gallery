@@ -1,0 +1,23 @@
+# ArtPro Gallery
+
+> ArtPro Gallery is a South African art gallery representing 50+ artists across four galleries in and around Johannesburg. It sells original paintings, decorative art and investment pieces, and offers framing, commissions, valuations, certificates of authenticity and nationwide delivery.
+
+## Key pages
+- [Art for Sale](https://artpro-gallery.louisvent.workers.dev/art-for-sale): browse available works by medium (oil, acrylic, watercolour and more)
+- [Artists](https://artpro-gallery.louisvent.workers.dev/artists): the represented South African artists
+- [Art by Artists](https://artpro-gallery.louisvent.workers.dev/art-by-artists): works grouped by the artist who made them
+- [Virtual Gallery](https://artpro-gallery.louisvent.workers.dev/interactive-gallery): an interactive 3D gallery you can explore online
+- [Services](https://artpro-gallery.louisvent.workers.dev/services): framing, hanging, commissions, valuations, delivery
+- [About](https://artpro-gallery.louisvent.workers.dev/about)
+- [Contact](https://artpro-gallery.louisvent.workers.dev/contact): the four gallery locations and enquiries
+
+## Galleries
+- Sunninghill Village, Sandton (head office)
+- Prison Break Market, Kyalami (art-classes studio)
+- ArtPro @ Lifestyle, Randpark Ridge (garden centre)
+- Maggies Farm, Lanseria (farm gallery)
+
+## Contact
+- Phone: +27 82 555 4272
+- Email: lee@artprogallery.co.za
+- Delivery: nationwide across South Africa, international shipping available

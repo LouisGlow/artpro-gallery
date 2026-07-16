@@ -3,14 +3,32 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>ArtPro Gallery — South African art across four galleries</title>
-<meta name="description" content="ArtPro Gallery represents a wide spectrum of South African artists across four galleries in and around Johannesburg. Browse masterpieces, decorative art and investment pieces — delivered with care.">
+<title>South African Art Gallery | ArtPro Gallery | Johannesburg</title>
+<meta name="description" content="South African art across four Johannesburg galleries — paintings, decorative &amp; investment pieces from 50+ represented artists, with framing, valuations &amp; nationwide delivery.">
 <link rel="icon" href="assets/images/favicon.jpg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="preload" as="image" href="assets/images/hero.jpg" fetchpriority="high">
 <link rel="stylesheet" href="styles.css">
 <style>
   #featured-art .card__artist a { color:inherit; text-decoration:none; transition:color .2s; }
   #featured-art .card__artist a:hover { color:var(--gold-deep,#8a6d1f); text-decoration:underline; }
+  .faq { max-width:820px; border-top:1px solid var(--border); }
+  .faq__item { border-bottom:1px solid var(--border); }
+  .faq__item summary { cursor:pointer; padding:18px 0; font-family:var(--font-display); text-transform:uppercase; letter-spacing:.04em; font-size:clamp(16px,1.6vw,19px); color:var(--ink); list-style:none; display:flex; justify-content:space-between; align-items:center; gap:16px; }
+  .faq__item summary::-webkit-details-marker { display:none; }
+  .faq__item summary::after { content:"+"; color:var(--gold); font-size:24px; line-height:1; flex:0 0 auto; }
+  .faq__item[open] summary::after { content:"\2013"; }
+  .faq__item p { margin:0 0 20px; color:var(--muted); max-width:70ch; line-height:1.7; }
 </style>
+  <link rel="canonical" href="https://artpro-gallery.louisvent.workers.dev/">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="ArtPro Gallery">
+  <meta property="og:title" content="South African Art Gallery | ArtPro Gallery | Johannesburg">
+  <meta property="og:description" content="South African art across four Johannesburg galleries — paintings, decorative &amp; investment pieces from 50+ represented artists, with framing, valuations &amp; nationwide delivery.">
+  <meta property="og:url" content="https://artpro-gallery.louisvent.workers.dev/">
+  <meta property="og:image" content="https://artpro-gallery.louisvent.workers.dev/assets/images/hero.jpg">
+  <meta name="twitter:card" content="summary_large_image">
 </head>
 <body>
 
@@ -50,7 +68,7 @@
       </div>
     </div>
     <figure class="hero__figure" style="margin:0;">
-      <img src="assets/images/hero.jpg" alt="Interior of ArtPro Gallery, artworks hung salon-style">
+      <img src="assets/images/hero.jpg" alt="Interior of ArtPro Gallery, artworks hung salon-style" width="1000" height="750" fetchpriority="high" decoding="async">
       <figcaption class="hero__figcap">Sunninghill Village — main floor</figcaption>
     </figure>
   </div>
@@ -100,18 +118,18 @@
       <a class="tlink reveal" href="art-for-sale.html">All work for sale →</a>
     </div>
     <div class="tile-grid grid-6 reveal">
-      <a class="tile" href="art-for-sale.html"><img src="assets/images/svc-oil.jpg" alt="Oil painting"><span class="tile__label">Oil</span></a>
-      <a class="tile" href="art-for-sale.html"><img src="assets/images/svc-acrylic.jpg" alt="Acrylic on canvas"><span class="tile__label">Acrylic</span></a>
-      <a class="tile" href="art-for-sale.html"><img src="assets/images/svc-watercolour.jpg" alt="Watercolour"><span class="tile__label">Watercolour</span></a>
-      <a class="tile" href="art-for-sale.html"><img src="assets/images/svc-charcoal.jpg" alt="Charcoal drawing"><span class="tile__label">Charcoal</span></a>
-      <a class="tile" href="art-for-sale.html"><img src="assets/images/svc-pastel.jpg" alt="Pastel"><span class="tile__label">Pastel</span></a>
-      <a class="tile" href="art-for-sale.html"><img src="assets/images/svc-linocut.jpg" alt="Linocut print"><span class="tile__label">Linocut</span></a>
-      <a class="tile" href="art-for-sale.html"><img src="assets/images/svc-etching.jpg" alt="Etching"><span class="tile__label">Etching</span></a>
-      <a class="tile" href="art-for-sale.html"><img src="assets/images/svc-print.jpg" alt="Fine-art print"><span class="tile__label">Print</span></a>
-      <a class="tile" href="art-for-sale.html"><img src="assets/images/svc-ceramics.jpg" alt="Ceramics"><span class="tile__label">Ceramics</span></a>
-      <a class="tile" href="art-for-sale.html"><img src="assets/images/svc-mixed-medium.jpg" alt="Mixed medium"><span class="tile__label">Mixed</span></a>
-      <a class="tile" href="art-for-sale.html"><img src="assets/images/svc-canvas.jpg" alt="Canvas"><span class="tile__label">Canvas</span></a>
-      <a class="tile" href="art-for-sale.html"><img src="assets/images/svc-stretched-canvas.jpg" alt="Stretched canvas"><span class="tile__label">Stretched</span></a>
+      <a class="tile" href="art-for-sale.html"><img loading="lazy" decoding="async" src="assets/images/svc-oil.jpg" alt="Oil painting"><span class="tile__label">Oil</span></a>
+      <a class="tile" href="art-for-sale.html"><img loading="lazy" decoding="async" src="assets/images/svc-acrylic.jpg" alt="Acrylic on canvas"><span class="tile__label">Acrylic</span></a>
+      <a class="tile" href="art-for-sale.html"><img loading="lazy" decoding="async" src="assets/images/svc-watercolour.jpg" alt="Watercolour"><span class="tile__label">Watercolour</span></a>
+      <a class="tile" href="art-for-sale.html"><img loading="lazy" decoding="async" src="assets/images/svc-charcoal.jpg" alt="Charcoal drawing"><span class="tile__label">Charcoal</span></a>
+      <a class="tile" href="art-for-sale.html"><img loading="lazy" decoding="async" src="assets/images/svc-pastel.jpg" alt="Pastel"><span class="tile__label">Pastel</span></a>
+      <a class="tile" href="art-for-sale.html"><img loading="lazy" decoding="async" src="assets/images/svc-linocut.jpg" alt="Linocut print"><span class="tile__label">Linocut</span></a>
+      <a class="tile" href="art-for-sale.html"><img loading="lazy" decoding="async" src="assets/images/svc-etching.jpg" alt="Etching"><span class="tile__label">Etching</span></a>
+      <a class="tile" href="art-for-sale.html"><img loading="lazy" decoding="async" src="assets/images/svc-print.jpg" alt="Fine-art print"><span class="tile__label">Print</span></a>
+      <a class="tile" href="art-for-sale.html"><img loading="lazy" decoding="async" src="assets/images/svc-ceramics.jpg" alt="Ceramics"><span class="tile__label">Ceramics</span></a>
+      <a class="tile" href="art-for-sale.html"><img loading="lazy" decoding="async" src="assets/images/svc-mixed-medium.jpg" alt="Mixed medium"><span class="tile__label">Mixed</span></a>
+      <a class="tile" href="art-for-sale.html"><img loading="lazy" decoding="async" src="assets/images/svc-canvas.jpg" alt="Canvas"><span class="tile__label">Canvas</span></a>
+      <a class="tile" href="art-for-sale.html"><img loading="lazy" decoding="async" src="assets/images/svc-stretched-canvas.jpg" alt="Stretched canvas"><span class="tile__label">Stretched</span></a>
     </div>
   </div>
 </section>
@@ -119,7 +137,7 @@
 <!-- ============ FEATURE — virtual gallery ============ -->
 <section class="section wrap wrap--wide">
   <div class="feature reveal" style="border:1px solid var(--border);">
-    <div class="feature__media"><img src="assets/images/img-abstract.jpg" alt="A bold South African artwork from the ArtPro collection"></div>
+    <div class="feature__media"><img loading="lazy" decoding="async" src="assets/images/img-abstract.jpg" alt="A bold South African artwork from the ArtPro collection"></div>
     <div class="feature__body on-ink">
       <p class="kicker">Step inside</p>
       <h2 class="display display--m" style="margin-top:16px;">Explore the virtual gallery</h2>
@@ -184,6 +202,42 @@
       <span class="loc__addr">R512 Pelindaba Rd, Lanseria, 1748<br>Maggies Home of the Chicken Pie</span>
       <span class="loc__tag"><span>Farm gallery</span></span>
     </div>
+  </div>
+</section>
+
+<!-- ============ FAQ ============ -->
+<section class="section section--tight wrap" id="faq">
+  <div class="section-head">
+    <div class="section-head__text reveal">
+      <p class="kicker">Good to know</p>
+      <h2 class="display display--m">Frequently asked questions</h2>
+    </div>
+  </div>
+  <div class="faq reveal">
+    <details class="faq__item">
+      <summary>Where are ArtPro Gallery's galleries located?</summary>
+      <p>ArtPro Gallery has four galleries in and around Johannesburg: Sunninghill Village (Sandton, our head office), Prison Break Market (Kyalami), ArtPro @ Lifestyle (Randpark Ridge) and Maggies Farm (Lanseria).</p>
+    </details>
+    <details class="faq__item">
+      <summary>Does ArtPro Gallery deliver artwork?</summary>
+      <p>Yes. We deliver nationwide across South Africa with care, and international shipping is available on request.</p>
+    </details>
+    <details class="faq__item">
+      <summary>Can I commission a custom artwork?</summary>
+      <p>Yes. We arrange bespoke commission work with our represented artists — get in touch with the piece, size and style you have in mind and we'll guide you.</p>
+    </details>
+    <details class="faq__item">
+      <summary>Does ArtPro Gallery offer framing and valuations?</summary>
+      <p>Yes. Alongside the gallery we offer custom framing and professional hanging, art valuations, and validation certificates of authenticity.</p>
+    </details>
+    <details class="faq__item">
+      <summary>How many artists does ArtPro Gallery represent?</summary>
+      <p>We represent a growing roster of more than 50 South African artists, from traditional masters to contemporary voices, across a wide range of mediums.</p>
+    </details>
+    <details class="faq__item">
+      <summary>Can I view the art online?</summary>
+      <p>Yes. Browse works for sale by medium in the shop, explore the collection by artist, or step into our interactive virtual gallery from any device.</p>
+    </details>
   </div>
 </section>
 
@@ -302,6 +356,63 @@
     grid.innerHTML = '<p class="muted" style="grid-column:1/-1;">Couldn’t load featured works — <a class="tlink" href="art-for-sale.html">visit the shop →</a></p>';
   });
 })();
+</script>
+<!-- Structured data: gallery, website, FAQ. Update the domain at launch. -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": ["ArtGallery", "LocalBusiness"],
+      "@id": "https://artpro-gallery.louisvent.workers.dev/#gallery",
+      "name": "ArtPro Gallery",
+      "url": "https://artpro-gallery.louisvent.workers.dev/",
+      "logo": "https://artpro-gallery.louisvent.workers.dev/assets/images/logo.png",
+      "image": "https://artpro-gallery.louisvent.workers.dev/assets/images/hero.jpg",
+      "description": "South African art gallery representing 50+ artists across four galleries in and around Johannesburg. Paintings, decorative and investment pieces, with framing, valuations and nationwide delivery.",
+      "telephone": "+27825554272",
+      "email": "lee@artprogallery.co.za",
+      "priceRange": "$$",
+      "areaServed": "ZA",
+      "address": {
+        "@type": "PostalAddress",
+        "streetAddress": "Lower level, shop LL 8, Sunninghill Village",
+        "addressLocality": "Sandton",
+        "addressRegion": "Gauteng",
+        "postalCode": "2157",
+        "addressCountry": "ZA"
+      },
+      "sameAs": [
+        "https://web.facebook.com/ArtProGalleries",
+        "https://www.instagram.com/artprogallery/",
+        "https://www.youtube.com/@ArtProGallery"
+      ]
+    },
+    {
+      "@type": "WebSite",
+      "@id": "https://artpro-gallery.louisvent.workers.dev/#website",
+      "name": "ArtPro Gallery",
+      "url": "https://artpro-gallery.louisvent.workers.dev/",
+      "publisher": { "@id": "https://artpro-gallery.louisvent.workers.dev/#gallery" },
+      "potentialAction": {
+        "@type": "SearchAction",
+        "target": { "@type": "EntryPoint", "urlTemplate": "https://artpro-gallery.louisvent.workers.dev/art-for-sale?q={search_term_string}" },
+        "query-input": "required name=search_term_string"
+      }
+    },
+    {
+      "@type": "FAQPage",
+      "mainEntity": [
+        { "@type": "Question", "name": "Where are ArtPro Gallery's galleries located?", "acceptedAnswer": { "@type": "Answer", "text": "ArtPro Gallery has four galleries in and around Johannesburg: Sunninghill Village (Sandton, head office), Prison Break Market (Kyalami), ArtPro @ Lifestyle (Randpark Ridge) and Maggies Farm (Lanseria)." } },
+        { "@type": "Question", "name": "Does ArtPro Gallery deliver artwork?", "acceptedAnswer": { "@type": "Answer", "text": "Yes. We deliver nationwide across South Africa with care, and international shipping is available on request." } },
+        { "@type": "Question", "name": "Can I commission a custom artwork?", "acceptedAnswer": { "@type": "Answer", "text": "Yes. We arrange bespoke commission work with our represented artists — tell us the piece, size and style you have in mind." } },
+        { "@type": "Question", "name": "Does ArtPro Gallery offer framing and valuations?", "acceptedAnswer": { "@type": "Answer", "text": "Yes. We offer custom framing and professional hanging, art valuations, and validation certificates of authenticity." } },
+        { "@type": "Question", "name": "How many artists does ArtPro Gallery represent?", "acceptedAnswer": { "@type": "Answer", "text": "We represent more than 50 South African artists, from traditional masters to contemporary voices, across a wide range of mediums." } },
+        { "@type": "Question", "name": "Can I view the art online?", "acceptedAnswer": { "@type": "Answer", "text": "Yes. Browse works for sale by medium, explore the collection by artist, or step into our interactive virtual gallery from any device." } }
+      ]
+    }
+  ]
+}
 </script>
 </body>
 </html>
