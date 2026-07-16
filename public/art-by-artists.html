@@ -96,6 +96,14 @@
 </section>
 
 <section class="section wrap">
+  <div class="loc-pills reveal" id="gallery-pills">
+    <span class="loc-pills__label">Gallery</span>
+    <button class="loc-pill is-active" type="button" data-loc="">All galleries</button>
+    <button class="loc-pill" type="button" data-loc="Sunninghill Village">Sunninghill Village</button>
+    <button class="loc-pill" type="button" data-loc="Prison Break Market">Prison Break Market</button>
+    <button class="loc-pill" type="button" data-loc="ArtPro @ Lifestyle">ArtPro @ Lifestyle</button>
+    <button class="loc-pill" type="button" data-loc="Maggies Farm">Maggies Farm</button>
+  </div>
   <div id="aba-list"><p class="aba-note">Loading the collection…</p></div>
 
   <p class="aba-note" style="margin-top:40px;max-width:64ch;">
@@ -156,33 +164,44 @@
   ])
     .then(function(res){
       if(res[0] && res[0].artists){ res[0].artists.forEach(function(a){ ARTISTS[(a.name || '').toLowerCase()] = a; }); }
-      var pieces = (res[1] && res[1].pieces) || [];
-      if(!pieces.length){ host.innerHTML = '<p class="aba-note">The collection is being updated — please check back soon.</p>'; return; }
-
-      // group by artist, preserving first-seen order (server sorts by artist)
-      var groups = [], byArtist = {};
-      pieces.forEach(function(p){
-        var key = (p.artist || 'Other').trim() || 'Other';
-        if(!byArtist[key]){ byArtist[key] = { artist: key, items: [] }; groups.push(byArtist[key]); }
-        byArtist[key].items.push(p);
-      });
-      host.innerHTML = groups.map(renderGroup).join('');
-
-      // Wire each artwork to open the shared lightbox (same order as the DOM).
-      var LBITEMS = [];
-      groups.forEach(function(g){ g.items.forEach(function(p){
-        LBITEMS.push({ url: p.photo, title: p.desc, meta: p.medium, artist: p.artist, artistSlug: (ARTISTS[(p.artist || '').toLowerCase()] || {}).slug });
-      }); });
-      Array.prototype.forEach.call(host.querySelectorAll('.artwork'), function(el, i){
-        el.addEventListener('click', function(e){
-          e.preventDefault();
-          if(window.ArtProLightbox){ ArtProLightbox.open(LBITEMS, i); }
-        });
-      });
+      ALL = (res[1] && res[1].pieces) || [];
+      if(!ALL.length){ host.innerHTML = '<p class="aba-note">The collection is being updated — please check back soon.</p>'; return; }
+      render('');       // all galleries
+      setupPills();
     })
     .catch(function(){
       host.innerHTML = '<p class="aba-note">Couldn’t load the collection right now — please refresh the page.</p>';
     });
+
+  // Render the collection, optionally filtered to one gallery/location.
+  var ALL = [];
+  function render(loc){
+    var pieces = loc ? ALL.filter(function(p){ return (p.loc || '') === loc; }) : ALL;
+    if(!pieces.length){ host.innerHTML = '<p class="aba-note">No works at this gallery right now — try another.</p>'; return; }
+    var groups = [], byArtist = {};
+    pieces.forEach(function(p){
+      var key = (p.artist || 'Other').trim() || 'Other';
+      if(!byArtist[key]){ byArtist[key] = { artist: key, items: [] }; groups.push(byArtist[key]); }
+      byArtist[key].items.push(p);
+    });
+    host.innerHTML = groups.map(renderGroup).join('');
+    var LBITEMS = [];
+    groups.forEach(function(g){ g.items.forEach(function(p){
+      LBITEMS.push({ url: p.photo, title: p.desc, meta: p.medium, artist: p.artist, artistSlug: (ARTISTS[(p.artist || '').toLowerCase()] || {}).slug });
+    }); });
+    Array.prototype.forEach.call(host.querySelectorAll('.artwork'), function(el, i){
+      el.addEventListener('click', function(e){ e.preventDefault(); if(window.ArtProLightbox){ ArtProLightbox.open(LBITEMS, i); } });
+    });
+  }
+  function setupPills(){
+    var pills = document.querySelectorAll('#gallery-pills [data-loc]');
+    Array.prototype.forEach.call(pills, function(pill){
+      pill.addEventListener('click', function(){
+        Array.prototype.forEach.call(pills, function(p){ p.classList.toggle('is-active', p === pill); });
+        render(pill.getAttribute('data-loc'));
+      });
+    });
+  }
 
   function renderGroup(g){
     var meta = ARTISTS[g.artist.toLowerCase()];

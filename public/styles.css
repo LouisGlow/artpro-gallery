@@ -391,6 +391,17 @@ a { color: inherit; }
 }
 .chip[aria-pressed="true"], .chip:hover { background: var(--ink-deep); color: var(--paper); border-color: var(--ink-deep); }
 
+/* ---- gallery / location pills (filter art by which store it's in) ---- */
+.loc-pills { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-bottom: clamp(20px, 3vw, 30px); }
+.loc-pills__label { font-family: var(--font-display); text-transform: uppercase; letter-spacing: 0.16em; font-size: 11px; color: var(--muted); margin-right: 4px; }
+.loc-pill {
+  font-family: var(--font-display); text-transform: uppercase; letter-spacing: 0.1em; font-size: 12px;
+  padding: 8px 15px; border: 1px solid var(--border); background: var(--surface); color: var(--muted);
+  border-radius: 100px; cursor: pointer; transition: all .18s ease; -webkit-tap-highlight-color: transparent;
+}
+.loc-pill:hover { color: var(--ink); border-color: var(--muted); }
+.loc-pill.is-active { background: var(--gold); color: #1a1712; border-color: var(--gold); }
+
 .shop-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: clamp(14px, 1.6vw, 26px); }
 @media (max-width: 1024px){ .shop-grid { grid-template-columns: repeat(3,1fr);} }
 @media (max-width: 760px){ .shop-grid { grid-template-columns: repeat(2,1fr);} }

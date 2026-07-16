@@ -297,9 +297,9 @@ body { background: #ece7df; font-family: 'Montserrat', -apple-system, 'Segoe UI'
 }
 .vg-grid::-webkit-scrollbar { width:6px; }
 .vg-grid::-webkit-scrollbar-thumb { background:rgba(33,29,24,.25); border-radius:4px; }
-.vg-filters { display:flex; gap:8px; margin-top:14px; }
+.vg-filters { display:flex; flex-wrap:wrap; gap:8px; margin-top:14px; }
 .vg-filter {
-	flex:1; min-width:0; -webkit-appearance:none; appearance:none;
+	flex:1 1 45%; min-width:110px; -webkit-appearance:none; appearance:none;
 	background:rgba(255,255,255,.55); border:1px solid var(--glass-brd); border-radius:3px;
 	color:var(--ink); font-family:var(--font-body); font-size:12px; padding:9px 10px; cursor:pointer;
 }
@@ -660,6 +660,7 @@ body { background: #ece7df; font-family: 'Montserrat', -apple-system, 'Segoe UI'
 		<div class="vg-filters">
 			<select class="vg-filter" id="vg-filter-artist" aria-label="Filter by artist"><option value="">All artists</option></select>
 			<select class="vg-filter" id="vg-filter-medium" aria-label="Filter by medium"><option value="">All mediums</option></select>
+			<select class="vg-filter" id="vg-filter-gallery" aria-label="Filter by gallery"><option value="">All galleries</option></select>
 		</div>
 
 		<!-- Thumbnail grid populated from the catalogue -->
@@ -895,9 +896,10 @@ body { background: #ece7df; font-family: 'Montserrat', -apple-system, 'Segoe UI'
 	var ROTATE_MS = 7000, rotateTimer = null;
 	var artistSel = document.getElementById('vg-filter-artist');
 	var mediumSel = document.getElementById('vg-filter-medium');
+	var gallerySel = document.getElementById('vg-filter-gallery');
 
 	function pieceToItem(p) {
-		return { url: p.photo, thumb: p.photo, title: p.desc || 'Untitled', caption: p.medium || 'ArtPro Gallery', artist: p.artist || '', medium: p.medium || '' };
+		return { url: p.photo, thumb: p.photo, title: p.desc || 'Untitled', caption: p.medium || 'ArtPro Gallery', artist: p.artist || '', medium: p.medium || '', loc: p.loc || '' };
 	}
 	function uniqueSorted(arr) {
 		var seen = {}, out = [];
@@ -911,7 +913,8 @@ body { background: #ece7df; font-family: 'Montserrat', -apple-system, 'Segoe UI'
 	function applyFilter() {
 		var a = artistSel ? artistSel.value : '';
 		var m = mediumSel ? mediumSel.value : '';
-		GALLERY = ALL.filter(function (it) { return (!a || it.artist === a) && (!m || it.medium === m); });
+		var loc = gallerySel ? gallerySel.value : '';
+		GALLERY = ALL.filter(function (it) { return (!a || it.artist === a) && (!m || it.medium === m) && (!loc || it.loc === loc); });
 		current = -1;
 		buildGrid();
 		stopRotate();
@@ -936,11 +939,13 @@ body { background: #ece7df; font-family: 'Montserrat', -apple-system, 'Segoe UI'
 
 	if (artistSel) { artistSel.addEventListener('change', applyFilter); }
 	if (mediumSel) { mediumSel.addEventListener('change', applyFilter); }
+	if (gallerySel) { gallerySel.addEventListener('change', applyFilter); }
 
 	function bootGallery(items) {
 		ALL = items;
 		fillSelect(artistSel, uniqueSorted(ALL.map(function (it) { return it.artist; })));
 		fillSelect(mediumSel, uniqueSorted(ALL.map(function (it) { return it.medium; })));
+		fillSelect(gallerySel, uniqueSorted(ALL.map(function (it) { return it.loc; })));
 		applyFilter();
 	}
 

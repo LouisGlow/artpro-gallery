@@ -59,6 +59,14 @@
 </section>
 
 <section class="section section--tight wrap wrap--wide" style="padding-top:26px;">
+  <div class="loc-pills reveal" id="gallery-pills">
+    <span class="loc-pills__label">Gallery</span>
+    <button class="loc-pill is-active" type="button" data-loc="">All galleries</button>
+    <button class="loc-pill" type="button" data-loc="Sunninghill Village">Sunninghill Village</button>
+    <button class="loc-pill" type="button" data-loc="Prison Break Market">Prison Break Market</button>
+    <button class="loc-pill" type="button" data-loc="ArtPro @ Lifestyle">ArtPro @ Lifestyle</button>
+    <button class="loc-pill" type="button" data-loc="Maggies Farm">Maggies Farm</button>
+  </div>
   <div class="shop-toolbar reveal">
     <button class="chip" data-filter="all" aria-pressed="true">All</button>
     <button class="chip" data-filter="oil" aria-pressed="false">Oil</button>
@@ -138,7 +146,7 @@
       var enquire = 'contact.html?artist=' + encodeURIComponent(p.artist || '') + '&piece=' + encodeURIComponent(p.desc || '');
       var img = p.photo ? esc(p.photo) : 'assets/images/artists/_placeholder.jpg';
       var tag = p.medium ? '<span class="card__tag">' + esc(p.medium) + '</span>' : '';
-      return '<article class="card" data-medium="' + esc(cat(p.medium)) + '">' +
+      return '<article class="card" data-medium="' + esc(cat(p.medium)) + '" data-loc="' + esc(p.loc || '') + '">' +
         '<a class="card__media" href="#" role="button">' + tag +
           '<img src="' + img + '" alt="' + esc(p.desc) + '" loading="lazy"></a>' +
         '<div class="card__body"><span class="card__title">' + esc(p.desc || 'Untitled') + '</span>' +
@@ -156,32 +164,39 @@
       });
     });
 
-    wireChips();
-
-    // Honour a ?q= search term (used by the site's SearchAction / search box).
-    var q = new URLSearchParams(location.search).get('q');
-    if(q){
-      q = q.toLowerCase();
-      Array.prototype.forEach.call(grid.querySelectorAll('.card'), function(card){
-        card.style.display = card.textContent.toLowerCase().indexOf(q) !== -1 ? '' : 'none';
-      });
-    }
+    setupFilters();
   }).catch(function(){
     grid.innerHTML = '<p class="muted" style="grid-column:1/-1;">Couldn’t load available works right now — please refresh.</p>';
   });
 
-  // Chip filtering (site.js binds before these cards exist, so wire it here too).
-  function wireChips(){
+  // Unified filtering: gallery pills + medium chips + ?q search all compose.
+  var state = { medium: 'all', loc: '', q: (new URLSearchParams(location.search).get('q') || '').toLowerCase() };
+  function applyFilters(){
+    Array.prototype.forEach.call(grid.querySelectorAll('.card'), function(card){
+      var okM = state.medium === 'all' || card.getAttribute('data-medium') === state.medium;
+      var okL = state.loc === '' || card.getAttribute('data-loc') === state.loc;
+      var okQ = !state.q || card.textContent.toLowerCase().indexOf(state.q) !== -1;
+      card.style.display = (okM && okL && okQ) ? '' : 'none';
+    });
+  }
+  function setupFilters(){
     var chips = document.querySelectorAll('.shop-toolbar [data-filter]');
     Array.prototype.forEach.call(chips, function(chip){
       chip.addEventListener('click', function(){
-        var f = chip.getAttribute('data-filter');
+        state.medium = chip.getAttribute('data-filter');
         Array.prototype.forEach.call(chips, function(c){ c.setAttribute('aria-pressed', c === chip ? 'true' : 'false'); });
-        Array.prototype.forEach.call(grid.querySelectorAll('.card'), function(card){
-          card.style.display = (f === 'all' || card.getAttribute('data-medium') === f) ? '' : 'none';
-        });
+        applyFilters();
       });
     });
+    var pills = document.querySelectorAll('#gallery-pills [data-loc]');
+    Array.prototype.forEach.call(pills, function(pill){
+      pill.addEventListener('click', function(){
+        state.loc = pill.getAttribute('data-loc');
+        Array.prototype.forEach.call(pills, function(p){ p.classList.toggle('is-active', p === pill); });
+        applyFilters();
+      });
+    });
+    applyFilters();
   }
 })();
 </script>

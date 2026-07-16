@@ -54,7 +54,7 @@ function publicPiece(r) {
     pid: r.pid, photo: photo,
     id: r.art_id || '', desc: r.descr || '', artist: r.artist || '',
     medium: r.medium || '', art: r.art_size || '', frame: r.frame || '', status: r.status || '',
-    featured: !!r.featured
+    loc: r.loc || '', featured: !!r.featured
   };
 }
 
@@ -184,7 +184,7 @@ async function handleApi(request, env, url) {
   // Public read for the website's own pages — non-archived pieces, no location.
   if (pathname === '/api/public/pieces') {
     const { results } = await env.DB.prepare(
-      `SELECT pid, photo, art_id, descr, artist, medium, art_size, frame, status, featured, updated
+      `SELECT pid, photo, art_id, descr, artist, medium, art_size, frame, loc, status, featured, updated
          FROM pieces WHERE archived = 0 ORDER BY artist ASC, created ASC, rowid ASC`
     ).all();
     return json({ pieces: (results || []).map(publicPiece) });
