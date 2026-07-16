@@ -279,6 +279,10 @@ async function handleApi(request, env, url) {
       const pid = crypto.randomUUID();
       const now = Date.now();
       const c = pieceColumns(body, pid, now);
+      if (c.art_id) {
+        const dup = await env.DB.prepare(`SELECT pid FROM pieces WHERE art_id = ? LIMIT 1`).bind(c.art_id).all();
+        if (dup.results && dup.results.length) return json({ error: 'ID "' + c.art_id + '" is already used by another piece.' }, 409);
+      }
       await env.DB.prepare(
         `INSERT INTO pieces (pid, photo, photo_blob, photo_type, art_id, descr, artist, medium, art_size, frame, loc, status, archived, featured, created, updated)
          VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`
@@ -312,6 +316,10 @@ async function handleApi(request, env, url) {
       const body = await request.json().catch(() => ({}));
       const now = Date.now();
       const c = pieceColumns(body, pid, now);
+      if (c.art_id) {
+        const dup = await env.DB.prepare(`SELECT pid FROM pieces WHERE art_id = ? AND pid != ? LIMIT 1`).bind(c.art_id, pid).all();
+        if (dup.results && dup.results.length) return json({ error: 'ID "' + c.art_id + '" is already used by another piece.' }, 409);
+      }
       // If no new image was sent (photo is a plain URL/path, e.g. the existing
       // /api/pieces/:pid/photo), keep the stored blob untouched.
       if (c.hasImage) {

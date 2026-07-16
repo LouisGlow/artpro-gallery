@@ -208,6 +208,13 @@
   // Artist dropdown from the artists DB (fallback: bundled file)
   (function(){
     var sel = g('apc_artist'); if(!sel){ return; }
+    // When an artist is picked, prefill the ID with their initials + "-"
+    var idf = g('apc_id');
+    sel.addEventListener('change', function(){
+      var name = sel.value.trim(); if(!name || !idf){ return; }
+      var pre = name.split(/\s+/).map(function(w){ return w.charAt(0); }).join('').toUpperCase().slice(0, 4) + '-';
+      idf.value = pre + idf.value.trim().replace(/^[A-Za-z]*-?\s*/, '');
+    });
     function fill(names){
       names.sort(function(x, y){ return x.localeCompare(y); })
         .forEach(function(n){ var o = document.createElement('option'); o.textContent = n; sel.appendChild(o); });
@@ -267,8 +274,8 @@
     ArtProStore.create(piece).then(function(){
       flash('Saved &ldquo;' + descSafe + '&rdquo; to the catalog. <a class="tlink" href="catalog.html">View catalog &rarr;</a>');
       resetForm();
-    }).catch(function(){
-      flash('Could not save — check your connection and try again.');
+    }).catch(function(err){
+      flash((err && err.message) ? err.message : 'Could not save — check your connection and try again.');
     }).then(function(){ saving = false; });
   }
 

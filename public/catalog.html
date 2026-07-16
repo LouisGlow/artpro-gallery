@@ -245,6 +245,7 @@
         </div>
       </form>
     </div>
+    <p id="e_err" style="display:none;color:#a5382f;font-size:13px;margin:0 24px;font-weight:600;"></p>
     <div class="apc-modal__foot">
       <button class="apc-btn" type="button" id="e_save">Save changes</button>
       <button class="apc-btn apc-btn--ghost" type="button" data-close>Cancel</button>
@@ -309,6 +310,7 @@
 
   function openRow(tr){
     current = tr; var c = cells(tr);
+    var _err = g('e_err'); if(_err){ _err.style.display = 'none'; }
     // 0 photo | 1 id | 2 desc | 3 medium | 4 art | 5 frame | 6 location | 7 status
     g('e_heading').textContent = c[2].textContent.trim() || 'Piece';
     g('e_id').value     = c[1].textContent.trim();
@@ -349,11 +351,20 @@
   }
   function applySave(photoDataUrl){
     if(!current){ return; }
+    var errEl = g('e_err');
+    var newId = g('e_id').value.trim();
+    if(newId){
+      var dup = Array.prototype.some.call(tbody.querySelectorAll('tr'), function(tr){
+        return tr !== current && cells(tr)[1].textContent.trim() === newId;
+      });
+      if(dup){ if(errEl){ errEl.textContent = 'ID "' + newId + '" is already used by another piece.'; errEl.style.display = ''; } return; }
+    }
+    if(errEl){ errEl.style.display = 'none'; }
     var existing = cells(current)[0].querySelector('img');
     var piece = {
       pid:    current.getAttribute('data-pid') || '',
       photo:  photoDataUrl || (existing ? existing.getAttribute('src') : ''),
-      id:     g('e_id').value.trim(),
+      id:     newId,
       desc:   g('e_desc').value.trim(),
       artist: g('e_artist').value.trim(),
       medium: g('e_medium').value.trim(),
@@ -364,8 +375,9 @@
       archived: current.getAttribute('data-archived') === '1',
       featured: g('e_featured').checked
     };
-    close();
-    ArtProStore.update(piece.pid, piece).then(reload);
+    ArtProStore.update(piece.pid, piece).then(function(){ close(); reload(); }).catch(function(err){
+      if(errEl){ errEl.textContent = (err && err.message) || 'Could not save — please try again.'; errEl.style.display = ''; }
+    });
   }
 
   function del(){
@@ -409,6 +421,13 @@
   g('e_no_frame').addEventListener('change', function(){
     g('e_frame').disabled = this.checked;
     if(this.checked){ g('e_frame').value = ''; }
+  });
+  // Prefill an empty ID with the selected artist's initials + "-"
+  g('e_artist').addEventListener('change', function(){
+    var name = g('e_artist').value.trim();
+    if(name && !g('e_id').value.trim()){
+      g('e_id').value = name.split(/\s+/).map(function(w){ return w.charAt(0); }).join('').toUpperCase().slice(0, 4) + '-';
+    }
   });
   g('e_save').addEventListener('click', save);
   g('e_del').addEventListener('click', del);

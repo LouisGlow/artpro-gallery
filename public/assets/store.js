@@ -53,7 +53,11 @@
   // ---- remote (API) backend ----
   function req(path, opts) {
     return fetch(path, opts).then(function (r) {
-      if (!r.ok) throw new Error('API ' + r.status);
+      if (!r.ok) {
+        return r.json().catch(function () { return {}; }).then(function (j) {
+          var e = new Error(j.error || ('API ' + r.status)); e.status = r.status; throw e;
+        });
+      }
       return r.status === 204 ? null : r.json();
     });
   }
