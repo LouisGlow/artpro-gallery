@@ -662,6 +662,27 @@ function addBeams(){
   }
 }
 
+// Wooden lintel across every doorway. Openings are 2.4m high (DH in the Blender build);
+// the beam hangs just into the head of the opening and tucks 0.02 up into the wall above.
+function addDoorBeams(){
+  const tex=WOOD.clone(); tex.needsUpdate=true; tex.wrapS=tex.wrapT=THREE.RepeatWrapping; tex.repeat.set(1.6,1);
+  const mat=new THREE.MeshStandardMaterial({map:tex, roughness:0.55, metalness:0.0, envMapIntensity:0.35});
+  const H=0.24, CY=2.30, D=0.30;          // beam height, centre height, depth (wall is 0.2)
+  const DOORS=[
+    {along:'x', bx:0,   by:0,  w:6.0},    // atrium -> spine
+    {along:'z', bx:3,   by:12, w:2.8}, {along:'z', bx:3,  by:30, w:2.8}, {along:'z', bx:3,  by:48, w:2.8},
+    {along:'z', bx:-3,  by:12, w:2.8}, {along:'z', bx:-3, by:30, w:2.8}, {along:'z', bx:-3, by:48, w:2.8},
+    {along:'x', bx:0,   by:64, w:6.0},    // spine -> galleries wing
+    {along:'x', bx:-18, by:80, w:3.0}, {along:'x', bx:-6, by:80, w:3.0},
+    {along:'x', bx:6,   by:80, w:3.0}, {along:'x', bx:18, by:80, w:3.0},
+  ];
+  for(const d of DOORS){
+    const g = d.along==='x' ? new THREE.BoxGeometry(d.w+0.1, H, D)
+                            : new THREE.BoxGeometry(D, H, d.w+0.1);
+    const m=new THREE.Mesh(g, mat); m.position.set(d.bx, CY, -d.by); scene.add(m);
+  }
+}
+
 // More art: flank each room's doorway wall, fill the side walls, and dress the galleries wing.
 function addMoreArt(){
   const S=(p)=>SPACES.find(s=>s.p===p);
@@ -969,6 +990,7 @@ function animate(){
     addTrim();
     processCanvases(gltf.scene);
     addBeams();
+    addDoorBeams();
     addPassageArt();
     addAtriumArt();
     addMoreArt();
