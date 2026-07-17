@@ -224,8 +224,38 @@ function concreteTexture(base, spec){
   const t=new THREE.CanvasTexture(c); t.wrapS=t.wrapT=THREE.RepeatWrapping;
   t.colorSpace=THREE.SRGBColorSpace; t.anisotropy=8; return t;
 }
-const TEX_WALL  = concreteTexture('#c9c6c0', 0.06);
-const TEX_FLOOR = concreteTexture('#9a9791', 0.05);
+// white marble with grey veining — one 1024px block = 10m = a 2x2 grid of 5x5m tiles
+function marbleTexture(){
+  const S=1024, c=document.createElement('canvas'); c.width=c.height=S; const g=c.getContext('2d');
+  const bg=g.createLinearGradient(0,0,S,S); bg.addColorStop(0,'#f8fafb'); bg.addColorStop(1,'#eef1f4');
+  g.fillStyle=bg; g.fillRect(0,0,S,S);
+  for(let k=0;k<8;k++){ g.globalAlpha=0.03+Math.random()*0.04; g.fillStyle='#aeb6c1';
+    g.beginPath(); g.ellipse(Math.random()*S,Math.random()*S,120+Math.random()*220,60+Math.random()*160,Math.random()*3,0,7); g.fill(); }
+  g.globalAlpha=1; g.lineCap='round'; g.lineJoin='round';
+  function vein(x,y,ang,len,w,alpha){
+    if(w<0.4||len<4) return;
+    const pts=[[x,y]]; let a=ang,px=x,py=y;
+    for(let i=0;i<len;i++){ a+=(Math.random()-0.5)*0.5; px+=Math.cos(a)*7; py+=Math.sin(a)*7; pts.push([px,py]); }
+    g.strokeStyle='rgba(150,158,169,'+(alpha*0.5)+')'; g.lineWidth=w*3.2;
+    g.beginPath(); g.moveTo(pts[0][0],pts[0][1]); for(const p of pts) g.lineTo(p[0],p[1]); g.stroke();
+    g.strokeStyle='rgba(74,84,97,'+alpha+')'; g.lineWidth=Math.max(0.6,w);
+    g.beginPath(); g.moveTo(pts[0][0],pts[0][1]); for(const p of pts) g.lineTo(p[0],p[1]); g.stroke();
+    for(let i=6;i<pts.length;i++){ if(Math.random()<0.06) vein(pts[i][0],pts[i][1],a+(Math.random()-0.5)*1.6,len*0.35,w*0.55,alpha*0.9); }
+  }
+  for(let k=0;k<7;k++){ const e=Math.random(); let x,y,ang;
+    if(e<0.5){ x=Math.random()*S; y=Math.random()<0.5?0:S; ang=(y===0?1:-1)*(Math.PI/2)+(Math.random()-0.5); }
+    else { x=Math.random()<0.5?0:S; y=Math.random()*S; ang=(x===0?0:Math.PI)+(Math.random()-0.5); }
+    vein(x,y,ang,60+Math.random()*80,1.4+Math.random()*1.6,0.32+Math.random()*0.22); }
+  // grout grid at 0 and mid -> 5m tiles that tile continuously
+  const line=(p,col,wpx)=>{ g.strokeStyle=col; g.lineWidth=wpx;
+    g.beginPath(); g.moveTo(p,0); g.lineTo(p,S); g.stroke();
+    g.beginPath(); g.moveTo(0,p); g.lineTo(S,p); g.stroke(); };
+  for(const p of [1.5,512]){ line(p,'rgba(206,210,216,0.9)',9); line(p,'rgba(120,127,138,0.85)',3.5); }
+  const t=new THREE.CanvasTexture(c); t.wrapS=t.wrapT=THREE.RepeatWrapping;
+  t.colorSpace=THREE.SRGBColorSpace; t.anisotropy=16; return t;
+}
+const TEX_WALL = concreteTexture('#c9c6c0', 0.06);
+const MARBLE   = marbleTexture();
 
 // ---------- lighting (windows do most of the work) ----------
 scene.add(new THREE.HemisphereLight(0xf3ecdd, 0x555049, 0.55));
@@ -366,16 +396,16 @@ function fitAspect(aspect, maxW, maxH){
 function makeArtMesh(slot, tex){
   let w=slot.maxW, h=slot.maxH;
   if(tex && tex.image && tex.image.width){ [w,h]=fitAspect(tex.image.width/tex.image.height, slot.maxW, slot.maxH); }
-  // dark frame slightly behind
-  const frame=new THREE.Mesh(new THREE.PlaneGeometry(w+0.09,h+0.09),
-    new THREE.MeshStandardMaterial({color:0x1a1815, roughness:0.6, metalness:0.1}));
-  frame.position.copy(slot.pos).addScaledVector(slot.normal, slot.off);
-  frame.lookAt(frame.position.clone().add(slot.normal)); scene.add(frame);
+  const place=(mesh,d)=>{ mesh.position.copy(slot.pos).addScaledVector(slot.normal, slot.off+d);
+    mesh.lookAt(mesh.position.clone().add(slot.normal)); scene.add(mesh); };
+  // gold reveal (back) -> dark mat -> artwork (front)
+  place(new THREE.Mesh(new THREE.PlaneGeometry(w+0.16,h+0.16),
+    new THREE.MeshStandardMaterial({color:0xb8912f, metalness:0.95, roughness:0.32, envMapIntensity:1.6})), 0);
+  place(new THREE.Mesh(new THREE.PlaneGeometry(w+0.07,h+0.07),
+    new THREE.MeshStandardMaterial({color:0x171512, roughness:0.55, metalness:0.1})), 0.006);
   const art=new THREE.Mesh(new THREE.PlaneGeometry(w,h),
     tex? new THREE.MeshBasicMaterial({map:tex}) : new THREE.MeshStandardMaterial({color:0xb7a17a,roughness:0.9}));
-  art.position.copy(slot.pos).addScaledVector(slot.normal, slot.off+0.01);
-  art.lookAt(art.position.clone().add(slot.normal)); scene.add(art);
-  slot.mesh=art;
+  place(art, 0.012); slot.mesh=art;
 }
 
 async function fillArt(){
@@ -407,7 +437,12 @@ function dressScene(root){
     if(!o.isMesh) return;
     const m=o.material; const n=o.name;
     if(n.includes('Wall')){ m.map=TEX_WALL; m.map.repeat.set(2.2,1.6); m.roughness=0.95; m.envMapIntensity=0.4; m.needsUpdate=true; walls.push(o); }
-    else if(n.includes('Floor')){ m.map=TEX_FLOOR; m.map.repeat.set(5,6); m.roughness=0.3; m.metalness=0.15; m.envMapIntensity=1.3; m.needsUpdate=true; }
+    else if(n.includes('Floor')){
+      o.geometry.computeBoundingBox(); const bb=new THREE.Vector3(); o.geometry.boundingBox.getSize(bb);
+      const t=MARBLE.clone(); t.wrapS=t.wrapT=THREE.RepeatWrapping; t.needsUpdate=true;
+      t.repeat.set(Math.max(0.6,bb.x/10), Math.max(0.6,bb.z/10));   // 10m block = two 5m tiles
+      m.map=t; m.color.set(0xffffff); m.roughness=0.1; m.metalness=0.0; m.envMapIntensity=1.7; m.needsUpdate=true;
+    }
     else if(n.includes('Ceil')){ m.roughness=0.95; m.envMapIntensity=0.2; }
     else if(n.startsWith('Beam')){ m.map=TEX_WALL; m.map.repeat.set(1.5,1); m.roughness=0.9; m.envMapIntensity=0.3; m.needsUpdate=true; }
     else if(n.startsWith('Window')){
