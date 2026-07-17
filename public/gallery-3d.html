@@ -676,10 +676,20 @@ function addDoorBeams(){
     {along:'x', bx:-18, by:80, w:3.0}, {along:'x', bx:-6, by:80, w:3.0},
     {along:'x', bx:6,   by:80, w:3.0}, {along:'x', bx:18, by:80, w:3.0},
   ];
+  const JW=0.18, JH=CY-H/2;               // jamb width, and height up to the underside of the head
   for(const d of DOORS){
+    // head beam across the top
     const g = d.along==='x' ? new THREE.BoxGeometry(d.w+0.1, H, D)
                             : new THREE.BoxGeometry(D, H, d.w+0.1);
     const m=new THREE.Mesh(g, mat); m.position.set(d.bx, CY, -d.by); scene.add(m);
+    // jambs (uprights) down each side of the opening, completing the frame
+    for(const s of [-1, 1]){
+      const jg = d.along==='x' ? new THREE.BoxGeometry(JW, JH, D) : new THREE.BoxGeometry(D, JH, JW);
+      const j = new THREE.Mesh(jg, mat);
+      if(d.along==='x') j.position.set(d.bx + s*(d.w/2), JH/2, -d.by);
+      else              j.position.set(d.bx, JH/2, -(d.by + s*(d.w/2)));
+      scene.add(j);
+    }
   }
 }
 
