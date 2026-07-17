@@ -260,6 +260,28 @@ function marbleTexture(){
 const TEX_WALL = concreteTexture('#cacaca', 0.14);   // grey speckle, tinted dark by the wall material
 const MARBLE   = marbleTexture();
 
+// dark grained wood for the ceiling beams
+function woodTexture(){
+  const w=512,h=256, c=document.createElement('canvas'); c.width=w; c.height=h; const g=c.getContext('2d');
+  const base=g.createLinearGradient(0,0,0,h);
+  base.addColorStop(0,'#5c3e27'); base.addColorStop(0.5,'#6f4c30'); base.addColorStop(1,'#472f1d');
+  g.fillStyle=base; g.fillRect(0,0,w,h);
+  g.lineCap='round';
+  for(let i=0;i<80;i++){                    // horizontal grain
+    const y=Math.random()*h, dark=Math.random()>0.5;
+    g.strokeStyle='rgba('+(dark?'42,27,16':'126,90,54')+','+(0.08+Math.random()*0.2)+')';
+    g.lineWidth=0.5+Math.random()*1.8; g.beginPath(); let yy=y; g.moveTo(0,yy);
+    for(let x=0;x<=w;x+=14){ yy=y+Math.sin((x/w)*6.283*(1+Math.random()*0.6)+i)*(2+Math.random()*4); g.lineTo(x,yy); }
+    g.stroke();
+  }
+  for(let k=0;k<3;k++){ const kx=Math.random()*w, ky=Math.random()*h;   // knots
+    for(let r=16;r>0;r-=2){ g.strokeStyle='rgba(28,17,9,'+(0.12+Math.random()*0.1)+')'; g.lineWidth=1.3;
+      g.beginPath(); g.ellipse(kx,ky,r,r*0.55,0,0,7); g.stroke(); } }
+  const t=new THREE.CanvasTexture(c); t.wrapS=t.wrapT=THREE.RepeatWrapping;
+  t.colorSpace=THREE.SRGBColorSpace; t.anisotropy=8; return t;
+}
+const WOOD = woodTexture();
+
 // ---------- lighting (windows do most of the work) ----------
 scene.add(new THREE.HemisphereLight(0xf3ecdd, 0x555049, 0.55));
 scene.add(new THREE.AmbientLight(0xffffff, 0.14));
@@ -366,6 +388,7 @@ const artSlots = [];
 function processCanvases(root){
   root.traverse(o=>{
     if(!o.isMesh || !o.name.startsWith('Canvas_')) return;
+    o.visible=false;   // hide the Blender mount box; JS draws the framed art/title in front
     const parts=o.name.split('_'); const kind=parts[1]; const prefix=parts[2];
     o.geometry.computeBoundingBox();
     const size=new THREE.Vector3(); o.geometry.boundingBox.getSize(size);
@@ -476,7 +499,7 @@ function dressScene(root){
       m.map=t; m.color.set(0xffffff); m.roughness=0.1; m.metalness=0.0; m.envMapIntensity=1.7; m.needsUpdate=true;
     }
     else if(n.includes('Ceil')){ m.roughness=0.95; m.envMapIntensity=0.2; }
-    else if(n.startsWith('Beam')){ m.map=TEX_WALL; m.map.repeat.set(1.5,1); m.roughness=0.9; m.envMapIntensity=0.3; m.needsUpdate=true; }
+    else if(n.startsWith('Beam')){ m.color.set(0xffffff); m.map=WOOD; m.map.repeat.set(4,1); m.roughness=0.55; m.metalness=0.0; m.envMapIntensity=0.35; m.needsUpdate=true; }
     else if(n.startsWith('Window')){
       m.emissive=new THREE.Color(0xfff3df); m.emissiveIntensity=6.0; m.toneMapped=true;
       // cast a warm pool into the room + down onto the glossy floor
