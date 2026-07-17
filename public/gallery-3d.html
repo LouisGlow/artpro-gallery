@@ -505,7 +505,13 @@ async function fillArt(){
   const available = withPhoto.filter(notSold);
   const forSale   = withPhoto.filter(p=> /display|stock|sale/i.test(p.status||'') && notSold(p));
   const featured  = withPhoto.filter(p=> p.featured);
-  const artistUrls= artists.filter(a=> a && a.photo && !/_placeholder/.test(a.photo)).map(a=>a.photo);
+  const loader=new THREE.TextureLoader();
+  // hang every artist whose face photo actually loads (a dead path would leave a blank frame);
+  // upload a missing photo in the staff Artists admin and it appears here automatically.
+  const cand = artists.filter(a=> a && a.photo && !/_placeholder/.test(a.photo)).map(a=>a.photo);
+  const okAt = new Array(cand.length);
+  await Promise.all(cand.map(async (u,i)=>{ try{ await loader.loadAsync(u); okAt[i]=u; }catch(e){ okAt[i]=null; } }));
+  const artistUrls = okAt.filter(Boolean);
   addArtistWall(artistUrls.length);   // one wall slot per artist face photo
   // "street art": the catalogue's Street-art series, or a piece tagged street art / graffiti / urban etc.
   const streetRe  = /street[\s\-]*art|graffiti|urban|mural|spray|stencil/i;
@@ -526,7 +532,6 @@ async function fillArt(){
   const pools={}, counters={};
   artSlots.forEach(s=>{ if(!(s.prefix in pools)) pools[s.prefix]=poolFor(s.prefix); });
 
-  const loader=new THREE.TextureLoader();
   await Promise.all(artSlots.map(async slot=>{
     const pool=pools[slot.prefix]||[];
     if(!pool.length){ makeArtMesh(slot,null); return; }
