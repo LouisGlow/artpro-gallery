@@ -39,6 +39,22 @@
   #prompt.show{ opacity:1; }
   #prompt b{ color:var(--gold); }
 
+  /* wall label that appears when you look at a piece */
+  #info{ position:fixed; left:50%; bottom:92px; transform:translateX(-50%) translateY(6px);
+    width:min(390px,88vw); background:rgba(238,233,225,.97); color:var(--ink);
+    border:1px solid rgba(184,145,47,.65); border-radius:10px; padding:13px 16px 11px;
+    box-shadow:0 14px 34px rgba(0,0,0,.5); opacity:0; pointer-events:none; z-index:6;
+    transition:opacity .16s ease, transform .16s ease; text-align:left; }
+  #info.show{ opacity:1; transform:translateX(-50%) translateY(0); }
+  #info .i-t{ font-family:"Barlow Condensed",system-ui,sans-serif; font-weight:700;
+    text-transform:uppercase; letter-spacing:.03em; font-size:21px; line-height:1.12; }
+  #info .i-a{ color:var(--gold-deep); font-size:12.5px; font-weight:600; margin:2px 0 8px; }
+  #info .i-r{ display:flex; justify-content:space-between; gap:14px; font-size:12px;
+    border-top:1px solid rgba(33,29,24,.12); padding:5px 0; color:#4a453d; }
+  #info .i-r span:first-child{ color:#8c8578; letter-spacing:.04em; text-transform:uppercase; font-size:10.5px; }
+  #info .i-r span:last-child{ text-align:right; }
+  #info .i-bio{ font-size:12px; color:#4a453d; line-height:1.5; border-top:1px solid rgba(33,29,24,.12); padding-top:6px; }
+
   #hint{ position:fixed; left:50%; bottom:16px; transform:translateX(-50%); z-index:6;
     background:rgba(20,18,15,.6); color:#d8d2c6; font-size:12px; letter-spacing:.02em;
     padding:7px 14px; border-radius:999px; pointer-events:none; transition:opacity .4s; }
@@ -90,6 +106,7 @@
 <div id="app"></div>
 <div id="reticle"></div>
 <div id="prompt"></div>
+<div id="info"></div>
 <div id="hint">Click to look around · <b>WASD</b> to walk · click a title wall to open that page</div>
 
 <div id="bar">
@@ -414,15 +431,41 @@ $('#tBack').addEventListener('touchstart',e=>{e.preventDefault();tFwd=-1;},{pass
 ['touchend','touchcancel'].forEach(ev=>{ $('#tFwd').addEventListener(ev,()=>tFwd=0); $('#tBack').addEventListener(ev,()=>tFwd=0); });
 
 // ---------- interact ----------
-const interactables = [];
+const interactables = [];   // content boards: click to open that page
+const lookables = [];       // everything the crosshair can report on (boards + artworks)
 const centerRay = new THREE.Raycaster(); centerRay.far = 26;
 const clickRay = new THREE.Raycaster(); clickRay.far = 26;
+const esc = s => String(s??'').replace(/[&<>"]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+function infoHTML(o){
+  const d=o.userData.info||{};
+  if(o.userData.kind==='artist'){
+    const bio=(d.bio||'').split('\n').map(s=>s.trim()).filter(Boolean)[0]||'';
+    return `<div class="i-t">${esc(d.name)}</div><div class="i-a">Represented artist</div>`
+      + (bio?`<div class="i-bio">${esc(bio.length>150?bio.slice(0,150)+'…':bio)}</div>`:'');
+  }
+  const rows=[['Medium',d.medium],['Size',d.art],['Frame',d.frame],['Status',d.status],['Gallery',d.loc],['Ref',d.id]]
+    .filter(([,v])=> v && String(v).trim());
+  return `<div class="i-t">${esc(d.desc||'Untitled')}</div><div class="i-a">${esc(d.artist||'')}</div>`
+    + rows.map(([k,v])=>`<div class="i-r"><span>${k}</span><span>${esc(v)}</span></div>`).join('');
+}
+let lastLook=null;
 function updateHot(){
   centerRay.setFromCamera({x:0,y:0}, camera);
-  const hit = centerRay.intersectObjects(interactables,false)[0];
-  const p=$('#prompt'), r=$('#reticle');
-  if(hit){ p.innerHTML='Click to open <b>'+hit.object.userData.title+'</b> →'; p.classList.add('show'); r.classList.add('hot'); }
-  else { p.classList.remove('show'); r.classList.remove('hot'); }
+  const hit = centerRay.intersectObjects(lookables,false)[0];
+  const p=$('#prompt'), r=$('#reticle'), inf=$('#info');
+  const o = hit && hit.object;
+  // artworks only report from close enough to actually be reading the label
+  const isArt = o && o.userData.info && hit.distance < 7.5;
+  const isBoard = o && o.userData.url;
+  if(isBoard){
+    if(o!==lastLook){ p.innerHTML='Click to open <b>'+esc(o.userData.title)+'</b> →'; lastLook=o; }
+    p.classList.add('show'); inf.classList.remove('show'); r.classList.add('hot');
+  } else if(isArt){
+    if(o!==lastLook){ inf.innerHTML=infoHTML(o); lastLook=o; }
+    inf.classList.add('show'); p.classList.remove('show'); r.classList.add('hot');
+  } else {
+    p.classList.remove('show'); inf.classList.remove('show'); r.classList.remove('hot'); lastLook=null;
+  }
 }
 
 // ---------- content textures ----------
@@ -553,7 +596,7 @@ function processCanvases(root){
       const m=put(new THREE.Mesh(new THREE.PlaneGeometry(W,H),
         new THREE.MeshBasicMaterial({map:contentTexture(prefix)})), 0.012);
       m.userData.url=PAGES[prefix]?.url; m.userData.title=PAGES[prefix]?.title||prefix;
-      interactables.push(m);
+      interactables.push(m); lookables.push(m);
       // brass picture light on a bracket above the board + a warm wash down the face
       const ax=Math.abs(normal.x)>0.5, brass=new THREE.MeshStandardMaterial({color:0xb8912f, metalness:0.9, roughness:0.35, envMapIntensity:1.4});
       const topY=cy+H/2+0.30, arm=0.30;
@@ -728,7 +771,7 @@ function fitAspect(aspect, maxW, maxH){
   if(h>maxH){ h=maxH; w=h*aspect; }
   return [w,h];
 }
-function makeArtMesh(slot, tex){
+function makeArtMesh(slot, tex, item){
   let w=slot.maxW, h=slot.maxH;
   if(tex && tex.image && tex.image.width){ [w,h]=fitAspect(tex.image.width/tex.image.height, slot.maxW, slot.maxH); }
   const place=(mesh,d)=>{ mesh.position.copy(slot.pos).addScaledVector(slot.normal, slot.off+d);
@@ -744,6 +787,11 @@ function makeArtMesh(slot, tex){
   const art=new THREE.Mesh(new THREE.PlaneGeometry(w,h),
     tex? new THREE.MeshBasicMaterial({map:tex}) : new THREE.MeshStandardMaterial({color:0xb7a17a,roughness:0.9}));
   place(art, 0.012); slot.mesh=art;
+  if(item){   // carry the catalogue record so the crosshair can show its wall label
+    art.userData.info=item;
+    art.userData.kind = slot.prefix==='ART' ? 'artist' : 'piece';
+    lookables.push(art);
+  }
 }
 
 async function fillArt(){
@@ -752,7 +800,6 @@ async function fillArt(){
   try{ adata = await fetch('/api/public/artists').then(r=>r.ok?r.json():null); }catch(e){}
   const pieces  = Array.isArray(pdata)?pdata:(pdata&&Array.isArray(pdata.pieces))?pdata.pieces:[];
   const artists = Array.isArray(adata)?adata:(adata&&Array.isArray(adata.artists))?adata.artists:(window.ARTPRO_ARTISTS||[]);
-  const pieceUrl = p => p.photo ? p.photo : `/api/pieces/${p.pid}/photo?v=${p.updated||0}`;
   const notSold = p => !/sold/i.test(p.status||'');
   const withPhoto = pieces.filter(p=> p && p.photo);
   const available = withPhoto.filter(notSold);
@@ -761,11 +808,11 @@ async function fillArt(){
   const loader=new THREE.TextureLoader();
   // hang every artist whose face photo actually loads (a dead path would leave a blank frame);
   // upload a missing photo in the staff Artists admin and it appears here automatically.
-  const cand = artists.filter(a=> a && a.photo && !/_placeholder/.test(a.photo)).map(a=>a.photo);
+  const cand = artists.filter(a=> a && a.photo && !/_placeholder/.test(a.photo));
   const okAt = new Array(cand.length);
-  await Promise.all(cand.map(async (u,i)=>{ try{ await loader.loadAsync(u); okAt[i]=u; }catch(e){ okAt[i]=null; } }));
-  const artistUrls = okAt.filter(Boolean);
-  addArtistWall(artistUrls.length);   // one wall slot per artist face photo
+  await Promise.all(cand.map(async (a,i)=>{ try{ await loader.loadAsync(a.photo); okAt[i]=a; }catch(e){ okAt[i]=null; } }));
+  const artistsOk = okAt.filter(Boolean);
+  addArtistWall(artistsOk.length);   // one wall slot per artist face photo
   // build each gallery room's walls to fit however many pieces the catalogue tags to it
   const gcount={};
   for(const k in GALLERY_LOC) gcount[k]=withPhoto.filter(p=>(p.loc||'').toLowerCase().includes(GALLERY_LOC[k])).length;
@@ -776,26 +823,27 @@ async function fillArt(){
 
   // each room draws from the catalogue slice that matches its page/section
   function poolFor(prefix){
-    if(prefix==='PASS') return (street.length?street:available).map(pieceUrl);              // passage = street art
-    if(prefix==='ART')  return artistUrls.length ? artistUrls : withPhoto.map(pieceUrl);   // Artists room = portraits
-    if(prefix==='Home') return (featured.length?featured:available).map(pieceUrl);           // featured
-    if(prefix==='AFS')  return (forSale.length?forSale:available).map(pieceUrl);             // for sale
-    if(prefix==='ABA')  return (available.length?available:withPhoto).map(pieceUrl);         // works by artists
+    if(prefix==='PASS') return street.length?street:available;              // passage = street art
+    if(prefix==='ART')  return artistsOk.length ? artistsOk : withPhoto;    // Artists room = portraits
+    if(prefix==='Home') return featured.length?featured:available;          // featured
+    if(prefix==='AFS')  return forSale.length?forSale:available;            // for sale
+    if(prefix==='ABA')  return available.length?available:withPhoto;        // works by artists
     // gallery rooms show ONLY the art actually at that gallery (empty wall if none tagged)
     const kw=GALLERY_LOC[prefix];
-    if(kw) return withPhoto.filter(p=>(p.loc||'').toLowerCase().includes(kw)).map(pieceUrl);
-    return (available.length?available:withPhoto).map(pieceUrl);                             // Services/About/Contact
+    if(kw) return withPhoto.filter(p=>(p.loc||'').toLowerCase().includes(kw));
+    return available.length?available:withPhoto;                            // Services/About/Contact
   }
   const pools={}, counters={};
   artSlots.forEach(s=>{ if(!(s.prefix in pools)) pools[s.prefix]=poolFor(s.prefix); });
 
   await Promise.all(artSlots.map(async slot=>{
     const pool=pools[slot.prefix]||[];
-    if(!pool.length){ makeArtMesh(slot,null); return; }
+    if(!pool.length){ makeArtMesh(slot,null,null); return; }
     const i=(counters[slot.prefix]||0); counters[slot.prefix]=i+1;
-    const url=pool[i%pool.length];
-    try{ const tex=await loader.loadAsync(url); tex.colorSpace=THREE.SRGBColorSpace; tex.anisotropy=8; makeArtMesh(slot,tex); }
-    catch(e){ makeArtMesh(slot,null); }
+    const item=pool[i%pool.length];
+    const url = item.photo ? item.photo : `/api/pieces/${item.pid}/photo?v=${item.updated||0}`;
+    try{ const tex=await loader.loadAsync(url); tex.colorSpace=THREE.SRGBColorSpace; tex.anisotropy=8; makeArtMesh(slot,tex,item); }
+    catch(e){ makeArtMesh(slot,null,item); }
   }));
 }
 
