@@ -862,8 +862,6 @@ function travelTo(nodeKey){
   seg=0; segT=0; traveling=true;
 }
 document.querySelectorAll('.goto').forEach(b=> b.addEventListener('click', ()=> travelTo(b.dataset.node)) );
-window.__tp=(x,z,yw,pt)=>{ traveling=false; camera.position.set(x,1.6,z); yaw=yw||0; pitch=pt||0; applyLook(); };
-window.__slots=()=>artSlots.reduce((a,s)=>{a[s.prefix]=(a[s.prefix]||0)+1;return a;},{});
 function stepTravel(dt){
   if(seg>=path.length-1){ traveling=false; return; }
   const a=path[seg], b=path[seg+1]; const segLen=a.distanceTo(b);
