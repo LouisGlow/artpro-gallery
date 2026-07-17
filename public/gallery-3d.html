@@ -538,7 +538,8 @@ function processCanvases(root){
       sp.position.copy(fx.position);
       sp.target.position.copy(pos).addScaledVector(normal,0.04); sp.target.position.y=cy;
       scene.add(sp); scene.add(sp.target);
-    } else if(prefix!=='ART' && prefix!=='Home'){   // Artists room + atrium are laid out in JS below
+    } else if(prefix!=='ART' && prefix!=='Home' && !GALLERY_LOC[prefix]){
+      // Artists room, atrium and the gallery rooms are laid out in JS (they size to the DB)
       artSlots.push({ pos, normal, off, maxW, maxH, prefix, mesh:null });
     }
   });
@@ -602,10 +603,30 @@ function addMoreArt(){
       artSlots.push({ pos:T3(x, s.y0+0.11, 1.55), normal:new THREE.Vector3(0,0,-1), off:0.03, maxW:1.3, maxH:1.05, prefix:p, mesh:null });
     }
   }
-  // galleries wing side walls
+  // galleries wing side walls (general mix — the wing isn't one of the four galleries)
   for(const y of [68,72,76]){
-    artSlots.push({ pos:T3(23.9, y, 1.55),  normal:new THREE.Vector3(-1,0,0), off:0.03, maxW:1.5, maxH:1.15, prefix:'GMF', mesh:null });
-    artSlots.push({ pos:T3(-23.9, y, 1.55), normal:new THREE.Vector3(1,0,0),  off:0.03, maxW:1.5, maxH:1.15, prefix:'GSU', mesh:null });
+    artSlots.push({ pos:T3(23.9, y, 1.55),  normal:new THREE.Vector3(-1,0,0), off:0.03, maxW:1.5, maxH:1.15, prefix:'WING', mesh:null });
+    artSlots.push({ pos:T3(-23.9, y, 1.55), normal:new THREE.Vector3(1,0,0),  off:0.03, maxW:1.5, maxH:1.15, prefix:'WING', mesh:null });
+  }
+}
+
+// Each gallery room hangs EVERY piece tagged to that location — the wall is built to fit the
+// count the database returns, so adding/retagging art in the catalog just works.
+function addGalleryArt(counts){
+  const GAL=[['GSU',-18],['GPB',-6],['GPL',6],['GMF',18]];
+  for(const [p,cx] of GAL){
+    const n=counts[p]||0; if(!n) continue;
+    const perWall=Math.ceil(n/2), rows=perWall>5?2:1, cols=Math.ceil(perWall/rows);
+    const heights = rows===1 ? [1.55] : [1.32,2.72];
+    const spots=[];
+    for(const s of [{x:cx+5.37,nx:-1},{x:cx-5.37,nx:1}])
+      for(const h of heights)
+        for(let c=0;c<cols;c++)
+          spots.push({x:s.x, nx:s.nx, h, y: cols===1 ? 86 : 81 + 10*(c/(cols-1))});
+    spots.slice(0,n).forEach(sp=>{
+      artSlots.push({ pos:T3(sp.x, sp.y, sp.h), normal:new THREE.Vector3(sp.nx,0,0), off:0.03,
+        maxW: rows===1?1.4:1.12, maxH: rows===1?1.1:0.92, prefix:p, mesh:null });
+    });
   }
 }
 
@@ -711,6 +732,10 @@ async function fillArt(){
   await Promise.all(cand.map(async (u,i)=>{ try{ await loader.loadAsync(u); okAt[i]=u; }catch(e){ okAt[i]=null; } }));
   const artistUrls = okAt.filter(Boolean);
   addArtistWall(artistUrls.length);   // one wall slot per artist face photo
+  // build each gallery room's walls to fit however many pieces the catalogue tags to it
+  const gcount={};
+  for(const k in GALLERY_LOC) gcount[k]=withPhoto.filter(p=>(p.loc||'').toLowerCase().includes(GALLERY_LOC[k])).length;
+  addGalleryArt(gcount);
   // "street art": the catalogue's Street-art series, or a piece tagged street art / graffiti / urban etc.
   const streetRe  = /street[\s\-]*art|graffiti|urban|mural|spray|stencil/i;
   const street    = withPhoto.filter(p=> streetRe.test([p.medium,p.desc,p.title,p.artist].join(' ')));
@@ -815,6 +840,8 @@ function travelTo(nodeKey){
   seg=0; segT=0; traveling=true;
 }
 document.querySelectorAll('.goto').forEach(b=> b.addEventListener('click', ()=> travelTo(b.dataset.node)) );
+window.__tp=(x,z,yw,pt)=>{ traveling=false; camera.position.set(x,1.6,z); yaw=yw||0; pitch=pt||0; applyLook(); };
+window.__slots=()=>artSlots.reduce((a,s)=>{a[s.prefix]=(a[s.prefix]||0)+1;return a;},{});
 function stepTravel(dt){
   if(seg>=path.length-1){ traveling=false; return; }
   const a=path[seg], b=path[seg+1]; const segLen=a.distanceTo(b);
