@@ -282,6 +282,20 @@ function woodTexture(){
 }
 const WOOD = woodTexture();
 
+// window frame + mullions (dark bars, transparent panes) drawn over the glowing glass
+function windowFrameTexture(){
+  const w=140,h=340, c=document.createElement('canvas'); c.width=w; c.height=h; const g=c.getContext('2d');
+  g.clearRect(0,0,w,h);
+  g.fillStyle='#1b1815';
+  const b=11;                                   // outer frame
+  g.fillRect(0,0,w,b); g.fillRect(0,h-b,w,b); g.fillRect(0,0,b,h); g.fillRect(w-b,0,b,h);
+  const mv=6;
+  g.fillRect(w/2-mv/2,0,mv,h);                  // vertical mullion
+  for(const f of [0.25,0.5,0.75]) g.fillRect(0,h*f-mv/2,w,mv);   // horizontal mullions
+  const t=new THREE.CanvasTexture(c); t.colorSpace=THREE.SRGBColorSpace; t.anisotropy=8; return t;
+}
+const WINFRAME = windowFrameTexture();
+
 // ---------- lighting (windows do most of the work) ----------
 scene.add(new THREE.HemisphereLight(0xf3ecdd, 0x555049, 0.55));
 scene.add(new THREE.AmbientLight(0xffffff, 0.14));
@@ -501,10 +515,14 @@ function dressScene(root){
     else if(n.includes('Ceil')){ m.roughness=0.95; m.envMapIntensity=0.2; }
     else if(n.startsWith('Beam')){ m.color.set(0xffffff); m.map=WOOD; m.map.repeat.set(4,1); m.roughness=0.55; m.metalness=0.0; m.envMapIntensity=0.35; m.needsUpdate=true; }
     else if(n.startsWith('Window')){
-      m.emissive=new THREE.Color(0xfff3df); m.emissiveIntensity=6.0; m.toneMapped=true;
-      // cast a warm pool into the room + down onto the glossy floor
+      m.color.set(0x000000); m.emissive=new THREE.Color(0xfff4e6); m.emissiveIntensity=4.6; m.toneMapped=true; m.needsUpdate=true;
       const pos=new THREE.Vector3(); o.getWorldPosition(pos);
       const into=new THREE.Vector3(-Math.sign(pos.x)||1,0,0);
+      // dark frame + mullions on the room side -> reads as a real divided-light window
+      const fr=new THREE.Mesh(new THREE.PlaneGeometry(1.5,3.5),
+        new THREE.MeshBasicMaterial({map:WINFRAME, transparent:true, depthWrite:false}));
+      fr.position.copy(pos).addScaledVector(into,0.09); fr.lookAt(fr.position.clone().add(into)); scene.add(fr);
+      // daylight spilling in — warm pool on the marble floor
       const sp=new THREE.SpotLight(0xfff0d6, 90, 24, 0.7, 0.6, 1.3);
       sp.position.copy(pos).addScaledVector(into,0.4); sp.position.y=2.7;
       const tgt=pos.clone().addScaledVector(into,5.5); tgt.y=0;
