@@ -15,6 +15,9 @@
 <meta name="description" content="Walk through ArtPro Gallery in 3D — an experimental WebGPU gallery where every page is a room.">
 <meta name="robots" content="noindex">
 <link rel="icon" href="assets/images/favicon.jpg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=Montserrat:wght@400;600&display=swap" rel="stylesheet">
 <style>
   :root{ --gold:#b8912f; --gold-deep:#8a6d1f; --ink:#211d18; --paper:#ece7df; }
   *{ box-sizing:border-box; }
@@ -398,17 +401,81 @@ function updateHot(){
 }
 
 // ---------- content textures ----------
-function titleTexture(prefix){
-  const {title,sub}=PAGES[prefix]||{title:prefix,sub:''};
-  const c=document.createElement('canvas'); c.width=1024; c.height=512; const g=c.getContext('2d');
-  g.fillStyle='#211d18'; g.fillRect(0,0,1024,512);
-  g.fillStyle='#b8912f'; g.fillRect(0,0,1024,10); g.fillRect(0,502,1024,10);
-  g.fillStyle='#b8912f'; g.font='700 96px "Barlow Condensed",Arial,sans-serif';
-  g.textAlign='center'; g.textBaseline='middle';
-  g.fillText(title.toUpperCase(), 512, 210);
-  g.fillStyle='#ece7df'; g.font='400 40px Montserrat,Arial,sans-serif'; g.fillText(sub, 512, 320);
-  g.fillStyle='#8a8578'; g.font='600 26px Montserrat,Arial,sans-serif'; g.fillText('CLICK TO OPEN THIS PAGE', 512, 400);
-  const t=new THREE.CanvasTexture(c); t.colorSpace=THREE.SRGBColorSpace; t.anisotropy=8; return t;
+// ---------- the content wall: each room's main wall renders that page's real content ----------
+// Content is scraped live from the page itself, so editing the page updates the gallery wall.
+const PAGE_CACHE={};
+async function pageContent(url){
+  if(PAGE_CACHE[url]) return PAGE_CACHE[url];
+  try{
+    const html=await fetch(url).then(r=>r.ok?r.text():'');
+    const doc=new DOMParser().parseFromString(html,'text/html');
+    doc.querySelectorAll('script,style,nav,footer,header,.site-footer,.site-nav,.crumbs').forEach(e=>e.remove());
+    const h1=doc.querySelector('h1');
+    const out={ headline: h1?h1.textContent.replace(/\s+/g,' ').trim():'', lead:'', blocks:[] };
+    const all=[...doc.querySelectorAll('h1,h2,h3,p')];
+    const rest=all.slice(h1?all.indexOf(h1)+1:0);
+    for(const el of rest){
+      const t=el.textContent.replace(/\s+/g,' ').trim();
+      if(!t || /^home\s*\/\s*/i.test(t)) continue;          // skip breadcrumbs
+      const tag=el.tagName.toLowerCase();
+      if(tag==='h2'||tag==='h3'){ if(t.length<60) out.blocks.push({h:t}); }
+      else if(t.length>55){ if(!out.lead) out.lead=t; else out.blocks.push({p:t}); }
+      if(out.blocks.length>=6) break;
+    }
+    PAGE_CACHE[url]=out; return out;
+  }catch(e){ return {headline:'',lead:'',blocks:[]}; }
+}
+function wrapText(g,text,x,y,maxW,lineH,maxLines){
+  const words=String(text||'').split(/\s+/).filter(Boolean); let line='',lines=0;
+  for(const w of words){
+    const t=line?line+' '+w:w;
+    if(g.measureText(t).width>maxW && line){
+      g.fillText(line,x,y); y+=lineH; if(++lines>=(maxLines||99)) return y; line=w;
+    } else line=t;
+  }
+  if(line){ g.fillText(line,x,y); y+=lineH; }
+  return y;
+}
+function drawContent(c,prefix,ct){
+  const g=c.getContext('2d'), W=c.width, H=c.height, M=96;
+  const P=PAGES[prefix]||{title:prefix,sub:''};
+  g.fillStyle='#ece7df'; g.fillRect(0,0,W,H);                       // paper panel
+  g.fillStyle='#b8912f'; g.fillRect(0,0,W,12); g.fillRect(0,H-12,W,12);
+  g.textAlign='left'; g.textBaseline='top';
+  let y=M;
+  g.fillStyle='#8a6d1f'; g.font='600 32px Montserrat,Arial,sans-serif';
+  g.fillText('ARTPRO GALLERY', M, y); y+=52;
+  g.fillStyle='#211d18'; g.font='700 116px "Barlow Condensed",Arial,sans-serif';
+  y=wrapText(g,((ct&&ct.headline)||P.title).toUpperCase(),M,y,W-2*M,112,2)+14;
+  g.fillStyle='#5c564c'; g.font='400 52px Montserrat,Arial,sans-serif';
+  y=wrapText(g,(ct&&ct.lead)||P.sub,M,y,W-2*M,68,3)+26;
+  g.fillStyle='#cbc4b6'; g.fillRect(M,y,W-2*M,2); y+=36;
+  // body blocks across two columns
+  const blocks=(ct&&ct.blocks)||[], gap=76, colW=(W-2*M-gap)/2, half=Math.ceil(blocks.length/2);
+  [blocks.slice(0,half), blocks.slice(half)].forEach((col,ci)=>{
+    let cy=y; const cx=M+ci*(colW+gap);
+    for(const b of col){
+      if(cy>H-M-80) break;
+      if(b.h){ g.fillStyle='#8a6d1f'; g.font='600 44px Montserrat,Arial,sans-serif';
+        cy=wrapText(g,b.h,cx,cy,colW,54,2)+10; }
+      else { g.fillStyle='#4a453d'; g.font='400 38px Montserrat,Arial,sans-serif';
+        cy=wrapText(g,b.p,cx,cy,colW,50,5)+22; }
+    }
+  });
+  g.textAlign='right'; g.fillStyle='#8a6d1f'; g.font='600 28px Montserrat,Arial,sans-serif';
+  g.fillText('CLICK TO OPEN THE FULL PAGE  →', W-M, H-M-24);
+}
+function contentTexture(prefix){
+  const c=document.createElement('canvas'); c.width=2400; c.height=1200;
+  const tex=new THREE.CanvasTexture(c); tex.colorSpace=THREE.SRGBColorSpace; tex.anisotropy=16;
+  drawContent(c,prefix,null);                                        // instant: title + tagline
+  const url=PAGES[prefix]?.url;
+  if(url) (async()=>{
+    const ct=await pageContent(url);
+    try{ await document.fonts.ready; }catch(e){}
+    drawContent(c,prefix,ct); tex.needsUpdate=true;                  // swap in the real page content
+  })();
+  return tex;
 }
 
 // ---------- build front planes for every Canvas_ box ----------
@@ -430,9 +497,13 @@ function processCanvases(root){
     const normal = new THREE.Vector3(axis==='x'?sign:0, 0, axis==='z'?sign:0);
     const off = (axis==='x'?size.x:size.z)/2 + 0.03;
     if(kind==='Title'){
-      const geo=new THREE.PlaneGeometry(maxW,maxH);
-      const m=new THREE.Mesh(geo, new THREE.MeshBasicMaterial({map:titleTexture(prefix)}));
-      m.position.copy(pos).addScaledVector(normal, off); m.lookAt(m.position.clone().add(normal));
+      // the main wall becomes a large 2:1 "content wall" showing that page's real content
+      const isHome = prefix==='Home';
+      const isGal  = !!GALLERY_LOC[prefix];
+      const W = isHome ? 7.2 : (isGal ? 5.0 : 6.0), H = W/2;
+      const m=new THREE.Mesh(new THREE.PlaneGeometry(W,H), new THREE.MeshBasicMaterial({map:contentTexture(prefix)}));
+      m.position.copy(pos).addScaledVector(normal, off); m.position.y = isHome ? 2.3 : 2.1;
+      m.lookAt(m.position.clone().add(normal));
       m.userData.url=PAGES[prefix]?.url; m.userData.title=PAGES[prefix]?.title||prefix;
       scene.add(m); interactables.push(m);
     } else if(prefix!=='ART'){        // Artists room gets a generated portrait grid instead
