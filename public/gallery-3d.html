@@ -552,6 +552,28 @@ function dressScene(root){
   });
 }
 
+// ---------- skirting (baseboard) + cornice (crown) along every wall ----------
+function addTrim(){
+  const mat=new THREE.MeshStandardMaterial({color:0xdbe0e3, roughness:0.5, metalness:0.0, envMapIntensity:0.35});
+  const bb=new THREE.Box3(), s=new THREE.Vector3(), c=new THREE.Vector3();
+  walls.forEach(w=>{
+    bb.setFromObject(w); bb.getSize(s); bb.getCenter(c);
+    const thinX = s.x < s.z;                 // which axis is the wall thickness
+    const len = (thinX ? s.z : s.x) + 0.02;
+    if(len < 0.3) return;
+    if(bb.min.y < 0.06){                      // skirting only on floor-reaching segments
+      const g = thinX ? [0.28,0.14,len] : [len,0.14,0.28];
+      const m=new THREE.Mesh(new THREE.BoxGeometry(g[0],g[1],g[2]), mat);
+      m.position.set(c.x, 0.07, c.z); scene.add(m);
+    }
+    if(bb.max.y > 1.0){                       // cornice along the top (incl. over doorways)
+      const g = thinX ? [0.34,0.20,len] : [len,0.20,0.34];
+      const m=new THREE.Mesh(new THREE.BoxGeometry(g[0],g[1],g[2]), mat);
+      m.position.set(c.x, bb.max.y-0.10, c.z); scene.add(m);
+    }
+  });
+}
+
 // ---------- travel ----------
 let traveling=false, path=[], seg=0, segT=0, targetYaw=0;
 function nearestNode(){ const bx=camera.position.x, by=-camera.position.z; let best='ATR',bd=1e9;
@@ -606,6 +628,7 @@ function animate(){
     const gltf = await new GLTFLoader().loadAsync('assets/3d/artpro-gallery.glb');
     scene.add(gltf.scene);
     dressScene(gltf.scene);
+    addTrim();
     processCanvases(gltf.scene);
     addPassageArt();
     await fillArt();
