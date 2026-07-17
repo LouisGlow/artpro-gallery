@@ -23,14 +23,12 @@
   #app{ position:fixed; inset:0; }
   canvas{ display:block; }
 
-  /* reticle */
   #reticle{ position:fixed; left:50%; top:50%; width:8px; height:8px; margin:-4px 0 0 -4px;
     border-radius:50%; border:1.5px solid rgba(255,255,255,.75); pointer-events:none;
     opacity:0; transition:opacity .2s; mix-blend-mode:difference; z-index:5; }
   body.locked #reticle{ opacity:1; }
   #reticle.hot{ background:var(--gold); border-color:var(--gold); width:12px; height:12px; margin:-6px 0 0 -6px; }
 
-  /* prompt when looking at a door */
   #prompt{ position:fixed; left:50%; top:calc(50% + 22px); transform:translateX(-50%);
     background:rgba(20,18,15,.82); border:1px solid rgba(184,145,47,.5); color:var(--paper);
     padding:8px 14px; border-radius:999px; font-size:13px; letter-spacing:.03em; white-space:nowrap;
@@ -38,10 +36,13 @@
   #prompt.show{ opacity:1; }
   #prompt b{ color:var(--gold); }
 
-  /* top travel bar */
+  #hint{ position:fixed; left:50%; bottom:16px; transform:translateX(-50%); z-index:6;
+    background:rgba(20,18,15,.6); color:#d8d2c6; font-size:12px; letter-spacing:.02em;
+    padding:7px 14px; border-radius:999px; pointer-events:none; transition:opacity .4s; }
+  body.touch #hint{ display:none; }
+
   #bar{ position:fixed; top:0; left:0; right:0; z-index:7; display:flex; gap:6px; align-items:center;
-    padding:10px 14px; flex-wrap:wrap;
-    background:linear-gradient(#0e0d0bcc,#0e0d0b00); }
+    padding:10px 14px; flex-wrap:wrap; background:linear-gradient(#0e0d0bcc,#0e0d0b00); }
   #bar .brand{ font-family:"Barlow Condensed",system-ui,sans-serif; font-weight:700;
     text-transform:uppercase; letter-spacing:.14em; font-size:15px; margin-right:8px; }
   #bar .brand b{ color:var(--gold); }
@@ -52,7 +53,6 @@
     font:inherit; font-size:12px; letter-spacing:.02em; padding:6px 10px; border-radius:8px; }
   .goto:hover{ background:var(--gold); color:#0e0d0b; border-color:var(--gold); }
 
-  /* intro / start overlay */
   #intro{ position:fixed; inset:0; z-index:20; display:flex; align-items:center; justify-content:center;
     background:radial-gradient(120% 120% at 50% 30%, #1a1712 0%, #0b0a08 70%); text-align:center; }
   #intro .card{ max-width:520px; padding:34px 30px; }
@@ -67,14 +67,12 @@
   #enter:hover{ background:#d0a63b; }
   #intro small{ display:block; margin-top:16px; color:#8c8578; font-size:11px; }
 
-  /* loading */
   #load{ position:fixed; inset:0; z-index:30; display:flex; align-items:center; justify-content:center;
     background:#0b0a08; color:#cfc7b9; font-size:13px; letter-spacing:.06em; text-transform:uppercase; }
   #load .spin{ width:26px; height:26px; border:2px solid #ffffff22; border-top-color:var(--gold);
     border-radius:50%; animation:sp 1s linear infinite; margin-right:12px; }
   @keyframes sp{ to{ transform:rotate(360deg); } }
 
-  /* touch controls */
   #touch{ position:fixed; left:0; right:0; bottom:0; z-index:8; display:none;
     justify-content:space-between; padding:16px; pointer-events:none; }
   #touch button{ pointer-events:auto; width:64px; height:64px; border-radius:50%; font-size:24px;
@@ -87,9 +85,9 @@
 </head>
 <body>
 <div id="app"></div>
-
 <div id="reticle"></div>
 <div id="prompt"></div>
+<div id="hint">Click to look around · <b>WASD</b> to walk · click a title wall to open that page</div>
 
 <div id="bar">
   <span class="brand"><b>ArtPro</b> Gallery <span class="beta">3D BETA</span></span>
@@ -158,11 +156,11 @@ const PAGES = {
   GPL :{title:'ArtPro @ Lifestyle',  sub:'Randpark Ridge',           url:'gallery.html?g=artpro-lifestyle'},
   GMF :{title:'Maggies Farm',        sub:'Lanseria · Farm gallery',  url:'gallery.html?g=maggies-farm'},
 };
-// room interior centres (Blender coords) for orienting wall art
 const CENTERS = { AFS:[12,12],ABT:[-12,12],ABA:[12,30],ART:[-12,30],SRV:[12,48],CON:[-12,48],
   Home:[0,-9], GSU:[-18,86],GPB:[-6,86],GPL:[6,86],GMF:[18,86] };
+// which loc-keyword each gallery room filters its art by
+const GALLERY_LOC = { GSU:'sunninghill', GPB:'prison', GPL:'lifestyle', GMF:'maggie' };
 
-// navigation graph (Blender coords)
 const NODES = { ATR:[0,-8], S12:[0,12], S30:[0,30], S48:[0,48], SPW:[0,64], WN:[0,72],
   AFS:[6,12],ABT:[-6,12],ABA:[6,30],ART:[-6,30],SRV:[6,48],CON:[-6,48],
   GSUd:[-18,78],GPBd:[-6,78],GPLd:[6,78],GMFd:[18,78],
@@ -174,101 +172,112 @@ const EDGES = [['ATR','S12'],['S12','S30'],['S30','S48'],['S48','SPW'],['SPW','W
 const ADJ = {}; Object.keys(NODES).forEach(k=>ADJ[k]=[]);
 EDGES.forEach(([a,b])=>{ ADJ[a].push(b); ADJ[b].push(a); });
 
-// Blender (bx,by) -> three (x, y, z)
 const T3 = (bx,by,y=1.6) => new THREE.Vector3(bx, y, -by);
 
-// ---------- three basics ----------
+// ---------- renderer ----------
 const app = $('#app');
 let renderer;
-try{
-  renderer = new THREE.WebGPURenderer({ antialias:true });
-}catch(e){ fail('WebGPU/WebGL renderer could not be created: '+e.message); throw e; }
+try{ renderer = new THREE.WebGPURenderer({ antialias:true }); }
+catch(e){ fail('WebGPU/WebGL renderer could not be created: '+e.message); throw e; }
 renderer.setPixelRatio(Math.min(devicePixelRatio,2));
 renderer.setSize(innerWidth, innerHeight);
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.15;
 app.appendChild(renderer.domElement);
 
 const scene = new THREE.Scene();
-scene.background = new THREE.Color(0x0e0d0b);
-scene.fog = new THREE.Fog(0x0e0d0b, 24, 120);
+scene.background = new THREE.Color(0x141310);
+scene.fog = new THREE.Fog(0x141310, 34, 150);
 
 const camera = new THREE.PerspectiveCamera(70, innerWidth/innerHeight, 0.05, 400);
 camera.position.copy(T3(0,-14));
 
-// lights — even gallery wash + a little warmth
-scene.add(new THREE.HemisphereLight(0xffffff, 0x6b6357, 1.25));
-scene.add(new THREE.AmbientLight(0xfff4e0, 0.35));
-const key = new THREE.DirectionalLight(0xfff2df, 0.5); key.position.set(6,20,10); scene.add(key);
-// a few warm points down the spine + wing
-[[0,6],[0,24],[0,42],[0,60],[0,72]].forEach(([bx,by])=>{
-  const p = new THREE.PointLight(0xffe9c7, 40, 34, 2.0); p.position.copy(T3(bx,by,3.6)); scene.add(p);
+// ---------- environment (equirect gradient → soft reflections on the concrete) ----------
+function envTexture(){
+  const c=document.createElement('canvas'); c.width=512; c.height=256; const g=c.getContext('2d');
+  const grd=g.createLinearGradient(0,0,0,256);
+  grd.addColorStop(0.0,'#fdfaf4'); grd.addColorStop(0.42,'#e9e6df');
+  grd.addColorStop(0.55,'#9a968d'); grd.addColorStop(1.0,'#2b2925');
+  g.fillStyle=grd; g.fillRect(0,0,512,256);
+  const t=new THREE.CanvasTexture(c); t.mapping=THREE.EquirectangularReflectionMapping;
+  t.colorSpace=THREE.SRGBColorSpace; return t;
+}
+scene.environment = envTexture();
+
+// ---------- concrete textures (procedural) ----------
+function concreteTexture(base, spec){
+  const s=256, c=document.createElement('canvas'); c.width=c.height=s; const g=c.getContext('2d');
+  g.fillStyle=base; g.fillRect(0,0,s,s);
+  const img=g.getImageData(0,0,s,s), d=img.data;
+  for(let y=0;y<s;y++) for(let x=0;x<s;x++){
+    const i=(y*s+x)*4;
+    let n=Math.sin(x*127.1 + y*311.7)*43758.5453; n=n-Math.floor(n);   // per-pixel speckle
+    const v=(n-0.5)*spec*255;
+    d[i]+=v; d[i+1]+=v; d[i+2]+=v;
+  }
+  g.putImageData(img,0,0);
+  // a few faint, soft stains
+  for(let k=0;k<10;k++){ g.globalAlpha=0.02+Math.random()*0.03;
+    g.fillStyle=Math.random()>0.5?'#ffffff':'#000000';
+    const r=18+Math.random()*40; g.beginPath(); g.arc(Math.random()*s,Math.random()*s,r,0,7); g.fill(); }
+  g.globalAlpha=1;
+  const t=new THREE.CanvasTexture(c); t.wrapS=t.wrapT=THREE.RepeatWrapping;
+  t.colorSpace=THREE.SRGBColorSpace; t.anisotropy=8; return t;
+}
+const TEX_WALL  = concreteTexture('#c9c6c0', 0.06);
+const TEX_FLOOR = concreteTexture('#9a9791', 0.05);
+
+// ---------- lighting (windows do most of the work) ----------
+scene.add(new THREE.HemisphereLight(0xf3ecdd, 0x555049, 0.55));
+scene.add(new THREE.AmbientLight(0xffffff, 0.14));
+const sky = new THREE.DirectionalLight(0xfff3e0, 0.35); sky.position.set(8,24,6); scene.add(sky);
+// soft corridor fill so the spine isn't dark
+[[0,10],[0,28],[0,46],[0,62],[0,72]].forEach(([bx,by])=>{
+  const p=new THREE.PointLight(0xffe7c4, 12, 26, 2.0); p.position.copy(T3(bx,by,3.8)); scene.add(p);
 });
 
 // ---------- collision ----------
 const walls = [];
-const ray = new THREE.Raycaster(); ray.far = 6;
+const ray = new THREE.Raycaster();
 const PR = 0.62;
-function blocked(dir, dist){
-  ray.set(camera.position, dir); ray.far = dist;
-  const hit = ray.intersectObjects(walls, false);
-  return hit.length>0;
-}
-const AXIS = { xp:new THREE.Vector3(1,0,0), xn:new THREE.Vector3(-1,0,0), zp:new THREE.Vector3(0,0,1), zn:new THREE.Vector3(0,0,-1) };
+function blocked(dir, dist){ ray.set(camera.position, dir); ray.far = dist;
+  return ray.intersectObjects(walls,false).length>0; }
+const AX = { xp:new THREE.Vector3(1,0,0), xn:new THREE.Vector3(-1,0,0), zp:new THREE.Vector3(0,0,1), zn:new THREE.Vector3(0,0,-1) };
 function moveWithCollision(dx,dz){
-  if(dx!==0){ const d=dx>0?AXIS.xp:AXIS.xn; if(!blocked(d, Math.abs(dx)+PR)) camera.position.x+=dx; }
-  if(dz!==0){ const d=dz>0?AXIS.zp:AXIS.zn; if(!blocked(d, Math.abs(dz)+PR)) camera.position.z+=dz; }
+  if(dx!==0){ const d=dx>0?AX.xp:AX.xn; if(!blocked(d,Math.abs(dx)+PR)) camera.position.x+=dx; }
+  if(dz!==0){ const d=dz>0?AX.zp:AX.zn; if(!blocked(d,Math.abs(dz)+PR)) camera.position.z+=dz; }
   camera.position.y = 1.6;
 }
 
-// ---------- look ----------
+// ---------- look (pointer-lock + drag fallback, both always available) ----------
 let yaw=0, pitch=0;
 const SENS=0.0022;
 function applyLook(){ camera.quaternion.setFromEuler(new THREE.Euler(pitch,yaw,0,'YXZ')); }
 applyLook();
-function onMouseMove(e){ yaw -= e.movementX*SENS; pitch -= e.movementY*SENS;
-  pitch = Math.max(-1.2, Math.min(1.2, pitch)); applyLook(); }
-
 const canvasEl = renderer.domElement;
-canvasEl.addEventListener('click', ()=>{ if(!isTouch && document.pointerLockElement!==canvasEl && !traveling) canvasEl.requestPointerLock(); });
+function lookDelta(dx,dy){ yaw-=dx*SENS; pitch-=dy*SENS; pitch=Math.max(-1.2,Math.min(1.2,pitch)); applyLook(); }
+
+function onLockedMove(e){ lookDelta(e.movementX, e.movementY); }
 document.addEventListener('pointerlockchange', ()=>{
   const on = document.pointerLockElement===canvasEl;
   document.body.classList.toggle('locked', on);
-  if(on) document.addEventListener('mousemove', onMouseMove);
-  else document.removeEventListener('mousemove', onMouseMove);
+  if(on) document.addEventListener('mousemove', onLockedMove);
+  else document.removeEventListener('mousemove', onLockedMove);
 });
+function requestLock(){ if(!traveling && document.pointerLockElement!==canvasEl){ const p=canvasEl.requestPointerLock&&canvasEl.requestPointerLock(); if(p&&p.catch) p.catch(()=>{}); } }
 
-// drag-look fallback (mobile + non-locked desktop)
-let dragging=false, lastX=0,lastY=0;
-canvasEl.addEventListener('pointerdown', e=>{ if(document.pointerLockElement===canvasEl) return; dragging=true; lastX=e.clientX; lastY=e.clientY; });
-addEventListener('pointerup', ()=>dragging=false);
-addEventListener('pointermove', e=>{ if(!dragging) return; yaw-=(e.clientX-lastX)*SENS; pitch-=(e.clientY-lastY)*SENS; pitch=Math.max(-1.2,Math.min(1.2,pitch)); lastX=e.clientX; lastY=e.clientY; applyLook(); });
+// drag-look (works everywhere, incl. when pointer-lock is unavailable)
+let dragging=false, lastX=0, lastY=0, moved=false;
+canvasEl.addEventListener('pointerdown', e=>{ if(document.pointerLockElement===canvasEl) return;
+  dragging=true; moved=false; lastX=e.clientX; lastY=e.clientY; });
+addEventListener('pointerup', ()=>{ dragging=false; });
+addEventListener('pointermove', e=>{ if(!dragging || document.pointerLockElement===canvasEl) return;
+  const dx=e.clientX-lastX, dy=e.clientY-lastY; if(Math.abs(dx)+Math.abs(dy)>2) moved=true;
+  lastX=e.clientX; lastY=e.clientY; lookDelta(dx,dy); });
 
-// ---------- keys ----------
-const keys={};
-addEventListener('keydown',e=>{ keys[e.code]=true; if(e.code==='Escape' && document.pointerLockElement) document.exitPointerLock(); });
-addEventListener('keyup',e=>{ keys[e.code]=false; });
-
-// touch move buttons
-const isTouch = matchMedia('(pointer:coarse)').matches;
-if(isTouch) document.body.classList.add('touch');
-let tFwd=0;
-$('#tFwd').addEventListener('touchstart',e=>{e.preventDefault();tFwd=1;},{passive:false});
-$('#tBack').addEventListener('touchstart',e=>{e.preventDefault();tFwd=-1;},{passive:false});
-['touchend','touchcancel'].forEach(ev=>{ $('#tFwd').addEventListener(ev,()=>tFwd=0); $('#tBack').addEventListener(ev,()=>tFwd=0); });
-
-// ---------- interact: look/click a title wall to open the page ----------
-const interactables = [];
-const centerRay = new THREE.Raycaster(); centerRay.far = 22;
-const clickRay = new THREE.Raycaster(); clickRay.far = 22;
-let hotUrl=null, hotTitle=null;
-function updateHot(){
-  centerRay.setFromCamera({x:0,y:0}, camera);
-  const hit = centerRay.intersectObjects(interactables, false)[0];
-  const p=$('#prompt'), r=$('#reticle');
-  if(hit){ hotUrl=hit.object.userData.url; hotTitle=hit.object.userData.title;
-    p.innerHTML='Click to open <b>'+hotTitle+'</b> →'; p.classList.add('show'); r.classList.add('hot'); }
-  else { hotUrl=null; p.classList.remove('show'); r.classList.remove('hot'); }
-}
+// click: open a title wall if aimed at one, else capture the mouse for look
 canvasEl.addEventListener('click', e=>{
+  if(moved){ moved=false; return; }
   let hit;
   if(document.pointerLockElement===canvasEl){
     centerRay.setFromCamera({x:0,y:0}, camera); hit=centerRay.intersectObjects(interactables,false)[0];
@@ -276,8 +285,34 @@ canvasEl.addEventListener('click', e=>{
     const nx=(e.clientX/innerWidth)*2-1, ny=-(e.clientY/innerHeight)*2+1;
     clickRay.setFromCamera({x:nx,y:ny}, camera); hit=clickRay.intersectObjects(interactables,false)[0];
   }
-  if(hit && hit.object.userData.url){ location.href = hit.object.userData.url; }
+  if(hit && hit.object.userData.url){ location.href = hit.object.userData.url; return; }
+  requestLock();
 });
+setTimeout(()=>{ const h=$('#hint'); if(h) h.style.opacity='0'; }, 9000);
+
+// ---------- keys ----------
+const keys={};
+addEventListener('keydown',e=>{ keys[e.code]=true; if(e.code==='Escape' && document.pointerLockElement) document.exitPointerLock(); });
+addEventListener('keyup',e=>{ keys[e.code]=false; });
+
+const isTouch = matchMedia('(pointer:coarse)').matches && !matchMedia('(pointer:fine)').matches;
+if(isTouch) document.body.classList.add('touch');
+let tFwd=0;
+$('#tFwd').addEventListener('touchstart',e=>{e.preventDefault();tFwd=1;},{passive:false});
+$('#tBack').addEventListener('touchstart',e=>{e.preventDefault();tFwd=-1;},{passive:false});
+['touchend','touchcancel'].forEach(ev=>{ $('#tFwd').addEventListener(ev,()=>tFwd=0); $('#tBack').addEventListener(ev,()=>tFwd=0); });
+
+// ---------- interact ----------
+const interactables = [];
+const centerRay = new THREE.Raycaster(); centerRay.far = 26;
+const clickRay = new THREE.Raycaster(); clickRay.far = 26;
+function updateHot(){
+  centerRay.setFromCamera({x:0,y:0}, camera);
+  const hit = centerRay.intersectObjects(interactables,false)[0];
+  const p=$('#prompt'), r=$('#reticle');
+  if(hit){ p.innerHTML='Click to open <b>'+hit.object.userData.title+'</b> →'; p.classList.add('show'); r.classList.add('hot'); }
+  else { p.classList.remove('show'); r.classList.remove('hot'); }
+}
 
 // ---------- content textures ----------
 function titleTexture(prefix){
@@ -288,16 +323,9 @@ function titleTexture(prefix){
   g.fillStyle='#b8912f'; g.font='700 96px "Barlow Condensed",Arial,sans-serif';
   g.textAlign='center'; g.textBaseline='middle';
   g.fillText(title.toUpperCase(), 512, 210);
-  g.fillStyle='#ece7df'; g.font='400 40px Montserrat,Arial,sans-serif';
-  g.fillText(sub, 512, 320);
-  g.fillStyle='#8a8578'; g.font='600 26px Montserrat,Arial,sans-serif';
-  g.fillText('CLICK TO OPEN THIS PAGE', 512, 400);
+  g.fillStyle='#ece7df'; g.font='400 40px Montserrat,Arial,sans-serif'; g.fillText(sub, 512, 320);
+  g.fillStyle='#8a8578'; g.font='600 26px Montserrat,Arial,sans-serif'; g.fillText('CLICK TO OPEN THIS PAGE', 512, 400);
   const t=new THREE.CanvasTexture(c); t.colorSpace=THREE.SRGBColorSpace; t.anisotropy=8; return t;
-}
-function placeholderTexture(i){
-  const c=document.createElement('canvas'); c.width=64; c.height=64; const g=c.getContext('2d');
-  const hue=['#cbb892','#b7a17a','#d8cbb0','#a8906a'][i%4]; g.fillStyle=hue; g.fillRect(0,0,64,64);
-  const t=new THREE.CanvasTexture(c); t.colorSpace=THREE.SRGBColorSpace; return t;
 }
 
 // ---------- build front planes for every Canvas_ box ----------
@@ -309,90 +337,121 @@ function processCanvases(root){
     o.geometry.computeBoundingBox();
     const size=new THREE.Vector3(); o.geometry.boundingBox.getSize(size);
     const pos=new THREE.Vector3(); o.getWorldPosition(pos);
-    // thin axis = smallest of x,z (never y)
     const axis = size.x < size.z ? 'x' : 'z';
-    const width = axis==='x' ? size.z : size.x;
-    const height = size.y;
+    const maxW = (axis==='x' ? size.z : size.x) * 0.98;
+    const maxH = size.y * 0.98;
     const c = CENTERS[prefix] || [0,0];
     const cThree = T3(c[0], c[1], pos.y);
     const sign = Math.sign((axis==='x'?cThree.x:cThree.z) - (axis==='x'?pos.x:pos.z)) || 1;
     const normal = new THREE.Vector3(axis==='x'?sign:0, 0, axis==='z'?sign:0);
-    const geo = new THREE.PlaneGeometry(width*0.96, height*0.96);
-    let mat;
-    if(kind==='Title'){ mat=new THREE.MeshBasicMaterial({map:titleTexture(prefix)}); }
-    else { mat=new THREE.MeshBasicMaterial({map:placeholderTexture(artSlots.length)}); }
-    const m=new THREE.Mesh(geo,mat);
-    m.position.copy(pos).addScaledVector(normal, (axis==='x'?size.x:size.z)/2 + 0.03);
-    m.lookAt(m.position.clone().add(normal));
-    scene.add(m);
-    if(kind==='Title'){ m.userData.url=PAGES[prefix]?.url; m.userData.title=PAGES[prefix]?.title||prefix; interactables.push(m); }
-    else { artSlots.push({mesh:m, prefix}); }
+    const off = (axis==='x'?size.x:size.z)/2 + 0.03;
+    if(kind==='Title'){
+      const geo=new THREE.PlaneGeometry(maxW,maxH);
+      const m=new THREE.Mesh(geo, new THREE.MeshBasicMaterial({map:titleTexture(prefix)}));
+      m.position.copy(pos).addScaledVector(normal, off); m.lookAt(m.position.clone().add(normal));
+      m.userData.url=PAGES[prefix]?.url; m.userData.title=PAGES[prefix]?.title||prefix;
+      scene.add(m); interactables.push(m);
+    } else {
+      artSlots.push({ pos, normal, off, maxW, maxH, prefix, mesh:null });
+    }
   });
 }
 
-// fill art slots from the live catalogue.
-// IMPORTANT: assign textures BEFORE the render loop starts — swapping a
-// material's map mid-loop makes the WebGPU renderer throw and stops the loop.
+// fit (w,h) of an image aspect inside (maxW,maxH)
+function fitAspect(aspect, maxW, maxH){
+  let w=maxW, h=w/aspect;
+  if(h>maxH){ h=maxH; w=h*aspect; }
+  return [w,h];
+}
+function makeArtMesh(slot, tex){
+  let w=slot.maxW, h=slot.maxH;
+  if(tex && tex.image && tex.image.width){ [w,h]=fitAspect(tex.image.width/tex.image.height, slot.maxW, slot.maxH); }
+  // dark frame slightly behind
+  const frame=new THREE.Mesh(new THREE.PlaneGeometry(w+0.09,h+0.09),
+    new THREE.MeshStandardMaterial({color:0x1a1815, roughness:0.6, metalness:0.1}));
+  frame.position.copy(slot.pos).addScaledVector(slot.normal, slot.off);
+  frame.lookAt(frame.position.clone().add(slot.normal)); scene.add(frame);
+  const art=new THREE.Mesh(new THREE.PlaneGeometry(w,h),
+    tex? new THREE.MeshBasicMaterial({map:tex}) : new THREE.MeshStandardMaterial({color:0xb7a17a,roughness:0.9}));
+  art.position.copy(slot.pos).addScaledVector(slot.normal, slot.off+0.01);
+  art.lookAt(art.position.clone().add(slot.normal)); scene.add(art);
+  slot.mesh=art;
+}
+
 async function fillArt(){
   let data=null;
   try{ data = await fetch('/api/public/pieces').then(r=>r.ok?r.json():null); }catch(e){}
   const list = Array.isArray(data) ? data : (data && Array.isArray(data.pieces) ? data.pieces : []);
-  const pieces = list.filter(p=> p && (p.photo || p.pid));
-  if(!pieces.length) return;
+  const all = list.filter(p=> p && (p.photo || p.pid));
   const loader=new THREE.TextureLoader();
-  await Promise.all(artSlots.map(async (slot,i)=>{
-    const p = pieces[i % pieces.length];
+  const counters={};
+  function pick(prefix){
+    let pool=all;
+    const kw=GALLERY_LOC[prefix];
+    if(kw){ const f=all.filter(p=>(p.loc||'').toLowerCase().includes(kw)); if(f.length) pool=f; }
+    if(!pool.length) return null;
+    const i=(counters[prefix]||0); counters[prefix]=i+1; return pool[i%pool.length];
+  }
+  await Promise.all(artSlots.map(async slot=>{
+    const p = pick(slot.prefix);
+    if(!p){ makeArtMesh(slot, null); return; }
     const url = p.photo ? p.photo : `/api/pieces/${p.pid}/photo?v=${p.updated||0}`;
-    try{
-      const tex = await loader.loadAsync(url);
-      tex.colorSpace=THREE.SRGBColorSpace; tex.anisotropy=8;
-      slot.mesh.material = new THREE.MeshBasicMaterial({ map:tex });
-    }catch(e){ /* keep placeholder */ }
+    try{ const tex=await loader.loadAsync(url); tex.colorSpace=THREE.SRGBColorSpace; tex.anisotropy=8; makeArtMesh(slot, tex); }
+    catch(e){ makeArtMesh(slot, null); }
   }));
 }
 
-// ---------- travel (walk the corridors to a room) ----------
-let traveling=false, path=[], seg=0, segT=0, startYaw=0, targetYaw=0;
-function nearestNode(){
-  const bx=camera.position.x, by=-camera.position.z; let best='ATR', bd=1e9;
-  for(const k in NODES){ const [nx,ny]=NODES[k]; const d=(nx-bx)**2+(ny-by)**2; if(d<bd){bd=d;best=k;} }
-  return best;
+// ---------- upgrade the imported concrete materials + window light ----------
+function dressScene(root){
+  root.traverse(o=>{
+    if(!o.isMesh) return;
+    const m=o.material; const n=o.name;
+    if(n.includes('Wall')){ m.map=TEX_WALL; m.map.repeat.set(2.2,1.6); m.roughness=0.95; m.envMapIntensity=0.4; m.needsUpdate=true; walls.push(o); }
+    else if(n.includes('Floor')){ m.map=TEX_FLOOR; m.map.repeat.set(5,6); m.roughness=0.3; m.metalness=0.15; m.envMapIntensity=1.3; m.needsUpdate=true; }
+    else if(n.includes('Ceil')){ m.roughness=0.95; m.envMapIntensity=0.2; }
+    else if(n.startsWith('Beam')){ m.map=TEX_WALL; m.map.repeat.set(1.5,1); m.roughness=0.9; m.envMapIntensity=0.3; m.needsUpdate=true; }
+    else if(n.startsWith('Window')){
+      m.emissive=new THREE.Color(0xfff3df); m.emissiveIntensity=6.0; m.toneMapped=true;
+      // cast a warm pool into the room + down onto the glossy floor
+      const pos=new THREE.Vector3(); o.getWorldPosition(pos);
+      const into=new THREE.Vector3(-Math.sign(pos.x)||1,0,0);
+      const sp=new THREE.SpotLight(0xfff0d6, 90, 24, 0.7, 0.6, 1.3);
+      sp.position.copy(pos).addScaledVector(into,0.4); sp.position.y=2.7;
+      const tgt=pos.clone().addScaledVector(into,5.5); tgt.y=0;
+      sp.target.position.copy(tgt); scene.add(sp); scene.add(sp.target);
+    }
+  });
 }
-function bfs(a,b){
-  if(a===b) return [a];
-  const q=[a], prev={[a]:null}, seen={[a]:1};
-  while(q.length){ const n=q.shift(); for(const m of ADJ[n]){ if(!seen[m]){ seen[m]=1; prev[m]=n; if(m===b){ const p=[b]; let c=b; while(prev[c]!==null){ c=prev[c]; p.unshift(c);} return p; } q.push(m);} } }
-  return [b];
-}
+
+// ---------- travel ----------
+let traveling=false, path=[], seg=0, segT=0, targetYaw=0;
+function nearestNode(){ const bx=camera.position.x, by=-camera.position.z; let best='ATR',bd=1e9;
+  for(const k in NODES){ const [nx,ny]=NODES[k]; const d=(nx-bx)**2+(ny-by)**2; if(d<bd){bd=d;best=k;} } return best; }
+function bfs(a,b){ if(a===b) return [a]; const q=[a],prev={[a]:null},seen={[a]:1};
+  while(q.length){ const n=q.shift(); for(const m of ADJ[n]){ if(!seen[m]){ seen[m]=1; prev[m]=n;
+    if(m===b){ const p=[b]; let c=b; while(prev[c]!==null){ c=prev[c]; p.unshift(c);} return p; } q.push(m);} } } return [b]; }
 function travelTo(nodeKey){
   if(document.pointerLockElement) document.exitPointerLock();
-  const start=nearestNode();
-  const nodePath=bfs(start,nodeKey);
-  path = nodePath.map(k=>T3(NODES[k][0], NODES[k][1]));
-  path.unshift(camera.position.clone());          // begin from where we are
+  const np=bfs(nearestNode(), nodeKey);
+  path=np.map(k=>T3(NODES[k][0],NODES[k][1])); path.unshift(camera.position.clone());
   seg=0; segT=0; traveling=true;
 }
 document.querySelectorAll('.goto').forEach(b=> b.addEventListener('click', ()=> travelTo(b.dataset.node)) );
-
 function stepTravel(dt){
   if(seg>=path.length-1){ traveling=false; return; }
-  const a=path[seg], b=path[seg+1];
-  const segLen=a.distanceTo(b);
+  const a=path[seg], b=path[seg+1]; const segLen=a.distanceTo(b);
   const dir=b.clone().sub(a); if(segLen>0.001) dir.normalize();
   targetYaw=Math.atan2(-dir.x,-dir.z);
-  // smooth yaw toward target
   let dy=targetYaw-yaw; while(dy>Math.PI)dy-=2*Math.PI; while(dy<-Math.PI)dy+=2*Math.PI;
-  yaw += dy*Math.min(1, dt*6); pitch += (0-pitch)*Math.min(1,dt*4); applyLook();
-  const speed=6.5; segT += (dt*speed)/(segLen||1);
-  if(segT>=1){ camera.position.copy(b); seg++; segT=0; }
-  else camera.position.lerpVectors(a,b,segT);
+  yaw+=dy*Math.min(1,dt*6); pitch+=(0-pitch)*Math.min(1,dt*4); applyLook();
+  segT += (dt*6.5)/(segLen||1);
+  if(segT>=1){ camera.position.copy(b); seg++; segT=0; } else camera.position.lerpVectors(a,b,segT);
   camera.position.y=1.6;
 }
 
-// ---------- resize ----------
 addEventListener('resize', ()=>{ camera.aspect=innerWidth/innerHeight; camera.updateProjectionMatrix(); renderer.setSize(innerWidth,innerHeight); });
 
-// ---------- main loop ----------
+// ---------- loop ----------
 const clock=new THREE.Clock();
 function animate(){
  try{
@@ -405,7 +464,7 @@ function animate(){
     let s=(keys.KeyD||keys.ArrowRight?1:0)-(keys.KeyA||keys.ArrowLeft?1:0);
     if(f||s){ const v=new THREE.Vector3().addScaledVector(fwd,f).addScaledVector(right,s);
       if(v.lengthSq()>0){ v.normalize().multiplyScalar(4.5*dt); moveWithCollision(v.x,v.z); } }
-    if(document.body.classList.contains('locked')||isTouch||dragging!==undefined) updateHot();
+    updateHot();
   }
   renderer.render(scene,camera);
  }catch(e){ /* never let one bad frame freeze navigation */ }
@@ -415,19 +474,17 @@ function animate(){
 (async function boot(){
   try{
     if(renderer.init) await renderer.init();
-    const loader=new GLTFLoader();
-    const gltf = await loader.loadAsync('assets/3d/artpro-gallery.glb');
+    const gltf = await new GLTFLoader().loadAsync('assets/3d/artpro-gallery.glb');
     scene.add(gltf.scene);
-    gltf.scene.traverse(o=>{ if(o.isMesh && o.name.includes('Wall')) walls.push(o); });
+    dressScene(gltf.scene);
     processCanvases(gltf.scene);
-    await fillArt();                       // assign all wall art before the loop starts
+    await fillArt();
     renderer.setAnimationLoop(animate);
     $('#load').style.display='none';
   }catch(e){ console.error(e); fail('Failed to load the 3D gallery: '+e.message); }
 })();
 
-$('#enter').addEventListener('click', ()=>{ $('#intro').style.display='none';
-  if(!isTouch) canvasEl.requestPointerLock(); });
+$('#enter').addEventListener('click', ()=>{ $('#intro').style.display='none'; requestLock(); });
 </script>
 </body>
 </html>
