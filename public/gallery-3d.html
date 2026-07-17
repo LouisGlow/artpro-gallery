@@ -125,6 +125,9 @@
 <div id="load"><span class="spin"></span> Building the gallery…</div>
 <div class="err" id="err"><div><h2>Couldn't start the 3D view</h2><p id="errmsg"></p><p><a href="index.html" style="color:var(--gold)">← Back to the site</a></p></div></div>
 
+<!-- offline fallback for artist portraits (window.ARTPRO_ARTISTS) -->
+<script src="assets/artists-data.js"></script>
+
 <script type="importmap">
 {
   "imports": {
@@ -250,7 +253,7 @@ function marbleTexture(){
   const line=(p,col,wpx)=>{ g.strokeStyle=col; g.lineWidth=wpx;
     g.beginPath(); g.moveTo(p,0); g.lineTo(p,S); g.stroke();
     g.beginPath(); g.moveTo(0,p); g.lineTo(S,p); g.stroke(); };
-  for(const p of [1.5,512]){ line(p,'rgba(206,210,216,0.9)',9); line(p,'rgba(120,127,138,0.85)',3.5); }
+  for(const p of [1.5,256,512,768]){ line(p,'rgba(206,210,216,0.9)',6); line(p,'rgba(120,127,138,0.85)',2.5); }
   const t=new THREE.CanvasTexture(c); t.wrapS=t.wrapT=THREE.RepeatWrapping;
   t.colorSpace=THREE.SRGBColorSpace; t.anisotropy=16; return t;
 }
@@ -409,25 +412,40 @@ function makeArtMesh(slot, tex){
 }
 
 async function fillArt(){
-  let data=null;
-  try{ data = await fetch('/api/public/pieces').then(r=>r.ok?r.json():null); }catch(e){}
-  const list = Array.isArray(data) ? data : (data && Array.isArray(data.pieces) ? data.pieces : []);
-  const all = list.filter(p=> p && (p.photo || p.pid));
-  const loader=new THREE.TextureLoader();
-  const counters={};
-  function pick(prefix){
-    let pool=all;
+  let pdata=null, adata=null;
+  try{ pdata = await fetch('/api/public/pieces').then(r=>r.ok?r.json():null); }catch(e){}
+  try{ adata = await fetch('/api/public/artists').then(r=>r.ok?r.json():null); }catch(e){}
+  const pieces  = Array.isArray(pdata)?pdata:(pdata&&Array.isArray(pdata.pieces))?pdata.pieces:[];
+  const artists = Array.isArray(adata)?adata:(adata&&Array.isArray(adata.artists))?adata.artists:(window.ARTPRO_ARTISTS||[]);
+  const pieceUrl = p => p.photo ? p.photo : `/api/pieces/${p.pid}/photo?v=${p.updated||0}`;
+  const notSold = p => !/sold/i.test(p.status||'');
+  const withPhoto = pieces.filter(p=> p && p.photo);
+  const available = withPhoto.filter(notSold);
+  const forSale   = withPhoto.filter(p=> /display|stock|sale/i.test(p.status||'') && notSold(p));
+  const featured  = withPhoto.filter(p=> p.featured);
+  const artistUrls= artists.filter(a=> a && a.photo && !/_placeholder/.test(a.photo)).map(a=>a.photo);
+
+  // each room draws from the catalogue slice that matches its page/section
+  function poolFor(prefix){
+    if(prefix==='ART')  return artistUrls.length ? artistUrls : withPhoto.map(pieceUrl);   // Artists room = portraits
+    if(prefix==='Home') return (featured.length?featured:available).map(pieceUrl);           // featured
+    if(prefix==='AFS')  return (forSale.length?forSale:available).map(pieceUrl);             // for sale
+    if(prefix==='ABA')  return (available.length?available:withPhoto).map(pieceUrl);         // works by artists
     const kw=GALLERY_LOC[prefix];
-    if(kw){ const f=all.filter(p=>(p.loc||'').toLowerCase().includes(kw)); if(f.length) pool=f; }
-    if(!pool.length) return null;
-    const i=(counters[prefix]||0); counters[prefix]=i+1; return pool[i%pool.length];
+    if(kw){ const f=withPhoto.filter(p=>(p.loc||'').toLowerCase().includes(kw)); if(f.length) return f.map(pieceUrl); }
+    return (available.length?available:withPhoto).map(pieceUrl);                             // Services/About/Contact + gallery fallback
   }
+  const pools={}, counters={};
+  artSlots.forEach(s=>{ if(!(s.prefix in pools)) pools[s.prefix]=poolFor(s.prefix); });
+
+  const loader=new THREE.TextureLoader();
   await Promise.all(artSlots.map(async slot=>{
-    const p = pick(slot.prefix);
-    if(!p){ makeArtMesh(slot, null); return; }
-    const url = p.photo ? p.photo : `/api/pieces/${p.pid}/photo?v=${p.updated||0}`;
-    try{ const tex=await loader.loadAsync(url); tex.colorSpace=THREE.SRGBColorSpace; tex.anisotropy=8; makeArtMesh(slot, tex); }
-    catch(e){ makeArtMesh(slot, null); }
+    const pool=pools[slot.prefix]||[];
+    if(!pool.length){ makeArtMesh(slot,null); return; }
+    const i=(counters[slot.prefix]||0); counters[slot.prefix]=i+1;
+    const url=pool[i%pool.length];
+    try{ const tex=await loader.loadAsync(url); tex.colorSpace=THREE.SRGBColorSpace; tex.anisotropy=8; makeArtMesh(slot,tex); }
+    catch(e){ makeArtMesh(slot,null); }
   }));
 }
 
@@ -440,7 +458,7 @@ function dressScene(root){
     else if(n.includes('Floor')){
       o.geometry.computeBoundingBox(); const bb=new THREE.Vector3(); o.geometry.boundingBox.getSize(bb);
       const t=MARBLE.clone(); t.wrapS=t.wrapT=THREE.RepeatWrapping; t.needsUpdate=true;
-      t.repeat.set(Math.max(0.6,bb.x/10), Math.max(0.6,bb.z/10));   // 10m block = two 5m tiles
+      t.repeat.set(Math.max(0.5,bb.x/8), Math.max(0.5,bb.z/8));   // 8m block = 4x4 grid of 2m tiles
       m.map=t; m.color.set(0xffffff); m.roughness=0.1; m.metalness=0.0; m.envMapIntensity=1.7; m.needsUpdate=true;
     }
     else if(n.includes('Ceil')){ m.roughness=0.95; m.envMapIntensity=0.2; }
