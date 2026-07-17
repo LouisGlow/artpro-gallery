@@ -410,6 +410,9 @@ async function pageContent(url){
     const html=await fetch(url).then(r=>r.ok?r.text():'');
     const doc=new DOMParser().parseFromString(html,'text/html');
     doc.querySelectorAll('script,style,nav,footer,header,.site-footer,.site-nav,.crumbs').forEach(e=>e.remove());
+    // drop anything the page hides (empty states, JS placeholders, a11y-only text)
+    doc.querySelectorAll('[hidden],[aria-hidden="true"],[style*="display:none"],[style*="display: none"],'
+      +'[class*="empty"],[class*="hidden"],[class*="visually"]').forEach(e=>e.remove());
     const h1=doc.querySelector('h1');
     const out={ headline: h1?h1.textContent.replace(/\s+/g,' ').trim():'', lead:'', blocks:[] };
     const all=[...doc.querySelectorAll('h1,h2,h3,p')];
@@ -437,36 +440,47 @@ function wrapText(g,text,x,y,maxW,lineH,maxLines){
   return y;
 }
 function drawContent(c,prefix,ct){
-  const g=c.getContext('2d'), W=c.width, H=c.height, M=96;
+  const g=c.getContext('2d'), W=c.width, H=c.height, M=104;
   const P=PAGES[prefix]||{title:prefix,sub:''};
-  g.fillStyle='#ece7df'; g.fillRect(0,0,W,H);                       // paper panel
-  g.fillStyle='#b8912f'; g.fillRect(0,0,W,12); g.fillRect(0,H-12,W,12);
+  // warm ivory board with a soft raking gradient + vignette so it reads as a real mounted panel
+  const bg=g.createLinearGradient(0,0,W*0.7,H); bg.addColorStop(0,'#f2ede4'); bg.addColorStop(1,'#e4ded2');
+  g.fillStyle=bg; g.fillRect(0,0,W,H);
+  const vg=g.createRadialGradient(W*0.42,H*0.36,Math.min(W,H)*0.18,W*0.5,H*0.5,W*0.72);
+  vg.addColorStop(0,'rgba(255,255,255,0.35)'); vg.addColorStop(1,'rgba(58,48,32,0.20)');
+  g.fillStyle=vg; g.fillRect(0,0,W,H);
+  // inset mat line
+  g.strokeStyle='rgba(184,145,47,0.35)'; g.lineWidth=2;
+  g.strokeRect(M*0.5, M*0.5, W-M, H-M);
   g.textAlign='left'; g.textBaseline='top';
   let y=M;
-  g.fillStyle='#8a6d1f'; g.font='600 32px Montserrat,Arial,sans-serif';
-  g.fillText('ARTPRO GALLERY', M, y); y+=52;
-  g.fillStyle='#211d18'; g.font='700 116px "Barlow Condensed",Arial,sans-serif';
-  y=wrapText(g,((ct&&ct.headline)||P.title).toUpperCase(),M,y,W-2*M,112,2)+14;
-  g.fillStyle='#5c564c'; g.font='400 52px Montserrat,Arial,sans-serif';
-  y=wrapText(g,(ct&&ct.lead)||P.sub,M,y,W-2*M,68,3)+26;
-  g.fillStyle='#cbc4b6'; g.fillRect(M,y,W-2*M,2); y+=36;
+  // gold accent + eyebrow
+  g.fillStyle='#b8912f'; g.fillRect(M, y+12, 56, 5);
+  g.fillStyle='#8a6d1f'; g.font='600 28px Montserrat,Arial,sans-serif';
+  g.fillText('ARTPRO GALLERY', M+76, y); y+=52;
+  // headline
+  g.fillStyle='#211d18'; g.font='700 112px "Barlow Condensed",Arial,sans-serif';
+  y=wrapText(g,((ct&&ct.headline)||P.title).toUpperCase(),M,y,W-2*M,104,2)+12;
+  g.fillStyle='#b8912f'; g.fillRect(M,y,190,4); y+=28;
+  // lead
+  g.fillStyle='#57514a'; g.font='400 46px Montserrat,Arial,sans-serif';
+  y=wrapText(g,(ct&&ct.lead)||P.sub,M,y,W-2*M,60,2)+30;
   // body blocks across two columns
-  const blocks=(ct&&ct.blocks)||[], gap=76, colW=(W-2*M-gap)/2, half=Math.ceil(blocks.length/2);
+  const blocks=(ct&&ct.blocks)||[], gap=80, colW=(W-2*M-gap)/2, half=Math.ceil(blocks.length/2);
   [blocks.slice(0,half), blocks.slice(half)].forEach((col,ci)=>{
     let cy=y; const cx=M+ci*(colW+gap);
     for(const b of col){
-      if(cy>H-M-80) break;
-      if(b.h){ g.fillStyle='#8a6d1f'; g.font='600 44px Montserrat,Arial,sans-serif';
-        cy=wrapText(g,b.h,cx,cy,colW,54,2)+10; }
-      else { g.fillStyle='#4a453d'; g.font='400 38px Montserrat,Arial,sans-serif';
-        cy=wrapText(g,b.p,cx,cy,colW,50,5)+22; }
+      if(cy>H-M-70) break;
+      if(b.h){ g.fillStyle='#8a6d1f'; g.font='600 38px Montserrat,Arial,sans-serif';
+        cy=wrapText(g,b.h,cx,cy,colW,48,2)+8; }
+      else { g.fillStyle='#4a453d'; g.font='400 34px Montserrat,Arial,sans-serif';
+        cy=wrapText(g,b.p,cx,cy,colW,46,4)+18; }
     }
   });
-  g.textAlign='right'; g.fillStyle='#8a6d1f'; g.font='600 28px Montserrat,Arial,sans-serif';
-  g.fillText('CLICK TO OPEN THE FULL PAGE  →', W-M, H-M-24);
+  g.textAlign='right'; g.fillStyle='#8a6d1f'; g.font='600 26px Montserrat,Arial,sans-serif';
+  g.fillText('OPEN THE FULL PAGE  →', W-M, H-M+16);
 }
 function contentTexture(prefix){
-  const c=document.createElement('canvas'); c.width=2400; c.height=1200;
+  const c=document.createElement('canvas'); c.width=2400; c.height=1000;   // 2.4:1 board
   const tex=new THREE.CanvasTexture(c); tex.colorSpace=THREE.SRGBColorSpace; tex.anisotropy=16;
   drawContent(c,prefix,null);                                        // instant: title + tagline
   const url=PAGES[prefix]?.url;
@@ -497,15 +511,33 @@ function processCanvases(root){
     const normal = new THREE.Vector3(axis==='x'?sign:0, 0, axis==='z'?sign:0);
     const off = (axis==='x'?size.x:size.z)/2 + 0.03;
     if(kind==='Title'){
-      // the main wall becomes a large 2:1 "content wall" showing that page's real content
+      // main wall = a framed, lit interpretive board carrying that page's real content
       const isHome = prefix==='Home';
       const isGal  = !!GALLERY_LOC[prefix];
-      const W = isHome ? 7.2 : (isGal ? 5.0 : 6.0), H = W/2;
-      const m=new THREE.Mesh(new THREE.PlaneGeometry(W,H), new THREE.MeshBasicMaterial({map:contentTexture(prefix)}));
-      m.position.copy(pos).addScaledVector(normal, off); m.position.y = isHome ? 2.3 : 2.1;
-      m.lookAt(m.position.clone().add(normal));
+      const W = isHome ? 7.2 : (isGal ? 5.0 : 6.0), H = W/2.4;
+      const cy = isHome ? 2.25 : 2.05;
+      const put=(mesh,d)=>{ mesh.position.copy(pos).addScaledVector(normal, off+d); mesh.position.y=cy;
+        mesh.lookAt(mesh.position.clone().add(normal)); scene.add(mesh); return mesh; };
+      // gold reveal -> dark mat -> board : the same frame language as the artworks
+      put(new THREE.Mesh(new THREE.PlaneGeometry(W+0.26,H+0.26),
+        new THREE.MeshStandardMaterial({color:0xb8912f, metalness:0.95, roughness:0.3, envMapIntensity:1.6})), 0);
+      put(new THREE.Mesh(new THREE.PlaneGeometry(W+0.12,H+0.12),
+        new THREE.MeshStandardMaterial({color:0x171512, roughness:0.55, metalness:0.1})), 0.006);
+      const m=put(new THREE.Mesh(new THREE.PlaneGeometry(W,H),
+        new THREE.MeshBasicMaterial({map:contentTexture(prefix)})), 0.012);
       m.userData.url=PAGES[prefix]?.url; m.userData.title=PAGES[prefix]?.title||prefix;
-      scene.add(m); interactables.push(m);
+      interactables.push(m);
+      // brass picture light on a bracket above the board + a warm wash down the face
+      const ax=Math.abs(normal.x)>0.5, brass=new THREE.MeshStandardMaterial({color:0xb8912f, metalness:0.9, roughness:0.35, envMapIntensity:1.4});
+      const topY=cy+H/2+0.30, arm=0.30;
+      const fx=new THREE.Mesh(new THREE.BoxGeometry(ax?0.13:W*0.36, 0.08, ax?W*0.36:0.13), brass);
+      fx.position.copy(pos).addScaledVector(normal,arm); fx.position.y=topY; scene.add(fx);
+      const br=new THREE.Mesh(new THREE.BoxGeometry(ax?arm:0.06, 0.05, ax?0.06:arm), brass);   // arm back to the wall
+      br.position.copy(pos).addScaledVector(normal,arm/2); br.position.y=topY+0.05; scene.add(br);
+      const sp=new THREE.SpotLight(0xfff1d8, 34, 7.5, 0.9, 0.8, 1.1);
+      sp.position.copy(fx.position);
+      sp.target.position.copy(pos).addScaledVector(normal,0.04); sp.target.position.y=cy;
+      scene.add(sp); scene.add(sp.target);
     } else if(prefix!=='ART' && prefix!=='Home'){   // Artists room + atrium are laid out in JS below
       artSlots.push({ pos, normal, off, maxW, maxH, prefix, mesh:null });
     }
