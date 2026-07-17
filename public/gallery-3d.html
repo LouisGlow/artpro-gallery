@@ -330,7 +330,9 @@ function processCanvases(root){
   });
 }
 
-// fill art slots from the live catalogue
+// fill art slots from the live catalogue.
+// IMPORTANT: assign textures BEFORE the render loop starts — swapping a
+// material's map mid-loop makes the WebGPU renderer throw and stops the loop.
 async function fillArt(){
   let data=null;
   try{ data = await fetch('/api/public/pieces').then(r=>r.ok?r.json():null); }catch(e){}
@@ -338,12 +340,15 @@ async function fillArt(){
   const pieces = list.filter(p=> p && (p.photo || p.pid));
   if(!pieces.length) return;
   const loader=new THREE.TextureLoader();
-  artSlots.forEach((slot,i)=>{
+  await Promise.all(artSlots.map(async (slot,i)=>{
     const p = pieces[i % pieces.length];
     const url = p.photo ? p.photo : `/api/pieces/${p.pid}/photo?v=${p.updated||0}`;
-    loader.load(url, tex=>{ tex.colorSpace=THREE.SRGBColorSpace; tex.anisotropy=8;
-      slot.mesh.material.map=tex; slot.mesh.material.needsUpdate=true; }, undefined, ()=>{});
-  });
+    try{
+      const tex = await loader.loadAsync(url);
+      tex.colorSpace=THREE.SRGBColorSpace; tex.anisotropy=8;
+      slot.mesh.material = new THREE.MeshBasicMaterial({ map:tex });
+    }catch(e){ /* keep placeholder */ }
+  }));
 }
 
 // ---------- travel (walk the corridors to a room) ----------
@@ -390,6 +395,7 @@ addEventListener('resize', ()=>{ camera.aspect=innerWidth/innerHeight; camera.up
 // ---------- main loop ----------
 const clock=new THREE.Clock();
 function animate(){
+ try{
   const dt=Math.min(clock.getDelta(),0.05);
   if(traveling){ stepTravel(dt); }
   else {
@@ -402,6 +408,7 @@ function animate(){
     if(document.body.classList.contains('locked')||isTouch||dragging!==undefined) updateHot();
   }
   renderer.render(scene,camera);
+ }catch(e){ /* never let one bad frame freeze navigation */ }
 }
 
 // ---------- boot ----------
@@ -413,7 +420,7 @@ function animate(){
     scene.add(gltf.scene);
     gltf.scene.traverse(o=>{ if(o.isMesh && o.name.includes('Wall')) walls.push(o); });
     processCanvases(gltf.scene);
-    fillArt();
+    await fillArt();                       // assign all wall art before the loop starts
     renderer.setAnimationLoop(animate);
     $('#load').style.display='none';
   }catch(e){ console.error(e); fail('Failed to load the 3D gallery: '+e.message); }
