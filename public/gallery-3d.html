@@ -257,7 +257,7 @@ function marbleTexture(){
   const t=new THREE.CanvasTexture(c); t.wrapS=t.wrapT=THREE.RepeatWrapping;
   t.colorSpace=THREE.SRGBColorSpace; t.anisotropy=16; return t;
 }
-const TEX_WALL = concreteTexture('#cacaca', 0.14);   // grey speckle, tinted dark by the wall material
+const TEX_WALL = concreteTexture('#ccd1d7', 0.13);   // cool grey speckle, tinted by the wall material
 const MARBLE   = marbleTexture();
 
 // dark grained wood for the ceiling beams
@@ -519,7 +519,7 @@ function dressScene(root){
   root.traverse(o=>{
     if(!o.isMesh) return;
     const m=o.material; const n=o.name;
-    if(n.includes('Wall')){ m.color.set(0x2c2f34); m.map=TEX_WALL; m.map.repeat.set(4,3); m.roughness=0.92; m.metalness=0.0; m.envMapIntensity=0.22; m.needsUpdate=true; walls.push(o); }
+    if(n.includes('Wall')){ m.color.set(0x565c68); m.map=TEX_WALL; m.map.repeat.set(4,3); m.roughness=0.9; m.metalness=0.0; m.envMapIntensity=0.25; m.needsUpdate=true; walls.push(o); }
     else if(n.includes('Floor')){
       o.geometry.computeBoundingBox(); const bb=new THREE.Vector3(); o.geometry.boundingBox.getSize(bb);
       const t=MARBLE.clone(); t.wrapS=t.wrapT=THREE.RepeatWrapping; t.needsUpdate=true;
