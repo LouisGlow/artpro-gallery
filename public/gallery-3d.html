@@ -193,7 +193,7 @@ const GALLERY_LOC = { GSU:'sunninghill', GPB:'prison', GPL:'lifestyle', GMF:'mag
 // pieces would crowd/overlap, so extras are simply not shown — nothing ever spills
 // into the hallway. Raise/lower per room here.
 // TODO: drive these from the staff catalog so the client can set them per gallery.
-const ROOM_MAX = { GSU:24, GPB:24, GPL:24, GMF:24, DEFAULT:24 };
+const ROOM_MAX = { AFS:32, GSU:24, GPB:24, GPL:24, GMF:24, DEFAULT:24 };
 const roomMax = p => (ROOM_MAX[p] ?? ROOM_MAX.DEFAULT);
 
 const NODES = { ATR:[0,-8], S12:[0,12], S30:[0,30], S48:[0,48], SPW:[0,64], WN:[0,72],
@@ -240,24 +240,19 @@ function envTexture(){
 scene.environment = envTexture();
 
 // ---------- concrete textures (procedural) ----------
+// clean fine-grain plaster: true per-pixel noise at low amplitude (the old sine-hash tiled
+// and mip-blurred into smudgy clouds). Base near-white; the wall material tints it.
 function concreteTexture(base, spec){
-  const s=256, c=document.createElement('canvas'); c.width=c.height=s; const g=c.getContext('2d');
+  const s=512, c=document.createElement('canvas'); c.width=c.height=s; const g=c.getContext('2d');
   g.fillStyle=base; g.fillRect(0,0,s,s);
-  const img=g.getImageData(0,0,s,s), d=img.data;
-  for(let y=0;y<s;y++) for(let x=0;x<s;x++){
-    const i=(y*s+x)*4;
-    let n=Math.sin(x*127.1 + y*311.7)*43758.5453; n=n-Math.floor(n);   // per-pixel speckle
-    const v=(n-0.5)*spec*255;
-    d[i]+=v; d[i+1]+=v; d[i+2]+=v;
+  const img=g.getImageData(0,0,s,s), d=img.data, amp=spec*90;
+  for(let i=0;i<d.length;i+=4){
+    const n=(Math.random()-0.5)*amp;
+    d[i]+=n; d[i+1]+=n; d[i+2]+=n;
   }
   g.putImageData(img,0,0);
-  // a couple of very faint stains (kept tiny so wall-segment seams don't show)
-  for(let k=0;k<3;k++){ g.globalAlpha=0.015+Math.random()*0.02;
-    g.fillStyle=Math.random()>0.5?'#ffffff':'#000000';
-    const r=8+Math.random()*16; g.beginPath(); g.arc(Math.random()*s,Math.random()*s,r,0,7); g.fill(); }
-  g.globalAlpha=1;
   const t=new THREE.CanvasTexture(c); t.wrapS=t.wrapT=THREE.RepeatWrapping;
-  t.colorSpace=THREE.SRGBColorSpace; t.anisotropy=8; return t;
+  t.colorSpace=THREE.SRGBColorSpace; t.anisotropy=16; return t;
 }
 // white marble with grey veining — one 1024px block = 10m = a 2x2 grid of 5x5m tiles
 function marbleTexture(){
@@ -289,7 +284,7 @@ function marbleTexture(){
   const t=new THREE.CanvasTexture(c); t.wrapS=t.wrapT=THREE.RepeatWrapping;
   t.colorSpace=THREE.SRGBColorSpace; t.anisotropy=16; return t;
 }
-const TEX_WALL = concreteTexture('#ccd1d7', 0.13);   // cool grey speckle, tinted by the wall material
+const TEX_WALL = concreteTexture('#eef1f3', 0.09);   // subtle cool grain, tinted by the wall material
 const MARBLE   = marbleTexture();
 
 // dark grained wood for the ceiling beams
@@ -612,8 +607,8 @@ function processCanvases(root){
       sp.position.copy(fx.position);
       sp.target.position.copy(pos).addScaledVector(normal,0.04); sp.target.position.y=cy;
       scene.add(sp); scene.add(sp.target);
-    } else if(prefix!=='ART' && prefix!=='Home' && !GALLERY_LOC[prefix]){
-      // Artists room, atrium and the gallery rooms are laid out in JS (they size to the DB)
+    } else if(prefix!=='ART' && prefix!=='Home' && prefix!=='AFS' && !GALLERY_LOC[prefix]){
+      // Artists room, atrium, Art for Sale and the gallery rooms are laid out in JS (size to the DB)
       artSlots.push({ pos, normal, off, maxW, maxH, prefix, mesh:null });
     }
   });
@@ -696,7 +691,7 @@ function addDoorBeams(){
 // More art: flank each room's doorway wall, fill the side walls, and dress the galleries wing.
 function addMoreArt(){
   const S=(p)=>SPACES.find(s=>s.p===p);
-  for(const p of ['AFS','ABT','ABA','SRV','CON']){          // ART room keeps its portrait grid
+  for(const p of ['ABT','ABA','SRV','CON']){          // ART = portrait grid, AFS = its own dense grid
     const s=S(p), east=s.dx>0, inward=east?1:-1;
     // doorway wall, either side of the opening
     for(const y of [s.door-4.5, s.door+4.5]){
@@ -716,6 +711,27 @@ function addMoreArt(){
     artSlots.push({ pos:T3(23.9, y, 1.55),  normal:new THREE.Vector3(-1,0,0), off:0.03, maxW:1.5, maxH:1.15, prefix:'WING', mesh:null });
     artSlots.push({ pos:T3(-23.9, y, 1.55), normal:new THREE.Vector3(1,0,0),  off:0.03, maxW:1.5, maxH:1.15, prefix:'WING', mesh:null });
   }
+}
+
+// Art for Sale hangs a dense grid across its two long side walls, sized to the for-sale count
+// (capped by ROOM_MAX). The east wall keeps its windows + content board; west has the doorway.
+function addForSaleGrid(count){
+  const n=Math.min(count, roomMax('AFS')); if(!n) return;
+  const s=SPACES.find(z=>z.p==='AFS');                 // x[3,21] y[4.5,19.5]
+  const perWall=Math.ceil(n/2), rows=perWall>6?2:1, cols=Math.ceil(perWall/rows);
+  const heights = rows===1 ? [1.55] : [1.28,2.62];
+  const x0=s.x0+1.4, x1=s.x1-1.4;
+  const spots=[];
+  for(const w of [{y:s.y1-0.11,nz:1},{y:s.y0+0.11,nz:-1}])   // north, south walls
+    for(const h of heights)
+      for(let c=0;c<cols;c++){
+        const x = cols===1 ? (s.x0+s.x1)/2 : x0+(x1-x0)*(c/(cols-1));
+        spots.push({x, y:w.y, nz:w.nz, h});
+      }
+  spots.slice(0,n).forEach(sp=>{
+    artSlots.push({ pos:T3(sp.x, sp.y, sp.h), normal:new THREE.Vector3(0,0,sp.nz), off:0.03,
+      maxW: rows===1?1.4:1.15, maxH: rows===1?1.1:0.95, prefix:'AFS', mesh:null });
+  });
 }
 
 // Each gallery room hangs EVERY piece tagged to that location — the wall is built to fit the
@@ -852,6 +868,7 @@ async function fillArt(){
   const gcount={};
   for(const k in GALLERY_LOC) gcount[k]=withPhoto.filter(p=>(p.loc||'').toLowerCase().includes(GALLERY_LOC[k])).length;
   addGalleryArt(gcount);
+  addForSaleGrid((forSale.length?forSale:available).length);   // fill the Art for Sale room to fit
   // "street art": the catalogue's Street-art series, or a piece tagged street art / graffiti / urban etc.
   const streetRe  = /street[\s\-]*art|graffiti|urban|mural|spray|stencil/i;
   const street    = withPhoto.filter(p=> streetRe.test([p.medium,p.desc,p.title,p.artist].join(' ')));
@@ -887,7 +904,7 @@ function dressScene(root){
   root.traverse(o=>{
     if(!o.isMesh) return;
     const m=o.material; const n=o.name;
-    if(n.includes('Wall')){ m.color.set(0x565c68); m.map=TEX_WALL; m.map.repeat.set(4,3); m.roughness=0.9; m.metalness=0.0; m.envMapIntensity=0.25; m.needsUpdate=true; walls.push(o); }
+    if(n.includes('Wall')){ m.color.set(0x565c68); m.map=TEX_WALL; m.map.repeat.set(2.5,1.8); m.roughness=0.94; m.metalness=0.0; m.envMapIntensity=0.12; m.needsUpdate=true; walls.push(o); }
     else if(n.includes('Floor')){
       o.geometry.computeBoundingBox(); const bb=new THREE.Vector3(); o.geometry.boundingBox.getSize(bb);
       const t=MARBLE.clone(); t.wrapS=t.wrapT=THREE.RepeatWrapping; t.needsUpdate=true;
