@@ -91,7 +91,7 @@
 
 <div id="bar">
   <span class="brand"><b>ArtPro</b> Gallery <span class="beta">3D BETA</span></span>
-  <button class="goto" data-node="Home">Home</button>
+  <button class="goto" data-node="ATR">Home</button>
   <button class="goto" data-node="AFS">Art for Sale</button>
   <button class="goto" data-node="ABA">By Artist</button>
   <button class="goto" data-node="ART">Artists</button>
@@ -610,6 +610,7 @@ function bfs(a,b){ if(a===b) return [a]; const q=[a],prev={[a]:null},seen={[a]:1
   while(q.length){ const n=q.shift(); for(const m of ADJ[n]){ if(!seen[m]){ seen[m]=1; prev[m]=n;
     if(m===b){ const p=[b]; let c=b; while(prev[c]!==null){ c=prev[c]; p.unshift(c);} return p; } q.push(m);} } } return [b]; }
 function travelTo(nodeKey){
+  if(!NODES[nodeKey]) return;            // unknown destination -> ignore rather than throw
   if(document.pointerLockElement) document.exitPointerLock();
   const np=bfs(nearestNode(), nodeKey);
   path=np.map(k=>T3(NODES[k][0],NODES[k][1])); path.unshift(camera.position.clone());
