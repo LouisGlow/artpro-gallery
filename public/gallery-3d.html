@@ -597,7 +597,9 @@ function addBeams(){
   const mat=new THREE.MeshStandardMaterial({map:WOOD, roughness:0.55, metalness:0.0, envMapIntensity:0.35});
   const STEP=6;
   for(const s of SPACES){
-    const w=(s.x1-s.x0)+0.4, cx=(s.x0+s.x1)/2;
+    // walls are 0.2 thick centred on x0/x1: -0.1 tucks the beam INTO the wall without
+    // punching out the far face (+0.4 overshot by 0.1 and poked through)
+    const w=(s.x1-s.x0)-0.1, cx=(s.x0+s.x1)/2;
     for(let y=Math.ceil((s.y0+0.8)/STEP)*STEP; y<=s.y1-0.8; y+=STEP){
       const m=new THREE.Mesh(new THREE.BoxGeometry(w,0.6,0.7), mat);
       m.position.set(cx, s.h-0.3, -y); scene.add(m);
