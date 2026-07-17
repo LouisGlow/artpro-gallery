@@ -313,6 +313,23 @@ function skyTexture(){
 }
 const SKY = skyTexture();
 
+// soft contact shadow dropped on the wall behind every frame (cheaper + steadier than
+// shadow-mapping ~30 lights, and reads the same at gallery distances)
+function shadowTexture(){
+  const s=256, c=document.createElement('canvas'); c.width=c.height=s; const g=c.getContext('2d');
+  g.clearRect(0,0,s,s);
+  try{ g.filter='blur(16px)'; }catch(e){}
+  g.fillStyle='rgba(0,0,0,0.95)';
+  const m=20; g.fillRect(m,m,s-2*m,s-2*m);   // core must reach past the frame edge, or it's hidden
+  try{ g.filter='none'; }catch(e){}
+  const t=new THREE.CanvasTexture(c); t.colorSpace=THREE.SRGBColorSpace; return t;
+}
+const SHADOW = shadowTexture();
+function shadowPlane(w,h,op){
+  return new THREE.Mesh(new THREE.PlaneGeometry(w,h),
+    new THREE.MeshBasicMaterial({map:SHADOW, transparent:true, opacity:op, depthWrite:false}));
+}
+
 // ---------- lighting (windows do most of the work) ----------
 scene.add(new THREE.HemisphereLight(0xf3ecdd, 0x555049, 0.55));
 scene.add(new THREE.AmbientLight(0xffffff, 0.14));
@@ -518,6 +535,8 @@ function processCanvases(root){
       const cy = isHome ? 2.25 : 2.05;
       const put=(mesh,d)=>{ mesh.position.copy(pos).addScaledVector(normal, off+d); mesh.position.y=cy;
         mesh.lookAt(mesh.position.clone().add(normal)); scene.add(mesh); return mesh; };
+      // soft contact shadow behind the board
+      const bsh=put(shadowPlane(W+0.55,H+0.55,0.5), 0.004-off); bsh.position.y=cy-0.06; bsh.renderOrder=-1;
       // gold reveal -> dark mat -> board : the same frame language as the artworks
       put(new THREE.Mesh(new THREE.PlaneGeometry(W+0.26,H+0.26),
         new THREE.MeshStandardMaterial({color:0xb8912f, metalness:0.95, roughness:0.3, envMapIntensity:1.6})), 0);
@@ -701,7 +720,10 @@ function makeArtMesh(slot, tex){
   let w=slot.maxW, h=slot.maxH;
   if(tex && tex.image && tex.image.width){ [w,h]=fitAspect(tex.image.width/tex.image.height, slot.maxW, slot.maxH); }
   const place=(mesh,d)=>{ mesh.position.copy(slot.pos).addScaledVector(slot.normal, slot.off+d);
-    mesh.lookAt(mesh.position.clone().add(slot.normal)); scene.add(mesh); };
+    mesh.lookAt(mesh.position.clone().add(slot.normal)); scene.add(mesh); return mesh; };
+  // soft contact shadow, sitting on the wall and falling slightly downward
+  const sh=shadowPlane(w+0.44, h+0.44, 0.6);
+  place(sh, 0.004 - slot.off); sh.position.y -= 0.05; sh.renderOrder=-1;
   // gold reveal (back) -> dark mat -> artwork (front)
   place(new THREE.Mesh(new THREE.PlaneGeometry(w+0.16,h+0.16),
     new THREE.MeshStandardMaterial({color:0xb8912f, metalness:0.95, roughness:0.32, envMapIntensity:1.6})), 0);
