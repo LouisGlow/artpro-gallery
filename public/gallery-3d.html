@@ -734,6 +734,27 @@ function addForSaleGrid(count){
   });
 }
 
+// Overflow: pieces beyond a room's wall capacity get hung on the spare passage walls (the hall
+// has no fixed theme) instead of being dropped. Skips the doorways and the street-art spots.
+function addOverflow(pieces){
+  if(!pieces || !pieces.length) return;
+  const doors=[12,30,48], street=[6,21,39,56];
+  const near=(y,list,d)=>list.some(v=>Math.abs(v-y)<d);
+  const walls=[{x:2.9,nx:-1},{x:-2.9,nx:1}];              // spine east + west walls
+  const base=[], upper=[];
+  for(let y=3.4; y<=60.6; y+=2.7){
+    if(near(y,doors,2.1) || near(y,street,1.7)) continue;
+    for(const w of walls){ base.push({...w,y,h:1.55}); upper.push({...w,y,h:2.72}); }
+  }
+  const slots=base.concat(upper);                          // fill the eye-level row first
+  pieces.slice(0, slots.length).forEach((p,i)=>{
+    const s=slots[i];
+    artSlots.push({ pos:T3(s.x,s.y,s.h), normal:new THREE.Vector3(s.nx,0,0), off:0.03,
+      maxW:1.2, maxH: s.h>2 ? 0.9 : 1.0, prefix:'PASS', item:p, mesh:null });
+  });
+  return Math.min(pieces.length, slots.length);
+}
+
 // Each gallery room hangs EVERY piece tagged to that location — the wall is built to fit the
 // count the database returns, so adding/retagging art in the catalog just works.
 function addGalleryArt(counts){
@@ -869,6 +890,11 @@ async function fillArt(){
   for(const k in GALLERY_LOC) gcount[k]=withPhoto.filter(p=>(p.loc||'').toLowerCase().includes(GALLERY_LOC[k])).length;
   addGalleryArt(gcount);
   addForSaleGrid((forSale.length?forSale:available).length);   // fill the Art for Sale room to fit
+  // anything a room can't fit spills into the passage rather than being dropped
+  const ovf=[]; ovf.push(...forSale.slice(roomMax('AFS')));
+  for(const k in GALLERY_LOC){ const lp=withPhoto.filter(p=>(p.loc||'').toLowerCase().includes(GALLERY_LOC[k])); ovf.push(...lp.slice(roomMax(k))); }
+  const seen=new Set();
+  addOverflow(ovf.filter(p=>{ const id=p.pid||p.id; if(seen.has(id))return false; seen.add(id); return true; }));
   // "street art": the catalogue's Street-art series, or a piece tagged street art / graffiti / urban etc.
   const streetRe  = /street[\s\-]*art|graffiti|urban|mural|spray|stencil/i;
   const street    = withPhoto.filter(p=> streetRe.test([p.medium,p.desc,p.title,p.artist].join(' ')));
@@ -889,10 +915,13 @@ async function fillArt(){
   artSlots.forEach(s=>{ if(!(s.prefix in pools)) pools[s.prefix]=poolFor(s.prefix); });
 
   await Promise.all(artSlots.map(async slot=>{
-    const pool=pools[slot.prefix]||[];
-    if(!pool.length){ makeArtMesh(slot,null,null); return; }
-    const i=(counters[slot.prefix]||0); counters[slot.prefix]=i+1;
-    const item=pool[i%pool.length];
+    let item=slot.item;                         // overflow slots carry a specific piece
+    if(!item){
+      const pool=pools[slot.prefix]||[];
+      if(!pool.length){ makeArtMesh(slot,null,null); return; }
+      const i=(counters[slot.prefix]||0); counters[slot.prefix]=i+1;
+      item=pool[i%pool.length];
+    }
     const url = item.photo ? item.photo : `/api/pieces/${item.pid}/photo?v=${item.updated||0}`;
     try{ const tex=await loader.loadAsync(url); tex.colorSpace=THREE.SRGBColorSpace; tex.anisotropy=8; makeArtMesh(slot,tex,item); }
     catch(e){ makeArtMesh(slot,null,item); }
@@ -974,6 +1003,7 @@ function travelTo(nodeKey){
   seg=0; segT=0; traveling=true;
 }
 document.querySelectorAll('.goto').forEach(b=> b.addEventListener('click', ()=> travelTo(b.dataset.node)) );
+window.__slots=()=>artSlots.reduce((a,s)=>{a[s.prefix+(s.item?'*':'')]=(a[s.prefix+(s.item?'*':'')]||0)+1;return a;},{});
 function stepTravel(dt){
   if(seg>=path.length-1){ traveling=false; return; }
   const a=path[seg], b=path[seg+1]; const segLen=a.distanceTo(b);
