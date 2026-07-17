@@ -1,0 +1,425 @@
+<!doctype html>
+<html lang="en">
+<head>
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-0P4BWM3VNY"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag("js", new Date());
+  gtag("config", "G-0P4BWM3VNY");
+</script>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>3D Gallery (beta) | ArtPro Gallery</title>
+<meta name="description" content="Walk through ArtPro Gallery in 3D — an experimental WebGPU gallery where every page is a room.">
+<meta name="robots" content="noindex">
+<link rel="icon" href="assets/images/favicon.jpg">
+<style>
+  :root{ --gold:#b8912f; --gold-deep:#8a6d1f; --ink:#211d18; --paper:#ece7df; }
+  *{ box-sizing:border-box; }
+  html,body{ margin:0; height:100%; overflow:hidden; background:#0e0d0b; color:var(--paper);
+    font-family:"Montserrat",system-ui,-apple-system,Segoe UI,Roboto,sans-serif; }
+  #app{ position:fixed; inset:0; }
+  canvas{ display:block; }
+
+  /* reticle */
+  #reticle{ position:fixed; left:50%; top:50%; width:8px; height:8px; margin:-4px 0 0 -4px;
+    border-radius:50%; border:1.5px solid rgba(255,255,255,.75); pointer-events:none;
+    opacity:0; transition:opacity .2s; mix-blend-mode:difference; z-index:5; }
+  body.locked #reticle{ opacity:1; }
+  #reticle.hot{ background:var(--gold); border-color:var(--gold); width:12px; height:12px; margin:-6px 0 0 -6px; }
+
+  /* prompt when looking at a door */
+  #prompt{ position:fixed; left:50%; top:calc(50% + 22px); transform:translateX(-50%);
+    background:rgba(20,18,15,.82); border:1px solid rgba(184,145,47,.5); color:var(--paper);
+    padding:8px 14px; border-radius:999px; font-size:13px; letter-spacing:.03em; white-space:nowrap;
+    pointer-events:none; opacity:0; transition:opacity .15s; z-index:6; }
+  #prompt.show{ opacity:1; }
+  #prompt b{ color:var(--gold); }
+
+  /* top travel bar */
+  #bar{ position:fixed; top:0; left:0; right:0; z-index:7; display:flex; gap:6px; align-items:center;
+    padding:10px 14px; flex-wrap:wrap;
+    background:linear-gradient(#0e0d0bcc,#0e0d0b00); }
+  #bar .brand{ font-family:"Barlow Condensed",system-ui,sans-serif; font-weight:700;
+    text-transform:uppercase; letter-spacing:.14em; font-size:15px; margin-right:8px; }
+  #bar .brand b{ color:var(--gold); }
+  #bar .beta{ font-size:10px; color:#0e0d0b; background:var(--gold); border-radius:4px; padding:1px 5px; margin-left:6px; vertical-align:middle; letter-spacing:.08em; }
+  #bar a.exit{ margin-left:auto; color:var(--paper); text-decoration:none; font-size:12px; opacity:.75; border:1px solid #ffffff33; padding:6px 10px; border-radius:8px; }
+  #bar a.exit:hover{ opacity:1; }
+  .goto{ cursor:pointer; border:1px solid #ffffff22; background:#ffffff0d; color:var(--paper);
+    font:inherit; font-size:12px; letter-spacing:.02em; padding:6px 10px; border-radius:8px; }
+  .goto:hover{ background:var(--gold); color:#0e0d0b; border-color:var(--gold); }
+
+  /* intro / start overlay */
+  #intro{ position:fixed; inset:0; z-index:20; display:flex; align-items:center; justify-content:center;
+    background:radial-gradient(120% 120% at 50% 30%, #1a1712 0%, #0b0a08 70%); text-align:center; }
+  #intro .card{ max-width:520px; padding:34px 30px; }
+  #intro h1{ font-family:"Barlow Condensed",system-ui,sans-serif; font-weight:700; text-transform:uppercase;
+    letter-spacing:.06em; font-size:clamp(30px,6vw,52px); margin:0 0 4px; line-height:1; }
+  #intro h1 b{ color:var(--gold); }
+  #intro p{ color:#cfc7b9; line-height:1.6; margin:14px 0; font-size:15px; }
+  #intro .keys{ display:flex; gap:18px; justify-content:center; flex-wrap:wrap; margin:18px 0 26px; color:#b8b0a2; font-size:12px; letter-spacing:.03em; }
+  #intro .keys span b{ color:var(--paper); }
+  #enter{ cursor:pointer; border:none; background:var(--gold); color:#0e0d0b; font:inherit; font-weight:700;
+    text-transform:uppercase; letter-spacing:.08em; font-size:15px; padding:14px 30px; border-radius:10px; }
+  #enter:hover{ background:#d0a63b; }
+  #intro small{ display:block; margin-top:16px; color:#8c8578; font-size:11px; }
+
+  /* loading */
+  #load{ position:fixed; inset:0; z-index:30; display:flex; align-items:center; justify-content:center;
+    background:#0b0a08; color:#cfc7b9; font-size:13px; letter-spacing:.06em; text-transform:uppercase; }
+  #load .spin{ width:26px; height:26px; border:2px solid #ffffff22; border-top-color:var(--gold);
+    border-radius:50%; animation:sp 1s linear infinite; margin-right:12px; }
+  @keyframes sp{ to{ transform:rotate(360deg); } }
+
+  /* touch controls */
+  #touch{ position:fixed; left:0; right:0; bottom:0; z-index:8; display:none;
+    justify-content:space-between; padding:16px; pointer-events:none; }
+  #touch button{ pointer-events:auto; width:64px; height:64px; border-radius:50%; font-size:24px;
+    background:#ffffff14; border:1px solid #ffffff33; color:var(--paper); }
+  body.touch #touch{ display:flex; }
+  .err{ position:fixed; inset:0; z-index:40; display:none; align-items:center; justify-content:center; padding:30px; text-align:center; background:#0b0a08; }
+  .err.show{ display:flex; }
+  .err div{ max-width:460px; color:#cfc7b9; line-height:1.6; }
+</style>
+</head>
+<body>
+<div id="app"></div>
+
+<div id="reticle"></div>
+<div id="prompt"></div>
+
+<div id="bar">
+  <span class="brand"><b>ArtPro</b> Gallery <span class="beta">3D BETA</span></span>
+  <button class="goto" data-node="Home">Home</button>
+  <button class="goto" data-node="AFS">Art for Sale</button>
+  <button class="goto" data-node="ABA">By Artist</button>
+  <button class="goto" data-node="ART">Artists</button>
+  <button class="goto" data-node="SRV">Services</button>
+  <button class="goto" data-node="ABT">About</button>
+  <button class="goto" data-node="CON">Contact</button>
+  <button class="goto" data-node="GMF">Galleries</button>
+  <a class="exit" href="index.html">Exit ✕</a>
+</div>
+
+<div id="touch">
+  <button id="tBack">▼</button>
+  <button id="tFwd">▲</button>
+</div>
+
+<div id="intro">
+  <div class="card">
+    <h1>Walk the <b>Gallery</b></h1>
+    <p>An experimental 3D walk-through of the whole site. Every room is a page — stroll the halls, and click a room's title wall to open that page.</p>
+    <div class="keys">
+      <span><b>W A S D</b> move</span>
+      <span><b>Mouse</b> look</span>
+      <span><b>Click</b> a title to open</span>
+      <span><b>Esc</b> release</span>
+    </div>
+    <button id="enter">Enter the gallery</button>
+    <small>Best on a desktop with WebGPU (Chrome / Edge). Falls back to WebGL automatically.</small>
+  </div>
+</div>
+
+<div id="load"><span class="spin"></span> Building the gallery…</div>
+<div class="err" id="err"><div><h2>Couldn't start the 3D view</h2><p id="errmsg"></p><p><a href="index.html" style="color:var(--gold)">← Back to the site</a></p></div></div>
+
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://cdn.jsdelivr.net/npm/three@0.171.0/build/three.webgpu.js",
+    "three/webgpu": "https://cdn.jsdelivr.net/npm/three@0.171.0/build/three.webgpu.js",
+    "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.171.0/examples/jsm/"
+  }
+}
+</script>
+
+<script type="module">
+import * as THREE from 'three';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+
+const $ = s => document.querySelector(s);
+const fail = m => { $('#errmsg').textContent = m; $('#err').classList.add('show'); $('#load').style.display='none'; $('#intro').style.display='none'; };
+
+// ---------- page/room metadata ----------
+const PAGES = {
+  Home:{title:'ArtPro Gallery', sub:'Four galleries · Fifty artists', url:'index.html'},
+  AFS :{title:'Art for Sale',   sub:'Browse & enquire',              url:'art-for-sale.html'},
+  ABT :{title:'About',          sub:'Our story',                     url:'about.html'},
+  ABA :{title:'Art by Artists', sub:'Explore by artist',             url:'art-by-artists.html'},
+  ART :{title:'Artists',        sub:'50+ represented',               url:'artists.html'},
+  SRV :{title:'Services',       sub:'Framing · Valuations · Delivery',url:'services.html'},
+  CON :{title:'Contact',        sub:'Find a gallery',                url:'contact.html'},
+  GSU :{title:'Sunninghill Village', sub:'Sandton · Head office',    url:'gallery.html?g=sunninghill-village'},
+  GPB :{title:'Prison Break Market', sub:'Kyalami · Art classes',    url:'gallery.html?g=prison-break-market'},
+  GPL :{title:'ArtPro @ Lifestyle',  sub:'Randpark Ridge',           url:'gallery.html?g=artpro-lifestyle'},
+  GMF :{title:'Maggies Farm',        sub:'Lanseria · Farm gallery',  url:'gallery.html?g=maggies-farm'},
+};
+// room interior centres (Blender coords) for orienting wall art
+const CENTERS = { AFS:[12,12],ABT:[-12,12],ABA:[12,30],ART:[-12,30],SRV:[12,48],CON:[-12,48],
+  Home:[0,-9], GSU:[-18,86],GPB:[-6,86],GPL:[6,86],GMF:[18,86] };
+
+// navigation graph (Blender coords)
+const NODES = { ATR:[0,-8], S12:[0,12], S30:[0,30], S48:[0,48], SPW:[0,64], WN:[0,72],
+  AFS:[6,12],ABT:[-6,12],ABA:[6,30],ART:[-6,30],SRV:[6,48],CON:[-6,48],
+  GSUd:[-18,78],GPBd:[-6,78],GPLd:[6,78],GMFd:[18,78],
+  GSU:[-18,84],GPB:[-6,84],GPL:[6,84],GMF:[18,84] };
+const EDGES = [['ATR','S12'],['S12','S30'],['S30','S48'],['S48','SPW'],['SPW','WN'],
+  ['S12','AFS'],['S12','ABT'],['S30','ABA'],['S30','ART'],['S48','SRV'],['S48','CON'],
+  ['WN','GSUd'],['WN','GPBd'],['WN','GPLd'],['WN','GMFd'],
+  ['GSUd','GSU'],['GPBd','GPB'],['GPLd','GPL'],['GMFd','GMF']];
+const ADJ = {}; Object.keys(NODES).forEach(k=>ADJ[k]=[]);
+EDGES.forEach(([a,b])=>{ ADJ[a].push(b); ADJ[b].push(a); });
+
+// Blender (bx,by) -> three (x, y, z)
+const T3 = (bx,by,y=1.6) => new THREE.Vector3(bx, y, -by);
+
+// ---------- three basics ----------
+const app = $('#app');
+let renderer;
+try{
+  renderer = new THREE.WebGPURenderer({ antialias:true });
+}catch(e){ fail('WebGPU/WebGL renderer could not be created: '+e.message); throw e; }
+renderer.setPixelRatio(Math.min(devicePixelRatio,2));
+renderer.setSize(innerWidth, innerHeight);
+app.appendChild(renderer.domElement);
+
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x0e0d0b);
+scene.fog = new THREE.Fog(0x0e0d0b, 24, 120);
+
+const camera = new THREE.PerspectiveCamera(70, innerWidth/innerHeight, 0.05, 400);
+camera.position.copy(T3(0,-14));
+
+// lights — even gallery wash + a little warmth
+scene.add(new THREE.HemisphereLight(0xffffff, 0x6b6357, 1.25));
+scene.add(new THREE.AmbientLight(0xfff4e0, 0.35));
+const key = new THREE.DirectionalLight(0xfff2df, 0.5); key.position.set(6,20,10); scene.add(key);
+// a few warm points down the spine + wing
+[[0,6],[0,24],[0,42],[0,60],[0,72]].forEach(([bx,by])=>{
+  const p = new THREE.PointLight(0xffe9c7, 40, 34, 2.0); p.position.copy(T3(bx,by,3.6)); scene.add(p);
+});
+
+// ---------- collision ----------
+const walls = [];
+const ray = new THREE.Raycaster(); ray.far = 6;
+const PR = 0.62;
+function blocked(dir, dist){
+  ray.set(camera.position, dir); ray.far = dist;
+  const hit = ray.intersectObjects(walls, false);
+  return hit.length>0;
+}
+const AXIS = { xp:new THREE.Vector3(1,0,0), xn:new THREE.Vector3(-1,0,0), zp:new THREE.Vector3(0,0,1), zn:new THREE.Vector3(0,0,-1) };
+function moveWithCollision(dx,dz){
+  if(dx!==0){ const d=dx>0?AXIS.xp:AXIS.xn; if(!blocked(d, Math.abs(dx)+PR)) camera.position.x+=dx; }
+  if(dz!==0){ const d=dz>0?AXIS.zp:AXIS.zn; if(!blocked(d, Math.abs(dz)+PR)) camera.position.z+=dz; }
+  camera.position.y = 1.6;
+}
+
+// ---------- look ----------
+let yaw=0, pitch=0;
+const SENS=0.0022;
+function applyLook(){ camera.quaternion.setFromEuler(new THREE.Euler(pitch,yaw,0,'YXZ')); }
+applyLook();
+function onMouseMove(e){ yaw -= e.movementX*SENS; pitch -= e.movementY*SENS;
+  pitch = Math.max(-1.2, Math.min(1.2, pitch)); applyLook(); }
+
+const canvasEl = renderer.domElement;
+canvasEl.addEventListener('click', ()=>{ if(!isTouch && document.pointerLockElement!==canvasEl && !traveling) canvasEl.requestPointerLock(); });
+document.addEventListener('pointerlockchange', ()=>{
+  const on = document.pointerLockElement===canvasEl;
+  document.body.classList.toggle('locked', on);
+  if(on) document.addEventListener('mousemove', onMouseMove);
+  else document.removeEventListener('mousemove', onMouseMove);
+});
+
+// drag-look fallback (mobile + non-locked desktop)
+let dragging=false, lastX=0,lastY=0;
+canvasEl.addEventListener('pointerdown', e=>{ if(document.pointerLockElement===canvasEl) return; dragging=true; lastX=e.clientX; lastY=e.clientY; });
+addEventListener('pointerup', ()=>dragging=false);
+addEventListener('pointermove', e=>{ if(!dragging) return; yaw-=(e.clientX-lastX)*SENS; pitch-=(e.clientY-lastY)*SENS; pitch=Math.max(-1.2,Math.min(1.2,pitch)); lastX=e.clientX; lastY=e.clientY; applyLook(); });
+
+// ---------- keys ----------
+const keys={};
+addEventListener('keydown',e=>{ keys[e.code]=true; if(e.code==='Escape' && document.pointerLockElement) document.exitPointerLock(); });
+addEventListener('keyup',e=>{ keys[e.code]=false; });
+
+// touch move buttons
+const isTouch = matchMedia('(pointer:coarse)').matches;
+if(isTouch) document.body.classList.add('touch');
+let tFwd=0;
+$('#tFwd').addEventListener('touchstart',e=>{e.preventDefault();tFwd=1;},{passive:false});
+$('#tBack').addEventListener('touchstart',e=>{e.preventDefault();tFwd=-1;},{passive:false});
+['touchend','touchcancel'].forEach(ev=>{ $('#tFwd').addEventListener(ev,()=>tFwd=0); $('#tBack').addEventListener(ev,()=>tFwd=0); });
+
+// ---------- interact: look/click a title wall to open the page ----------
+const interactables = [];
+const centerRay = new THREE.Raycaster(); centerRay.far = 22;
+const clickRay = new THREE.Raycaster(); clickRay.far = 22;
+let hotUrl=null, hotTitle=null;
+function updateHot(){
+  centerRay.setFromCamera({x:0,y:0}, camera);
+  const hit = centerRay.intersectObjects(interactables, false)[0];
+  const p=$('#prompt'), r=$('#reticle');
+  if(hit){ hotUrl=hit.object.userData.url; hotTitle=hit.object.userData.title;
+    p.innerHTML='Click to open <b>'+hotTitle+'</b> →'; p.classList.add('show'); r.classList.add('hot'); }
+  else { hotUrl=null; p.classList.remove('show'); r.classList.remove('hot'); }
+}
+canvasEl.addEventListener('click', e=>{
+  let hit;
+  if(document.pointerLockElement===canvasEl){
+    centerRay.setFromCamera({x:0,y:0}, camera); hit=centerRay.intersectObjects(interactables,false)[0];
+  } else {
+    const nx=(e.clientX/innerWidth)*2-1, ny=-(e.clientY/innerHeight)*2+1;
+    clickRay.setFromCamera({x:nx,y:ny}, camera); hit=clickRay.intersectObjects(interactables,false)[0];
+  }
+  if(hit && hit.object.userData.url){ location.href = hit.object.userData.url; }
+});
+
+// ---------- content textures ----------
+function titleTexture(prefix){
+  const {title,sub}=PAGES[prefix]||{title:prefix,sub:''};
+  const c=document.createElement('canvas'); c.width=1024; c.height=512; const g=c.getContext('2d');
+  g.fillStyle='#211d18'; g.fillRect(0,0,1024,512);
+  g.fillStyle='#b8912f'; g.fillRect(0,0,1024,10); g.fillRect(0,502,1024,10);
+  g.fillStyle='#b8912f'; g.font='700 96px "Barlow Condensed",Arial,sans-serif';
+  g.textAlign='center'; g.textBaseline='middle';
+  g.fillText(title.toUpperCase(), 512, 210);
+  g.fillStyle='#ece7df'; g.font='400 40px Montserrat,Arial,sans-serif';
+  g.fillText(sub, 512, 320);
+  g.fillStyle='#8a8578'; g.font='600 26px Montserrat,Arial,sans-serif';
+  g.fillText('CLICK TO OPEN THIS PAGE', 512, 400);
+  const t=new THREE.CanvasTexture(c); t.colorSpace=THREE.SRGBColorSpace; t.anisotropy=8; return t;
+}
+function placeholderTexture(i){
+  const c=document.createElement('canvas'); c.width=64; c.height=64; const g=c.getContext('2d');
+  const hue=['#cbb892','#b7a17a','#d8cbb0','#a8906a'][i%4]; g.fillStyle=hue; g.fillRect(0,0,64,64);
+  const t=new THREE.CanvasTexture(c); t.colorSpace=THREE.SRGBColorSpace; return t;
+}
+
+// ---------- build front planes for every Canvas_ box ----------
+const artSlots = [];
+function processCanvases(root){
+  root.traverse(o=>{
+    if(!o.isMesh || !o.name.startsWith('Canvas_')) return;
+    const parts=o.name.split('_'); const kind=parts[1]; const prefix=parts[2];
+    o.geometry.computeBoundingBox();
+    const size=new THREE.Vector3(); o.geometry.boundingBox.getSize(size);
+    const pos=new THREE.Vector3(); o.getWorldPosition(pos);
+    // thin axis = smallest of x,z (never y)
+    const axis = size.x < size.z ? 'x' : 'z';
+    const width = axis==='x' ? size.z : size.x;
+    const height = size.y;
+    const c = CENTERS[prefix] || [0,0];
+    const cThree = T3(c[0], c[1], pos.y);
+    const sign = Math.sign((axis==='x'?cThree.x:cThree.z) - (axis==='x'?pos.x:pos.z)) || 1;
+    const normal = new THREE.Vector3(axis==='x'?sign:0, 0, axis==='z'?sign:0);
+    const geo = new THREE.PlaneGeometry(width*0.96, height*0.96);
+    let mat;
+    if(kind==='Title'){ mat=new THREE.MeshBasicMaterial({map:titleTexture(prefix)}); }
+    else { mat=new THREE.MeshBasicMaterial({map:placeholderTexture(artSlots.length)}); }
+    const m=new THREE.Mesh(geo,mat);
+    m.position.copy(pos).addScaledVector(normal, (axis==='x'?size.x:size.z)/2 + 0.03);
+    m.lookAt(m.position.clone().add(normal));
+    scene.add(m);
+    if(kind==='Title'){ m.userData.url=PAGES[prefix]?.url; m.userData.title=PAGES[prefix]?.title||prefix; interactables.push(m); }
+    else { artSlots.push({mesh:m, prefix}); }
+  });
+}
+
+// fill art slots from the live catalogue
+async function fillArt(){
+  let pieces=[];
+  try{ pieces = await fetch('/api/public/pieces').then(r=>r.ok?r.json():[]); }catch(e){}
+  if(!Array.isArray(pieces) || !pieces.length) return;
+  const loader=new THREE.TextureLoader();
+  artSlots.forEach((slot,i)=>{
+    const p = pieces[i % pieces.length];
+    if(!p || !p.pid) return;
+    const url = `/api/pieces/${p.pid}/photo?v=${p.updated||0}`;
+    loader.load(url, tex=>{ tex.colorSpace=THREE.SRGBColorSpace; tex.anisotropy=8;
+      slot.mesh.material.map=tex; slot.mesh.material.needsUpdate=true; }, undefined, ()=>{});
+  });
+}
+
+// ---------- travel (walk the corridors to a room) ----------
+let traveling=false, path=[], seg=0, segT=0, startYaw=0, targetYaw=0;
+function nearestNode(){
+  const bx=camera.position.x, by=-camera.position.z; let best='ATR', bd=1e9;
+  for(const k in NODES){ const [nx,ny]=NODES[k]; const d=(nx-bx)**2+(ny-by)**2; if(d<bd){bd=d;best=k;} }
+  return best;
+}
+function bfs(a,b){
+  if(a===b) return [a];
+  const q=[a], prev={[a]:null}, seen={[a]:1};
+  while(q.length){ const n=q.shift(); for(const m of ADJ[n]){ if(!seen[m]){ seen[m]=1; prev[m]=n; if(m===b){ const p=[b]; let c=b; while(prev[c]!==null){ c=prev[c]; p.unshift(c);} return p; } q.push(m);} } }
+  return [b];
+}
+function travelTo(nodeKey){
+  if(document.pointerLockElement) document.exitPointerLock();
+  const start=nearestNode();
+  const nodePath=bfs(start,nodeKey);
+  path = nodePath.map(k=>T3(NODES[k][0], NODES[k][1]));
+  path.unshift(camera.position.clone());          // begin from where we are
+  seg=0; segT=0; traveling=true;
+}
+document.querySelectorAll('.goto').forEach(b=> b.addEventListener('click', ()=> travelTo(b.dataset.node)) );
+
+function stepTravel(dt){
+  if(seg>=path.length-1){ traveling=false; return; }
+  const a=path[seg], b=path[seg+1];
+  const segLen=a.distanceTo(b);
+  const dir=b.clone().sub(a); if(segLen>0.001) dir.normalize();
+  targetYaw=Math.atan2(-dir.x,-dir.z);
+  // smooth yaw toward target
+  let dy=targetYaw-yaw; while(dy>Math.PI)dy-=2*Math.PI; while(dy<-Math.PI)dy+=2*Math.PI;
+  yaw += dy*Math.min(1, dt*6); pitch += (0-pitch)*Math.min(1,dt*4); applyLook();
+  const speed=6.5; segT += (dt*speed)/(segLen||1);
+  if(segT>=1){ camera.position.copy(b); seg++; segT=0; }
+  else camera.position.lerpVectors(a,b,segT);
+  camera.position.y=1.6;
+}
+
+// ---------- resize ----------
+addEventListener('resize', ()=>{ camera.aspect=innerWidth/innerHeight; camera.updateProjectionMatrix(); renderer.setSize(innerWidth,innerHeight); });
+
+// ---------- main loop ----------
+const clock=new THREE.Clock();
+function animate(){
+  const dt=Math.min(clock.getDelta(),0.05);
+  if(traveling){ stepTravel(dt); }
+  else {
+    const fwd=new THREE.Vector3(-Math.sin(yaw),0,-Math.cos(yaw));
+    const right=new THREE.Vector3(-fwd.z,0,fwd.x);
+    let f=(keys.KeyW||keys.ArrowUp?1:0)-(keys.KeyS||keys.ArrowDown?1:0)+tFwd;
+    let s=(keys.KeyD||keys.ArrowRight?1:0)-(keys.KeyA||keys.ArrowLeft?1:0);
+    if(f||s){ const v=new THREE.Vector3().addScaledVector(fwd,f).addScaledVector(right,s);
+      if(v.lengthSq()>0){ v.normalize().multiplyScalar(4.5*dt); moveWithCollision(v.x,v.z); } }
+    if(document.body.classList.contains('locked')||isTouch||dragging!==undefined) updateHot();
+  }
+  renderer.render(scene,camera);
+}
+
+// ---------- boot ----------
+(async function boot(){
+  try{
+    if(renderer.init) await renderer.init();
+    const loader=new GLTFLoader();
+    const gltf = await loader.loadAsync('assets/3d/artpro-gallery.glb');
+    scene.add(gltf.scene);
+    gltf.scene.traverse(o=>{ if(o.isMesh && o.name.includes('Wall')) walls.push(o); });
+    processCanvases(gltf.scene);
+    fillArt();
+    renderer.setAnimationLoop(animate);
+    $('#load').style.display='none';
+  }catch(e){ console.error(e); fail('Failed to load the 3D gallery: '+e.message); }
+})();
+
+$('#enter').addEventListener('click', ()=>{ $('#intro').style.display='none';
+  if(!isTouch) canvasEl.requestPointerLock(); });
+</script>
+</body>
+</html>
