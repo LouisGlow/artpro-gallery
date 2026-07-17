@@ -554,6 +554,91 @@ function addPassageArt(){
   }
 }
 
+// Every space is described once here (Blender coords) so beams/art/furniture stay in step.
+const SPACES=[
+  {p:'Home',x0:-10,x1:10,  y0:-18, y1:0,    h:5.0},
+  {p:'SPN', x0:-3, x1:3,   y0:0,   y1:64,   h:5.0},
+  {p:'AFS', x0:3,  x1:21,  y0:4.5, y1:19.5, h:4.5, door:12, dx:3},
+  {p:'ABT', x0:-21,x1:-3,  y0:4.5, y1:19.5, h:4.5, door:12, dx:-3},
+  {p:'ABA', x0:3,  x1:21,  y0:22.5,y1:37.5, h:4.5, door:30, dx:3},
+  {p:'ART', x0:-21,x1:-3,  y0:22.5,y1:37.5, h:4.5, door:30, dx:-3},
+  {p:'SRV', x0:3,  x1:21,  y0:40.5,y1:55.5, h:4.5, door:48, dx:3},
+  {p:'CON', x0:-21,x1:-3,  y0:40.5,y1:55.5, h:4.5, door:48, dx:-3},
+  {p:'WING',x0:-24,x1:24,  y0:64,  y1:80,   h:5.0},
+  {p:'GSU', x0:-23.5,x1:-12.5,y0:80,y1:92,  h:4.5},
+  {p:'GPB', x0:-11.5,x1:-0.5, y0:80,y1:92,  h:4.5},
+  {p:'GPL', x0:0.5, x1:11.5,  y0:80,y1:92,  h:4.5},
+  {p:'GMF', x0:12.5,x1:23.5,  y0:80,y1:92,  h:4.5},
+];
+
+// Beams on ONE 6m grid across the whole building, so they line up through every doorway.
+function addBeams(){
+  WOOD.repeat.set(4,1);
+  const mat=new THREE.MeshStandardMaterial({map:WOOD, roughness:0.55, metalness:0.0, envMapIntensity:0.35});
+  const STEP=6;
+  for(const s of SPACES){
+    const w=(s.x1-s.x0)+0.4, cx=(s.x0+s.x1)/2;
+    for(let y=Math.ceil((s.y0+0.8)/STEP)*STEP; y<=s.y1-0.8; y+=STEP){
+      const m=new THREE.Mesh(new THREE.BoxGeometry(w,0.6,0.7), mat);
+      m.position.set(cx, s.h-0.3, -y); scene.add(m);
+    }
+  }
+}
+
+// More art: flank each room's doorway wall, fill the side walls, and dress the galleries wing.
+function addMoreArt(){
+  const S=(p)=>SPACES.find(s=>s.p===p);
+  for(const p of ['AFS','ABT','ABA','SRV','CON']){          // ART room keeps its portrait grid
+    const s=S(p), east=s.dx>0, inward=east?1:-1;
+    // doorway wall, either side of the opening
+    for(const y of [s.door-4.5, s.door+4.5]){
+      artSlots.push({ pos:T3(s.dx+0.1*inward, y, 1.55), normal:new THREE.Vector3(inward,0,0),
+        off:0.03, maxW:1.3, maxH:1.05, prefix:p, mesh:null });
+    }
+    // extra pieces near the ends of both side walls (Blender already hung 3 mid-wall)
+    for(const f of [0.125, 0.875]){
+      const x=s.x0+(s.x1-s.x0)*f;
+      artSlots.push({ pos:T3(x, s.y1-0.11, 1.55), normal:new THREE.Vector3(0,0,1),  off:0.03, maxW:1.3, maxH:1.05, prefix:p, mesh:null });
+      artSlots.push({ pos:T3(x, s.y0+0.11, 1.55), normal:new THREE.Vector3(0,0,-1), off:0.03, maxW:1.3, maxH:1.05, prefix:p, mesh:null });
+    }
+  }
+  // galleries wing side walls
+  for(const y of [68,72,76]){
+    artSlots.push({ pos:T3(23.9, y, 1.55),  normal:new THREE.Vector3(-1,0,0), off:0.03, maxW:1.5, maxH:1.15, prefix:'GMF', mesh:null });
+    artSlots.push({ pos:T3(-23.9, y, 1.55), normal:new THREE.Vector3(1,0,0),  off:0.03, maxW:1.5, maxH:1.15, prefix:'GSU', mesh:null });
+  }
+}
+
+// Tables + chairs, scattered so the rooms feel lived-in.
+function furnish(){
+  const wood=new THREE.MeshStandardMaterial({map:WOOD, roughness:0.5, metalness:0.0, envMapIntensity:0.3});
+  const dark=new THREE.MeshStandardMaterial({color:0x241f19, roughness:0.6, metalness:0.1});
+  const leg=(g,w,h,d,x,y,z,m)=>{ const l=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),m); l.position.set(x,y,z); g.add(l); };
+  function table(bx,by,rot){
+    const g=new THREE.Group();
+    const top=new THREE.Mesh(new THREE.BoxGeometry(1.7,0.08,0.95), wood); top.position.y=0.74; g.add(top);
+    for(const [lx,lz] of [[-0.76,-0.4],[0.76,-0.4],[-0.76,0.4],[0.76,0.4]]) leg(g,0.08,0.72,0.08,lx,0.36,lz,dark);
+    g.position.copy(T3(bx,by,0)); g.rotation.y=rot; scene.add(g);
+  }
+  function chair(bx,by,rot){
+    const g=new THREE.Group();
+    const s=new THREE.Mesh(new THREE.BoxGeometry(0.46,0.06,0.46), wood); s.position.y=0.45; g.add(s);
+    const b=new THREE.Mesh(new THREE.BoxGeometry(0.46,0.5,0.06), dark); b.position.set(0,0.72,-0.2); g.add(b);
+    for(const [lx,lz] of [[-0.19,-0.19],[0.19,-0.19],[-0.19,0.19],[0.19,0.19]]) leg(g,0.05,0.44,0.05,lx,0.22,lz,dark);
+    g.position.copy(T3(bx,by,0)); g.rotation.y=rot; scene.add(g);
+  }
+  const sets=[ [-6,-12,0.2], [6,-5.5,-0.35],                    // atrium
+               [12,8,0.15], [-12,16,-0.2], [12,26,0.1],          // rooms
+               [-12,44,0.25], [12,52,-0.15], [-14,72,0.05], [14,72,-0.1] ];
+  sets.forEach(([x,y,r],i)=>{
+    table(x,y,r);
+    chair(x+1.5*Math.cos(r), y+1.5*Math.sin(r), r-1.5);
+    if(i%2===0) chair(x-1.4, y-1.3, r+Math.PI-0.25);
+  });
+  // a few loose chairs
+  [[-8,-3,0.6],[9,18,-0.9],[-9,33,2.2],[17,46,1.1],[0,70,0.4]].forEach(([x,y,r])=>chair(x,y,r));
+}
+
 // Atrium (x[-10,10] y[-18,0]) — side walls carry windows at y=-13 and y=-5,
 // so hang the featured art in the clear spans between/outside them.
 function addAtriumArt(){
@@ -668,7 +753,7 @@ function dressScene(root){
       m.map=t; m.color.set(0xffffff); m.roughness=0.1; m.metalness=0.0; m.envMapIntensity=1.7; m.needsUpdate=true;
     }
     else if(n.includes('Ceil')){ m.roughness=0.95; m.envMapIntensity=0.2; }
-    else if(n.startsWith('Beam')){ m.color.set(0xffffff); m.map=WOOD; m.map.repeat.set(4,1); m.roughness=0.55; m.metalness=0.0; m.envMapIntensity=0.35; m.needsUpdate=true; }
+    else if(n.startsWith('Beam')){ o.visible=false; }   // replaced by an aligned grid in addBeams()
     else if(n.startsWith('Window')){
       // replace the flat Blender emissive box with a controlled, wall-flush glass + frame
       const bb=new THREE.Box3().setFromObject(o); const size=bb.getSize(new THREE.Vector3());
@@ -772,8 +857,11 @@ function animate(){
     dressScene(gltf.scene);
     addTrim();
     processCanvases(gltf.scene);
+    addBeams();
     addPassageArt();
     addAtriumArt();
+    addMoreArt();
+    furnish();
     await fillArt();
     renderer.setAnimationLoop(animate);
     $('#load').style.display='none';
