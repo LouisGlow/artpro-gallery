@@ -39,21 +39,25 @@
   #prompt.show{ opacity:1; }
   #prompt b{ color:var(--gold); }
 
-  /* wall label that appears when you look at a piece */
+  /* wall label — no panel, just legible floating text (dark glow carries it over
+     both the near-black walls and the white marble) */
   #info{ position:fixed; left:50%; bottom:92px; transform:translateX(-50%) translateY(6px);
-    width:min(390px,88vw); background:rgba(238,233,225,.97); color:var(--ink);
-    border:1px solid rgba(184,145,47,.65); border-radius:10px; padding:13px 16px 11px;
-    box-shadow:0 14px 34px rgba(0,0,0,.5); opacity:0; pointer-events:none; z-index:6;
-    transition:opacity .16s ease, transform .16s ease; text-align:left; }
+    width:min(420px,88vw); opacity:0; pointer-events:none; z-index:6; text-align:left;
+    transition:opacity .16s ease, transform .16s ease;
+    paint-order:stroke fill;   /* dark outline behind the glyphs, so it reads on the white marble too */
+    text-shadow:0 1px 3px rgba(0,0,0,.8), 0 2px 14px rgba(0,0,0,.65); }
   #info.show{ opacity:1; transform:translateX(-50%) translateY(0); }
   #info .i-t{ font-family:"Barlow Condensed",system-ui,sans-serif; font-weight:700;
-    text-transform:uppercase; letter-spacing:.03em; font-size:21px; line-height:1.12; }
-  #info .i-a{ color:var(--gold-deep); font-size:12.5px; font-weight:600; margin:2px 0 8px; }
-  #info .i-r{ display:flex; justify-content:space-between; gap:14px; font-size:12px;
-    border-top:1px solid rgba(33,29,24,.12); padding:5px 0; color:#4a453d; }
-  #info .i-r span:first-child{ color:#8c8578; letter-spacing:.04em; text-transform:uppercase; font-size:10.5px; }
-  #info .i-r span:last-child{ text-align:right; }
-  #info .i-bio{ font-size:12px; color:#4a453d; line-height:1.5; border-top:1px solid rgba(33,29,24,.12); padding-top:6px; }
+    text-transform:uppercase; letter-spacing:.03em; font-size:27px; line-height:1.08; color:#fff;
+    -webkit-text-stroke:4.5px rgba(12,10,8,.72); }
+  #info .i-a{ color:#f0c256; font-size:14.5px; font-weight:700; margin:3px 0 10px;
+    -webkit-text-stroke:3.5px rgba(12,10,8,.72); }
+  #info .i-r{ display:flex; justify-content:space-between; gap:16px; font-size:13px;
+    padding:3px 0; color:#fff; -webkit-text-stroke:3px rgba(12,10,8,.72); }
+  #info .i-r span:first-child{ color:#cfc7b6; letter-spacing:.07em; text-transform:uppercase; font-size:11px; }
+  #info .i-r span:last-child{ text-align:right; font-weight:600; }
+  #info .i-bio{ font-size:13px; color:#fff; line-height:1.5; margin-top:2px;
+    -webkit-text-stroke:3px rgba(12,10,8,.72); }
 
   #hint{ position:fixed; left:50%; bottom:16px; transform:translateX(-50%); z-index:6;
     background:rgba(20,18,15,.6); color:#d8d2c6; font-size:12px; letter-spacing:.02em;
