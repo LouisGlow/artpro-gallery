@@ -185,7 +185,7 @@ catch(e){ fail('WebGPU/WebGL renderer could not be created: '+e.message); throw 
 renderer.setPixelRatio(Math.min(devicePixelRatio,2));
 renderer.setSize(innerWidth, innerHeight);
 renderer.toneMapping = THREE.ACESFilmicToneMapping;
-renderer.toneMappingExposure = 1.15;
+renderer.toneMappingExposure = 1.28;
 app.appendChild(renderer.domElement);
 
 const scene = new THREE.Scene();
@@ -219,10 +219,10 @@ function concreteTexture(base, spec){
     d[i]+=v; d[i+1]+=v; d[i+2]+=v;
   }
   g.putImageData(img,0,0);
-  // a few faint, soft stains
-  for(let k=0;k<10;k++){ g.globalAlpha=0.02+Math.random()*0.03;
+  // a couple of very faint stains (kept tiny so wall-segment seams don't show)
+  for(let k=0;k<3;k++){ g.globalAlpha=0.015+Math.random()*0.02;
     g.fillStyle=Math.random()>0.5?'#ffffff':'#000000';
-    const r=18+Math.random()*40; g.beginPath(); g.arc(Math.random()*s,Math.random()*s,r,0,7); g.fill(); }
+    const r=8+Math.random()*16; g.beginPath(); g.arc(Math.random()*s,Math.random()*s,r,0,7); g.fill(); }
   g.globalAlpha=1;
   const t=new THREE.CanvasTexture(c); t.wrapS=t.wrapT=THREE.RepeatWrapping;
   t.colorSpace=THREE.SRGBColorSpace; t.anisotropy=8; return t;
@@ -257,7 +257,7 @@ function marbleTexture(){
   const t=new THREE.CanvasTexture(c); t.wrapS=t.wrapT=THREE.RepeatWrapping;
   t.colorSpace=THREE.SRGBColorSpace; t.anisotropy=16; return t;
 }
-const TEX_WALL = concreteTexture('#c9c6c0', 0.06);
+const TEX_WALL = concreteTexture('#cacaca', 0.14);   // grey speckle, tinted dark by the wall material
 const MARBLE   = marbleTexture();
 
 // ---------- lighting (windows do most of the work) ----------
@@ -265,8 +265,8 @@ scene.add(new THREE.HemisphereLight(0xf3ecdd, 0x555049, 0.55));
 scene.add(new THREE.AmbientLight(0xffffff, 0.14));
 const sky = new THREE.DirectionalLight(0xfff3e0, 0.35); sky.position.set(8,24,6); scene.add(sky);
 // soft corridor fill so the spine isn't dark
-[[0,10],[0,28],[0,46],[0,62],[0,72]].forEach(([bx,by])=>{
-  const p=new THREE.PointLight(0xffe7c4, 12, 26, 2.0); p.position.copy(T3(bx,by,3.8)); scene.add(p);
+[[0,6],[0,18],[0,30],[0,42],[0,54],[0,62],[0,72]].forEach(([bx,by])=>{
+  const p=new THREE.PointLight(0xffe7c4, 22, 30, 2.0); p.position.copy(T3(bx,by,3.8)); scene.add(p);
 });
 
 // ---------- collision ----------
@@ -390,6 +390,16 @@ function processCanvases(root){
   });
 }
 
+// hang art along the passage (spine) walls — no Blender canvases there, so add slots in JS.
+// Spine is x[-3,3] y[0,64]; doorways at y=12,30,48. Place frames in the clear spans, eye height.
+function addPassageArt(){
+  const ys=[6,21,39,56];
+  for(const y of ys){
+    artSlots.push({ pos:T3(2.9,y,1.55),  normal:new THREE.Vector3(-1,0,0), off:0.03, maxW:1.8, maxH:1.3, prefix:'PASS', mesh:null });
+    artSlots.push({ pos:T3(-2.9,y,1.55), normal:new THREE.Vector3(1,0,0),  off:0.03, maxW:1.8, maxH:1.3, prefix:'PASS', mesh:null });
+  }
+}
+
 // fit (w,h) of an image aspect inside (maxW,maxH)
 function fitAspect(aspect, maxW, maxH){
   let w=maxW, h=w/aspect;
@@ -424,9 +434,13 @@ async function fillArt(){
   const forSale   = withPhoto.filter(p=> /display|stock|sale/i.test(p.status||'') && notSold(p));
   const featured  = withPhoto.filter(p=> p.featured);
   const artistUrls= artists.filter(a=> a && a.photo && !/_placeholder/.test(a.photo)).map(a=>a.photo);
+  // "street art": tag a piece's medium as Street Art, or artists known for bold/urban work
+  const streetRe  = /street\s*art|graffiti|urban|mural|spray|stencil|pop\s*art|norman[-\s]?catherine|wakaba|mutheki/i;
+  const street    = withPhoto.filter(p=> streetRe.test([p.medium,p.desc,p.title,p.artist].join(' ')));
 
   // each room draws from the catalogue slice that matches its page/section
   function poolFor(prefix){
+    if(prefix==='PASS') return (street.length?street:available).map(pieceUrl);              // passage = street art
     if(prefix==='ART')  return artistUrls.length ? artistUrls : withPhoto.map(pieceUrl);   // Artists room = portraits
     if(prefix==='Home') return (featured.length?featured:available).map(pieceUrl);           // featured
     if(prefix==='AFS')  return (forSale.length?forSale:available).map(pieceUrl);             // for sale
@@ -454,7 +468,7 @@ function dressScene(root){
   root.traverse(o=>{
     if(!o.isMesh) return;
     const m=o.material; const n=o.name;
-    if(n.includes('Wall')){ m.map=TEX_WALL; m.map.repeat.set(2.2,1.6); m.roughness=0.95; m.envMapIntensity=0.4; m.needsUpdate=true; walls.push(o); }
+    if(n.includes('Wall')){ m.color.set(0x2c2f34); m.map=TEX_WALL; m.map.repeat.set(4,3); m.roughness=0.92; m.metalness=0.0; m.envMapIntensity=0.22; m.needsUpdate=true; walls.push(o); }
     else if(n.includes('Floor')){
       o.geometry.computeBoundingBox(); const bb=new THREE.Vector3(); o.geometry.boundingBox.getSize(bb);
       const t=MARBLE.clone(); t.wrapS=t.wrapT=THREE.RepeatWrapping; t.needsUpdate=true;
@@ -531,6 +545,7 @@ function animate(){
     scene.add(gltf.scene);
     dressScene(gltf.scene);
     processCanvases(gltf.scene);
+    addPassageArt();
     await fillArt();
     renderer.setAnimationLoop(animate);
     $('#load').style.display='none';
