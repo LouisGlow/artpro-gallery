@@ -83,9 +83,9 @@
 
   <div class="hero__meta">
     <div><div class="stat__num">04</div><div class="stat__label">Galleries</div></div>
-    <div><div class="stat__num">50</div><div class="stat__label">Represented artists</div></div>
+    <div><div class="stat__num" id="stat-artists">50+</div><div class="stat__label">Represented artists</div></div>
     <div><div class="stat__num">12</div><div class="stat__label">Mediums &amp; categories</div></div>
-    <div><div class="stat__num">ZA</div><div class="stat__label">Nationwide delivery</div></div>
+    <div><div class="stat__num" id="stat-pieces">60+</div><div class="stat__label">Works in the collection</div></div>
   </div>
 </section>
 
@@ -113,33 +113,6 @@
     <a class="tlink reveal" href="art-for-sale.html">All work for sale →</a>
   </div>
   <div class="shop-grid" id="feat-grid"><p class="muted" style="grid-column:1/-1;">Loading featured works…</p></div>
-</section>
-
-<!-- ============ MEDIUMS ============ -->
-<section class="section section--tight" style="background:var(--surface);border-block:1px solid var(--border);">
-  <div class="wrap wrap--wide">
-    <div class="section-head">
-      <div class="section-head__text reveal">
-        <p class="kicker">Explore the collection</p>
-        <h2 class="display display--m">Art by medium</h2>
-      </div>
-      <a class="tlink reveal" href="art-for-sale.html">All work for sale →</a>
-    </div>
-    <div class="tile-grid grid-6 reveal">
-      <a class="tile" href="art-for-sale.html"><img loading="lazy" decoding="async" src="assets/images/svc-oil.jpg" alt="Oil painting"><span class="tile__label">Oil</span></a>
-      <a class="tile" href="art-for-sale.html"><img loading="lazy" decoding="async" src="assets/images/svc-acrylic.jpg" alt="Acrylic on canvas"><span class="tile__label">Acrylic</span></a>
-      <a class="tile" href="art-for-sale.html"><img loading="lazy" decoding="async" src="assets/images/svc-watercolour.jpg" alt="Watercolour"><span class="tile__label">Watercolour</span></a>
-      <a class="tile" href="art-for-sale.html"><img loading="lazy" decoding="async" src="assets/images/svc-charcoal.jpg" alt="Charcoal drawing"><span class="tile__label">Charcoal</span></a>
-      <a class="tile" href="art-for-sale.html"><img loading="lazy" decoding="async" src="assets/images/svc-pastel.jpg" alt="Pastel"><span class="tile__label">Pastel</span></a>
-      <a class="tile" href="art-for-sale.html"><img loading="lazy" decoding="async" src="assets/images/svc-linocut.jpg" alt="Linocut print"><span class="tile__label">Linocut</span></a>
-      <a class="tile" href="art-for-sale.html"><img loading="lazy" decoding="async" src="assets/images/svc-etching.jpg" alt="Etching"><span class="tile__label">Etching</span></a>
-      <a class="tile" href="art-for-sale.html"><img loading="lazy" decoding="async" src="assets/images/svc-print.jpg" alt="Fine-art print"><span class="tile__label">Print</span></a>
-      <a class="tile" href="art-for-sale.html"><img loading="lazy" decoding="async" src="assets/images/svc-ceramics.jpg" alt="Ceramics"><span class="tile__label">Ceramics</span></a>
-      <a class="tile" href="art-for-sale.html"><img loading="lazy" decoding="async" src="assets/images/svc-mixed-medium.jpg" alt="Mixed medium"><span class="tile__label">Mixed</span></a>
-      <a class="tile" href="art-for-sale.html"><img loading="lazy" decoding="async" src="assets/images/svc-canvas.jpg" alt="Canvas"><span class="tile__label">Canvas</span></a>
-      <a class="tile" href="art-for-sale.html"><img loading="lazy" decoding="async" src="assets/images/svc-stretched-canvas.jpg" alt="Stretched canvas"><span class="tile__label">Stretched</span></a>
-    </div>
-  </div>
 </section>
 
 <!-- ============ FEATURE — virtual gallery ============ -->
@@ -333,6 +306,15 @@
   ]).then(function(res){
     var available = ((res[0] && res[0].pieces) || []).filter(forSale);
     var ARTMAP = {}; ((res[1] && res[1].artists) || []).forEach(function(a){ ARTMAP[(a.name || '').toLowerCase()] = a.slug; });
+    // ---- live figures for the hero stat band ----
+    (function(){
+      var allPieces = (res[0] && res[0].pieces) || [];
+      var allArtists = (res[1] && res[1].artists) || [];
+      function setStat(id, v){ var el = document.getElementById(id); if(el){ el.textContent = v; } }
+      if(allPieces.length){ setStat('stat-pieces', String(allPieces.length)); }
+      var rep = allArtists.filter(function(a){ return a && (a.represented === undefined || a.represented); }).length || allArtists.length;
+      if(rep){ setStat('stat-artists', rep + '+'); }
+    })();
     if(!available.length){
       grid.innerHTML = '<p class="muted" style="grid-column:1/-1;">New works are coming soon — <a class="tlink" href="art-for-sale.html">see the shop →</a></p>';
       return;
