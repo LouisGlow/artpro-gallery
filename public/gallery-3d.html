@@ -1003,7 +1003,6 @@ function travelTo(nodeKey){
   seg=0; segT=0; traveling=true;
 }
 document.querySelectorAll('.goto').forEach(b=> b.addEventListener('click', ()=> travelTo(b.dataset.node)) );
-window.__slots=()=>artSlots.reduce((a,s)=>{a[s.prefix+(s.item?'*':'')]=(a[s.prefix+(s.item?'*':'')]||0)+1;return a;},{});
 function stepTravel(dt){
   if(seg>=path.length-1){ traveling=false; return; }
   const a=path[seg], b=path[seg+1]; const segLen=a.distanceTo(b);
