@@ -506,58 +506,82 @@ function wrapText(g,text,x,y,maxW,lineH,maxLines){
   if(line){ g.fillText(line,x,y); y+=lineH; }
   return y;
 }
+// Live figures for the boards (filled in by fillArt once the DB has loaded)
+const STATS={};
 function drawContent(c,prefix,ct){
-  const g=c.getContext('2d'), W=c.width, H=c.height, M=104;
+  const g=c.getContext('2d'), W=c.width, H=c.height, M=110, CX=W/2;
   const P=PAGES[prefix]||{title:prefix,sub:''};
-  // warm ivory board with a soft raking gradient + vignette so it reads as a real mounted panel
-  const bg=g.createLinearGradient(0,0,W*0.7,H); bg.addColorStop(0,'#f2ede4'); bg.addColorStop(1,'#e4ded2');
+  const isGal=!!GALLERY_LOC[prefix];
+  // gallery.html builds its content in JS, so the scrape returns a generic shell — use our titles
+  const headline=(isGal?P.title:((ct&&ct.headline)||P.title)).toUpperCase();
+  const lead=isGal?P.sub:((ct&&ct.lead)||P.sub);
+  // ivory board: raking light + vignette
+  const bg=g.createLinearGradient(0,0,W*0.7,H); bg.addColorStop(0,'#f4f0e7'); bg.addColorStop(1,'#e6e0d4');
   g.fillStyle=bg; g.fillRect(0,0,W,H);
-  const vg=g.createRadialGradient(W*0.42,H*0.36,Math.min(W,H)*0.18,W*0.5,H*0.5,W*0.72);
-  vg.addColorStop(0,'rgba(255,255,255,0.35)'); vg.addColorStop(1,'rgba(58,48,32,0.20)');
+  const vg=g.createRadialGradient(W*0.46,H*0.34,Math.min(W,H)*0.2,W*0.5,H*0.5,W*0.75);
+  vg.addColorStop(0,'rgba(255,255,255,0.4)'); vg.addColorStop(1,'rgba(58,48,32,0.18)');
   g.fillStyle=vg; g.fillRect(0,0,W,H);
-  // inset mat line
-  g.strokeStyle='rgba(184,145,47,0.35)'; g.lineWidth=2;
-  g.strokeRect(M*0.5, M*0.5, W-M, H-M);
-  g.textAlign='left'; g.textBaseline='top';
+  // double mat: gold line + dark hairline
+  g.strokeStyle='rgba(184,145,47,0.55)'; g.lineWidth=3;   g.strokeRect(46,46,W-92,H-92);
+  g.strokeStyle='rgba(33,29,24,0.22)';   g.lineWidth=1.5; g.strokeRect(62,62,W-124,H-124);
+  g.textBaseline='top'; g.textAlign='center';
   let y=M;
-  // gold accent + eyebrow
-  g.fillStyle='#b8912f'; g.fillRect(M, y+12, 56, 5);
-  g.fillStyle='#8a6d1f'; g.font='600 28px Montserrat,Arial,sans-serif';
-  g.fillText('ARTPRO GALLERY', M+76, y); y+=52;
-  // headline
-  g.fillStyle='#211d18'; g.font='700 112px "Barlow Condensed",Arial,sans-serif';
-  y=wrapText(g,((ct&&ct.headline)||P.title).toUpperCase(),M,y,W-2*M,104,2)+12;
-  g.fillStyle='#b8912f'; g.fillRect(M,y,190,4); y+=28;
-  // lead
-  g.fillStyle='#57514a'; g.font='400 46px Montserrat,Arial,sans-serif';
-  y=wrapText(g,(ct&&ct.lead)||P.sub,M,y,W-2*M,60,2)+30;
-  // body blocks across two columns
-  const blocks=(ct&&ct.blocks)||[], gap=80, colW=(W-2*M-gap)/2, half=Math.ceil(blocks.length/2);
+  // eyebrow with flanking gold dashes
+  g.fillStyle='#8a6d1f'; g.font='600 30px Montserrat,Arial,sans-serif';
+  g.fillText('A R T P R O   G A L L E R Y', CX, y);
+  g.fillStyle='#b8912f'; g.fillRect(CX-320,y+13,110,3); g.fillRect(CX+210,y+13,110,3);
+  y+=66;
+  // headline, centred
+  g.fillStyle='#211d18'; g.font='700 124px "Barlow Condensed",Arial,sans-serif';
+  y=wrapText(g,headline,CX,y,W-2*M,116,2)+10;
+  // gold rule with a centre diamond
+  g.fillStyle='#b8912f';
+  g.fillRect(CX-180,y+8,148,3); g.fillRect(CX+32,y+8,148,3);
+  g.save(); g.translate(CX,y+9.5); g.rotate(Math.PI/4); g.fillRect(-7,-7,14,14); g.restore();
+  y+=46;
+  // lead, centred
+  g.fillStyle='#57514a'; g.font='400 47px Montserrat,Arial,sans-serif';
+  y=wrapText(g,lead,CX,y,W-2.6*M,62,2)+16;
+  // live figures band
+  if(STATS[prefix]){
+    g.fillStyle='#8a6d1f'; g.font='700 42px "Barlow Condensed",Arial,sans-serif';
+    g.fillText(STATS[prefix], CX, y+8); y+=76;
+  } else y+=12;
+  g.fillStyle='rgba(33,29,24,0.16)'; g.fillRect(M,y,W-2*M,2); y+=34;
+  // body copy in two columns
+  g.textAlign='left';
+  const blocks=(ct&&ct.blocks)||[], gap=84, colW=(W-2*M-gap)/2, half=Math.ceil(blocks.length/2);
   [blocks.slice(0,half), blocks.slice(half)].forEach((col,ci)=>{
     let cy=y; const cx=M+ci*(colW+gap);
     for(const b of col){
-      if(cy>H-M-70) break;
-      if(b.h){ g.fillStyle='#8a6d1f'; g.font='600 38px Montserrat,Arial,sans-serif';
-        cy=wrapText(g,b.h,cx,cy,colW,48,2)+8; }
-      else { g.fillStyle='#4a453d'; g.font='400 34px Montserrat,Arial,sans-serif';
-        cy=wrapText(g,b.p,cx,cy,colW,46,4)+18; }
+      if(cy>H-160) break;
+      if(b.h){ g.fillStyle='#8a6d1f'; g.font='600 40px Montserrat,Arial,sans-serif';
+        cy=wrapText(g,b.h,cx,cy,colW,50,2)+8; }
+      else { g.fillStyle='#4a453d'; g.font='400 35px Montserrat,Arial,sans-serif';
+        cy=wrapText(g,b.p,cx,cy,colW,47,4)+20; }
     }
   });
-  g.textAlign='right'; g.fillStyle='#8a6d1f'; g.font='600 26px Montserrat,Arial,sans-serif';
-  g.fillText('OPEN THE FULL PAGE  →', W-M, H-M+16);
+  // footer band
+  g.fillStyle='rgba(33,29,24,0.16)'; g.fillRect(M,H-118,W-2*M,2);
+  g.font='600 26px Montserrat,Arial,sans-serif';
+  g.textAlign='left';  g.fillStyle='#8c8578'; g.fillText('ARTPRO GALLERY · JOHANNESBURG', M, H-92);
+  g.textAlign='right'; g.fillStyle='#8a6d1f'; g.fillText('OPEN THE FULL PAGE  →', W-M, H-92);
 }
+const BOARDS=[];
 function contentTexture(prefix){
   const c=document.createElement('canvas'); c.width=2400; c.height=1000;   // 2.4:1 board
   const tex=new THREE.CanvasTexture(c); tex.colorSpace=THREE.SRGBColorSpace; tex.anisotropy=16;
+  const rec={c,tex,prefix,ct:null}; BOARDS.push(rec);
   drawContent(c,prefix,null);                                        // instant: title + tagline
   const url=PAGES[prefix]?.url;
   if(url) (async()=>{
-    const ct=await pageContent(url);
+    rec.ct=await pageContent(url);
     try{ await document.fonts.ready; }catch(e){}
-    drawContent(c,prefix,ct); tex.needsUpdate=true;                  // swap in the real page content
+    drawContent(c,prefix,rec.ct); tex.needsUpdate=true;              // swap in the real page content
   })();
   return tex;
 }
+function refreshBoards(){ for(const r of BOARDS){ drawContent(r.c,r.prefix,r.ct); r.tex.needsUpdate=true; } }
 
 // ---------- build front planes for every Canvas_ box ----------
 const artSlots = [];
@@ -587,9 +611,9 @@ function processCanvases(root){
         mesh.lookAt(mesh.position.clone().add(normal)); scene.add(mesh); return mesh; };
       // soft contact shadow behind the board
       const bsh=put(shadowPlane(W+0.55,H+0.55,0.5), 0.004-off); bsh.position.y=cy-0.06; bsh.renderOrder=-1;
-      // gold reveal -> dark mat -> board : the same frame language as the artworks
+      // white frame -> dark mat -> board : the same frame language as the artworks
       put(new THREE.Mesh(new THREE.PlaneGeometry(W+0.26,H+0.26),
-        new THREE.MeshStandardMaterial({color:0xb8912f, metalness:0.95, roughness:0.3, envMapIntensity:1.6})), 0);
+        new THREE.MeshStandardMaterial({color:0xf6f3ec, metalness:0.0, roughness:0.42, envMapIntensity:0.5})), 0);
       put(new THREE.Mesh(new THREE.PlaneGeometry(W+0.12,H+0.12),
         new THREE.MeshStandardMaterial({color:0x171512, roughness:0.55, metalness:0.1})), 0.006);
       const m=put(new THREE.Mesh(new THREE.PlaneGeometry(W,H),
@@ -784,12 +808,14 @@ function furnish(){
   function table(bx,by,rot){
     const g=new THREE.Group();
     const top=new THREE.Mesh(new THREE.BoxGeometry(1.7,0.08,0.95), wood); top.position.y=0.74; g.add(top);
+    const tsh=shadowPlane(2.3,1.5,0.3); tsh.rotation.x=-Math.PI/2; tsh.position.y=0.012; g.add(tsh);
     for(const [lx,lz] of [[-0.76,-0.4],[0.76,-0.4],[-0.76,0.4],[0.76,0.4]]) leg(g,0.08,0.72,0.08,lx,0.36,lz,dark);
     g.position.copy(T3(bx,by,0)); g.rotation.y=rot; scene.add(g);
   }
   function chair(bx,by,rot){
     const g=new THREE.Group();
     const s=new THREE.Mesh(new THREE.BoxGeometry(0.46,0.06,0.46), wood); s.position.y=0.45; g.add(s);
+    const csh=shadowPlane(0.85,0.85,0.28); csh.rotation.x=-Math.PI/2; csh.position.y=0.012; g.add(csh);
     const b=new THREE.Mesh(new THREE.BoxGeometry(0.46,0.5,0.06), dark); b.position.set(0,0.72,-0.2); g.add(b);
     for(const [lx,lz] of [[-0.19,-0.19],[0.19,-0.19],[-0.19,0.19],[0.19,0.19]]) leg(g,0.05,0.44,0.05,lx,0.22,lz,dark);
     g.position.copy(T3(bx,by,0)); g.rotation.y=rot; scene.add(g);
@@ -804,6 +830,37 @@ function furnish(){
   });
   // a few loose chairs
   [[-8,-3,0.6],[9,18,-0.9],[-9,33,2.2],[17,46,1.1],[0,70,0.4]].forEach(([x,y,r])=>chair(x,y,r));
+}
+
+// Potted plants to soften the corners — pot, trunk, low-poly foliage, soft floor shadow.
+function addPlants(){
+  const potM=new THREE.MeshStandardMaterial({color:0x2c2824, roughness:0.7});
+  const trunkM=new THREE.MeshStandardMaterial({color:0x4a3a28, roughness:0.9});
+  const leafA=new THREE.MeshStandardMaterial({color:0x3d6b40, roughness:0.85, flatShading:true});
+  const leafB=new THREE.MeshStandardMaterial({color:0x2e5433, roughness:0.85, flatShading:true});
+  function plant(bx,by,s){
+    const g=new THREE.Group();
+    const pot=new THREE.Mesh(new THREE.CylinderGeometry(0.24*s,0.18*s,0.36*s,10), potM); pot.position.y=0.18*s; g.add(pot);
+    const tr=new THREE.Mesh(new THREE.CylinderGeometry(0.035*s,0.05*s,0.7*s,6), trunkM); tr.position.y=0.66*s; g.add(tr);
+    [[0,1.15,0,0.34],[0.2,0.98,0.1,0.24],[-0.22,1.0,-0.06,0.26],[0.05,1.34,-0.12,0.22],[-0.1,1.28,0.16,0.2]]
+      .forEach(([x,yy,z,r],i)=>{ const b=new THREE.Mesh(new THREE.IcosahedronGeometry(r*s,1), i%2?leafB:leafA);
+        b.position.set(x*s,yy*s,z*s); g.add(b); });
+    const sh=shadowPlane(1.1*s,1.1*s,0.3); sh.rotation.x=-Math.PI/2; sh.position.y=0.012; g.add(sh);
+    g.rotation.y=(bx*7+by)%3.14;
+    g.position.copy(T3(bx,by,0)); scene.add(g);
+  }
+  // atrium corners
+  plant(-8.8,-17,1.2); plant(8.8,-17,1.1); plant(-8.8,-1.1,1.0); plant(8.8,-1.1,1.15);
+  // rooms: two far corners each (clear of doorways, boards and windows)
+  plant(19.9,5.5,1.0);  plant(19.9,18.5,1.1);    // Art for Sale
+  plant(-19.9,5.5,1.1); plant(-19.9,18.5,1.0);   // About
+  plant(19.9,23.5,1.05);plant(19.9,36.5,1.0);    // Art by Artists
+  plant(-19.9,23.5,1.0);plant(-19.9,36.5,1.1);   // Artists
+  plant(19.9,41.5,1.1); plant(19.9,54.5,1.0);    // Services
+  plant(-19.9,41.5,1.0);plant(-19.9,54.5,1.05);  // Contact
+  // galleries wing + the four gallery rooms
+  plant(-22.9,65.2,1.2); plant(22.9,65.2,1.2); plant(-22.9,78.8,1.0); plant(22.9,78.8,1.0);
+  plant(-22.6,90.8,0.95); plant(-10.6,90.8,0.95); plant(1.4,90.8,0.95); plant(13.4,90.8,0.95);
 }
 
 // Atrium (x[-10,10] y[-18,0]) — side walls carry windows at y=-13 and y=-5,
@@ -851,9 +908,9 @@ function makeArtMesh(slot, tex, item){
   // soft contact shadow, sitting on the wall and falling slightly downward
   const sh=shadowPlane(w+0.44, h+0.44, 0.6);
   place(sh, 0.004 - slot.off); sh.position.y -= 0.05; sh.renderOrder=-1;
-  // gold reveal (back) -> dark mat -> artwork (front)
+  // white gallery frame (back) -> dark mat -> artwork (front)
   place(new THREE.Mesh(new THREE.PlaneGeometry(w+0.16,h+0.16),
-    new THREE.MeshStandardMaterial({color:0xb8912f, metalness:0.95, roughness:0.32, envMapIntensity:1.6})), 0);
+    new THREE.MeshStandardMaterial({color:0xf6f3ec, metalness:0.0, roughness:0.42, envMapIntensity:0.5})), 0);
   place(new THREE.Mesh(new THREE.PlaneGeometry(w+0.07,h+0.07),
     new THREE.MeshStandardMaterial({color:0x171512, roughness:0.55, metalness:0.1})), 0.006);
   const art=new THREE.Mesh(new THREE.PlaneGeometry(w,h),
@@ -895,6 +952,16 @@ async function fillArt(){
   for(const k in GALLERY_LOC){ const lp=withPhoto.filter(p=>(p.loc||'').toLowerCase().includes(GALLERY_LOC[k])); ovf.push(...lp.slice(roomMax(k))); }
   const seen=new Set();
   addOverflow(ovf.filter(p=>{ const id=p.pid||p.id; if(seen.has(id))return false; seen.add(id); return true; }));
+  // put the live numbers onto the wall boards, now that we know them
+  STATS.Home=`${artists.length} ARTISTS   ·   ${withPhoto.length} WORKS   ·   4 GALLERIES`;
+  STATS.AFS=`${forSale.length} WORKS AVAILABLE`;
+  STATS.ABA=`${available.length} WORKS, GROUPED BY ARTIST`;
+  STATS.ART=`${artistsOk.length} REPRESENTED ARTISTS`;
+  STATS.SRV='FRAMING  ·  VALUATIONS  ·  COMMISSIONS  ·  DELIVERY';
+  STATS.ABT='EST. AS EMMANUEL ART  ·  JOHANNESBURG';
+  STATS.CON='FOUR GALLERIES ACROSS JOHANNESBURG';
+  for(const k in GALLERY_LOC) STATS[k]=`${gcount[k]||0} WORKS AT THIS GALLERY`;
+  refreshBoards();
   // "street art": the catalogue's Street-art series, or a piece tagged street art / graffiti / urban etc.
   const streetRe  = /street[\s\-]*art|graffiti|urban|mural|spray|stencil/i;
   const street    = withPhoto.filter(p=> streetRe.test([p.medium,p.desc,p.title,p.artist].join(' ')));
@@ -942,6 +1009,10 @@ function dressScene(root){
     }
     else if(n.includes('Ceil')){ m.roughness=0.95; m.envMapIntensity=0.2; }
     else if(n.startsWith('Beam')){ o.visible=false; }   // replaced by an aligned grid in addBeams()
+    else if(n.startsWith('Bench')||n.startsWith('Plinth')){
+      const bb=new THREE.Box3().setFromObject(o), sz=bb.getSize(new THREE.Vector3()), ct=bb.getCenter(new THREE.Vector3());
+      const sh=shadowPlane(sz.x*1.6, sz.z*1.6, 0.3); sh.rotation.x=-Math.PI/2; sh.position.set(ct.x,0.012,ct.z); scene.add(sh);
+    }
     else if(n.startsWith('Window')){
       // replace the flat Blender emissive box with a controlled, wall-flush glass + frame
       const bb=new THREE.Box3().setFromObject(o); const size=bb.getSize(new THREE.Vector3());
@@ -1051,6 +1122,7 @@ function animate(){
     addAtriumArt();
     addMoreArt();
     furnish();
+    addPlants();
     await fillArt();
     renderer.setAnimationLoop(animate);
     $('#load').style.display='none';
