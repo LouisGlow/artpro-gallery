@@ -900,22 +900,51 @@ function fitAspect(aspect, maxW, maxH){
   if(h>maxH){ h=maxH; w=h*aspect; }
   return [w,h];
 }
+// parse a catalogue size like "119 x 89 cm" / "1.2 x 0.9 m" / "890x600mm" -> metres
+function parseDims(s){
+  if(!s) return null;
+  const m=String(s).match(/(\d+(?:[.,]\d+)?)\s*[x×]\s*(\d+(?:[.,]\d+)?)\s*(mm|cm|m)?/i);
+  if(!m) return null;
+  const k=(m[3]||'cm').toLowerCase()==='mm'?0.001:(m[3]||'cm').toLowerCase()==='m'?1:0.01;
+  const a=parseFloat(m[1].replace(',','.'))*k, b=parseFloat(m[2].replace(',','.'))*k;
+  return (a>0.05&&b>0.05&&a<5&&b<5) ? {w:a,h:b} : null;   // sanity: 5cm..5m
+}
 function makeArtMesh(slot, tex, item){
-  let w=slot.maxW, h=slot.maxH;
-  if(tex && tex.image && tex.image.width){ [w,h]=fitAspect(tex.image.width/tex.image.height, slot.maxW, slot.maxH); }
+  const aspect=(tex && tex.image && tex.image.width) ? tex.image.width/tex.image.height : 1.25;
+  // Real catalogue dimensions: the frame size is the OUTER measurement of the hung piece;
+  // with no frame entry (or "No frame") the art size sets it. Fallback: image aspect in-slot.
+  const orient=d=> d && ((aspect>=1)!==(d.w>=d.h)) ? {w:d.h,h:d.w} : d;   // match photo orientation
+  const fd=orient(item?parseDims(item.frame):null);
+  const ad=orient(item?parseDims(item.art):null);
+  const frameless=!fd && !!item && /no\s*frame/i.test(item.frame||'');
+  const F=0.16;
+  let outerW,outerH;
+  if(fd){ outerW=fd.w; outerH=fd.h; }
+  else if(ad){ outerW=ad.w+(frameless?0:F); outerH=ad.h+(frameless?0:F); }
+  else { const s=fitAspect(aspect,slot.maxW,slot.maxH); outerW=s[0]+(frameless?0:F); outerH=s[1]+(frameless?0:F); }
+  // true size, but never crowd the neighbouring slots
+  const cap=Math.min(1,(slot.maxW+F)/outerW,(slot.maxH+F)/outerH);
+  outerW*=cap; outerH*=cap;
+  const B=Math.min(F, outerW*0.22, outerH*0.22);   // frame border scales down for small works
   const place=(mesh,d)=>{ mesh.position.copy(slot.pos).addScaledVector(slot.normal, slot.off+d);
     mesh.lookAt(mesh.position.clone().add(slot.normal)); scene.add(mesh); return mesh; };
   // soft contact shadow, sitting on the wall and falling slightly downward
-  const sh=shadowPlane(w+0.44, h+0.44, 0.6);
+  const sh=shadowPlane(outerW+0.28, outerH+0.28, 0.6);
   place(sh, 0.004 - slot.off); sh.position.y -= 0.05; sh.renderOrder=-1;
-  // white gallery frame (back) -> dark mat -> artwork (front)
-  place(new THREE.Mesh(new THREE.PlaneGeometry(w+0.16,h+0.16),
-    new THREE.MeshStandardMaterial({color:0xf6f3ec, metalness:0.0, roughness:0.42, envMapIntensity:0.5})), 0);
-  place(new THREE.Mesh(new THREE.PlaneGeometry(w+0.07,h+0.07),
-    new THREE.MeshStandardMaterial({color:0x171512, roughness:0.55, metalness:0.1})), 0.006);
-  const art=new THREE.Mesh(new THREE.PlaneGeometry(w,h),
+  let iw=outerW, ih=outerH;
+  if(!frameless){
+    // white gallery frame (back) -> dark mat -> artwork (front)
+    place(new THREE.Mesh(new THREE.PlaneGeometry(outerW,outerH),
+      new THREE.MeshStandardMaterial({color:0xf6f3ec, metalness:0.0, roughness:0.42, envMapIntensity:0.5})), 0);
+    place(new THREE.Mesh(new THREE.PlaneGeometry(outerW-B*0.56,outerH-B*0.56),
+      new THREE.MeshStandardMaterial({color:0x171512, roughness:0.55, metalness:0.1})), 0.006);
+    iw=outerW-B; ih=outerH-B;
+  }
+  // the photo keeps its own aspect inside the mat, so it is never stretched
+  const s2=fitAspect(aspect, iw, ih);
+  const art=new THREE.Mesh(new THREE.PlaneGeometry(s2[0],s2[1]),
     tex? new THREE.MeshBasicMaterial({map:tex}) : new THREE.MeshStandardMaterial({color:0xb7a17a,roughness:0.9}));
-  place(art, 0.012); slot.mesh=art;
+  place(art, frameless?0.006:0.012); slot.mesh=art;
   if(item){   // carry the catalogue record so the crosshair can show its wall label
     art.userData.info=item;
     art.userData.kind = slot.prefix==='ART' ? 'artist' : 'piece';

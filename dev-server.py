@@ -20,6 +20,13 @@ pieces = [{"pid": f"p{i}", "photo": p.replace("\\", "/"), "id": f"X-{i}",
            "desc": os.path.basename(p), "artist": "Preview", "medium": "Oil",
            "status": "On display", "loc": "", "featured": i < 6}
           for i, p in enumerate(imgs)]
+# exercise the real-dimension paths: big framed / small framed / frameless
+SIZES = [{"art": "119 x 89 cm", "frame": "143 x 112 cm"},
+         {"art": "40 x 30 cm",  "frame": ""},
+         {"art": "90 x 60 cm",  "frame": "No frame"}]
+for i, s in enumerate(SIZES):
+    if i < len(pieces):
+        pieces[i].update(s)
 PIECES = json.dumps({"pieces": pieces}).encode()
 
 class H(http.server.SimpleHTTPRequestHandler):
