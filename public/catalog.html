@@ -65,6 +65,7 @@
 .apc-checks{display:flex;flex-direction:column;}
 .apc-check{display:flex;align-items:center;gap:12px;padding:11px 4px;border-top:1px solid var(--border);cursor:pointer;font-size:15px;}
 .apc-table tr[data-featured="1"] .apc-id::after{content:" \2605";color:var(--gold);}
+.apc-nf-row{display:flex;gap:22px;align-items:center;flex-wrap:wrap;}
 .apc-nf{display:flex;align-items:center;gap:9px;font-size:13.5px;color:var(--muted);cursor:pointer;margin-top:6px;}
 .apc-nf input{width:18px;height:18px;accent-color:var(--gold);}
 .apc-check:first-child{border-top:0;}
@@ -217,7 +218,7 @@
             </div>
             <div class="apc-pair">
               <div class="apc-field"><label for="e_art">Art size</label><input type="text" id="e_art"></div>
-              <div class="apc-field"><label for="e_frame">Frame size</label><input type="text" id="e_frame"><label class="apc-nf"><input type="checkbox" id="e_no_frame"> No frame</label></div>
+              <div class="apc-field"><label for="e_frame">Frame size</label><input type="text" id="e_frame"><div class="apc-nf-row"><label class="apc-nf"><input type="checkbox" id="e_no_frame"> No frame</label><label class="apc-nf"><input type="checkbox" id="e_glass"> Glass</label></div></div>
             </div>
           </div>
           <aside class="apc-side">
@@ -285,7 +286,8 @@
       loc:     c[7].textContent.trim(),
       status:  c[8].textContent.trim(),
       archived: tr.getAttribute('data-archived') === '1',
-      featured: tr.getAttribute('data-featured') === '1'
+      featured: tr.getAttribute('data-featured') === '1',
+      glass: tr.getAttribute('data-glass') === '1'
     };
   }
   // Re-render the whole table from the store (the source of truth).
@@ -333,6 +335,7 @@
     var img = c[0].querySelector('img'), eimg = g('e_photo_img');
     if(img){ eimg.src = img.src; eimg.classList.add('has'); } else { eimg.classList.remove('has'); }
     g('e_photo').value = ''; g('e_photo_text').textContent = 'Change photo';
+    g('e_glass').checked = current.getAttribute('data-glass') === '1';
     g('e_featured').checked = current.getAttribute('data-featured') === '1';
     g('e_archive').textContent = current.getAttribute('data-archived') === '1' ? 'Restore' : 'Archive';
     modal.classList.add('is-open'); document.body.style.overflow = 'hidden';
@@ -375,7 +378,8 @@
       loc:    g('e_location').value.trim(),
       status: statusText(),
       archived: current.getAttribute('data-archived') === '1',
-      featured: g('e_featured').checked
+      featured: g('e_featured').checked,
+      glass: g('e_glass').checked
     };
     ArtProStore.update(piece.pid, piece).then(function(){ close(); reload(); }).catch(function(err){
       if(errEl){ errEl.textContent = (err && err.message) || 'Could not save — please try again.'; errEl.style.display = ''; }
@@ -507,6 +511,7 @@
     if(d.pid){ tr.setAttribute('data-pid', d.pid); }
     if(d.archived){ tr.setAttribute('data-archived', '1'); }
     if(d.featured){ tr.setAttribute('data-featured', '1'); }
+    if(d.glass){ tr.setAttribute('data-glass', '1'); }
     tbody.appendChild(tr); return tr;
   }
   var msgT;

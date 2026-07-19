@@ -40,7 +40,8 @@ function rowToPiece(r) {
     loc: r.loc || '',
     status: r.status || '',
     archived: !!r.archived,
-    featured: !!r.featured
+    featured: !!r.featured,
+    glass: !!r.glass
   };
 }
 
@@ -54,7 +55,7 @@ function publicPiece(r) {
     pid: r.pid, photo: photo,
     id: r.art_id || '', desc: r.descr || '', artist: r.artist || '',
     medium: r.medium || '', art: r.art_size || '', frame: r.frame || '', status: r.status || '',
-    loc: r.loc || '', featured: !!r.featured
+    loc: r.loc || '', featured: !!r.featured, glass: !!r.glass
   };
 }
 
@@ -97,6 +98,7 @@ function pieceColumns(body, pid, now) {
     status: (body.status || '').toString(),
     archived: body.archived ? 1 : 0,
     featured: body.featured ? 1 : 0,
+    glass: body.glass ? 1 : 0,
     now
   };
 }
@@ -116,6 +118,7 @@ async function ensureSchema(db) {
          art_size TEXT NOT NULL DEFAULT '', frame TEXT NOT NULL DEFAULT '',
          loc TEXT NOT NULL DEFAULT '', status TEXT NOT NULL DEFAULT '',
          archived INTEGER NOT NULL DEFAULT 0, featured INTEGER NOT NULL DEFAULT 0,
+         glass INTEGER NOT NULL DEFAULT 0,
          created INTEGER NOT NULL DEFAULT 0, updated INTEGER NOT NULL DEFAULT 0
        )`
     ),
@@ -148,6 +151,7 @@ async function ensureSchema(db) {
   ]);
   // Add columns to a pre-existing pieces table (idempotent — ignore if present).
   try { await db.prepare(`ALTER TABLE pieces ADD COLUMN featured INTEGER NOT NULL DEFAULT 0`).run(); } catch (e) {}
+  try { await db.prepare(`ALTER TABLE pieces ADD COLUMN glass INTEGER NOT NULL DEFAULT 0`).run(); } catch (e) {}
   schemaReady = true;
 }
 
@@ -196,7 +200,7 @@ async function handleApi(request, env, url) {
   // Public read for the website's own pages — non-archived pieces, no location.
   if (pathname === '/api/public/pieces') {
     const { results } = await env.DB.prepare(
-      `SELECT pid, photo, art_id, descr, artist, medium, art_size, frame, loc, status, featured, updated
+      `SELECT pid, photo, art_id, descr, artist, medium, art_size, frame, loc, status, featured, glass, updated
          FROM pieces WHERE archived = 0 ORDER BY artist ASC, created ASC, rowid ASC`
     ).all();
     return json({ pieces: (results || []).map(publicPiece) });
@@ -264,7 +268,7 @@ async function handleApi(request, env, url) {
   // Staff: full JSON backup — pieces + artists (metadata) + content.
   if (pathname === '/api/admin/export' && method === 'GET') {
     const [p, a, c] = await Promise.all([
-      env.DB.prepare(`SELECT pid, photo, art_id, descr, artist, medium, art_size, frame, loc, status, archived, featured, created, updated FROM pieces ORDER BY created ASC`).all(),
+      env.DB.prepare(`SELECT pid, photo, art_id, descr, artist, medium, art_size, frame, loc, status, archived, featured, glass, created, updated FROM pieces ORDER BY created ASC`).all(),
       env.DB.prepare(`SELECT slug, name, photo, bio, represented, sort_order, created, updated FROM artists ORDER BY sort_order ASC, name ASC`).all(),
       env.DB.prepare(`SELECT key, value, updated FROM site_content`).all()
     ]);
@@ -349,7 +353,7 @@ async function handleApi(request, env, url) {
   if (pathname === '/api/pieces') {
     if (method === 'GET') {
       const { results } = await env.DB.prepare(
-        `SELECT pid, photo, art_id, descr, artist, medium, art_size, frame, loc, status, archived, featured, updated
+        `SELECT pid, photo, art_id, descr, artist, medium, art_size, frame, loc, status, archived, featured, glass, updated
            FROM pieces ORDER BY created ASC, rowid ASC`
       ).all();
       return json({ pieces: (results || []).map(rowToPiece) });
@@ -364,10 +368,10 @@ async function handleApi(request, env, url) {
         if (dup.results && dup.results.length) return json({ error: 'ID "' + c.art_id + '" is already used by another piece.' }, 409);
       }
       await env.DB.prepare(
-        `INSERT INTO pieces (pid, photo, photo_blob, photo_type, art_id, descr, artist, medium, art_size, frame, loc, status, archived, featured, created, updated)
-         VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`
-      ).bind(pid, c.photo, c.photo_blob, c.photo_type, c.art_id, c.descr, c.artist, c.medium, c.art_size, c.frame, c.loc, c.status, c.archived, c.featured, now, now).run();
-      const { results } = await env.DB.prepare(`SELECT pid, photo, art_id, descr, artist, medium, art_size, frame, loc, status, archived, featured, updated FROM pieces WHERE pid = ?`).bind(pid).all();
+        `INSERT INTO pieces (pid, photo, photo_blob, photo_type, art_id, descr, artist, medium, art_size, frame, loc, status, archived, featured, glass, created, updated)
+         VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`
+      ).bind(pid, c.photo, c.photo_blob, c.photo_type, c.art_id, c.descr, c.artist, c.medium, c.art_size, c.frame, c.loc, c.status, c.archived, c.featured, c.glass, now, now).run();
+      const { results } = await env.DB.prepare(`SELECT pid, photo, art_id, descr, artist, medium, art_size, frame, loc, status, archived, featured, glass, updated FROM pieces WHERE pid = ?`).bind(pid).all();
       return json({ piece: rowToPiece(results[0]) }, 201);
     }
     return json({ error: 'Method not allowed' }, 405);
@@ -404,14 +408,14 @@ async function handleApi(request, env, url) {
       // /api/pieces/:pid/photo), keep the stored blob untouched.
       if (c.hasImage) {
         await env.DB.prepare(
-          `UPDATE pieces SET photo=?, photo_blob=?, photo_type=?, art_id=?, descr=?, artist=?, medium=?, art_size=?, frame=?, loc=?, status=?, archived=?, featured=?, updated=? WHERE pid=?`
-        ).bind(c.photo, c.photo_blob, c.photo_type, c.art_id, c.descr, c.artist, c.medium, c.art_size, c.frame, c.loc, c.status, c.archived, c.featured, now, pid).run();
+          `UPDATE pieces SET photo=?, photo_blob=?, photo_type=?, art_id=?, descr=?, artist=?, medium=?, art_size=?, frame=?, loc=?, status=?, archived=?, featured=?, glass=?, updated=? WHERE pid=?`
+        ).bind(c.photo, c.photo_blob, c.photo_type, c.art_id, c.descr, c.artist, c.medium, c.art_size, c.frame, c.loc, c.status, c.archived, c.featured, c.glass, now, pid).run();
       } else {
         await env.DB.prepare(
-          `UPDATE pieces SET photo=?, art_id=?, descr=?, artist=?, medium=?, art_size=?, frame=?, loc=?, status=?, archived=?, featured=?, updated=? WHERE pid=?`
-        ).bind(c.photo, c.art_id, c.descr, c.artist, c.medium, c.art_size, c.frame, c.loc, c.status, c.archived, c.featured, now, pid).run();
+          `UPDATE pieces SET photo=?, art_id=?, descr=?, artist=?, medium=?, art_size=?, frame=?, loc=?, status=?, archived=?, featured=?, glass=?, updated=? WHERE pid=?`
+        ).bind(c.photo, c.art_id, c.descr, c.artist, c.medium, c.art_size, c.frame, c.loc, c.status, c.archived, c.featured, c.glass, now, pid).run();
       }
-      const { results } = await env.DB.prepare(`SELECT pid, photo, art_id, descr, artist, medium, art_size, frame, loc, status, archived, featured, updated FROM pieces WHERE pid = ?`).bind(pid).all();
+      const { results } = await env.DB.prepare(`SELECT pid, photo, art_id, descr, artist, medium, art_size, frame, loc, status, archived, featured, glass, updated FROM pieces WHERE pid = ?`).bind(pid).all();
       if (!results || !results.length) return json({ error: 'Not found' }, 404);
       return json({ piece: rowToPiece(results[0]) });
     }
