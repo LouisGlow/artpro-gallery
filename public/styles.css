@@ -323,8 +323,8 @@ a { color: inherit; }
 }
 .svc-row:hover { padding-left: 14px; background: color-mix(in oklab, var(--gold) 8%, transparent); }
 .svc-row__num { font-family: var(--font-display); color: var(--gold-deep); font-size: 15px; letter-spacing: 0.1em; }
-.svc-row__name { font-family: var(--font-display); font-weight: 500; text-transform: uppercase; letter-spacing: 0.08em; font-size: clamp(20px, 2.6vw, 30px); line-height: 1.1; color: var(--ink-deep); }
-.svc-row__desc { color: var(--muted); font-size: 14.5px; margin-top: 6px; max-width: 54ch; }
+.svc-row__name { display: block; font-family: var(--font-display); font-weight: 500; text-transform: uppercase; letter-spacing: 0.08em; font-size: clamp(20px, 2.6vw, 30px); line-height: 1.1; color: var(--ink-deep); }
+.svc-row__desc { display: block; color: var(--muted); font-size: 14.5px; margin-top: 9px; max-width: 54ch; }
 .svc-row__meta { font-family: var(--font-display); text-transform: uppercase; letter-spacing: 0.14em; font-size: 12px; color: var(--muted); white-space: nowrap; }
 @media (max-width: 640px) {
   .svc-row { grid-template-columns: 40px 1fr; }
