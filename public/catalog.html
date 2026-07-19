@@ -163,7 +163,7 @@
 
       <div class="apc-table-wrap">
         <table class="apc-table">
-          <thead><tr><th>Photo</th><th>ID</th><th>Description</th><th>Artist</th><th>Medium</th><th>Art size</th><th>Frame size</th><th>Location</th><th>Status</th></tr></thead>
+          <thead><tr><th>Photo</th><th>ID</th><th>Artist</th><th>Description</th><th>Medium</th><th>Art size</th><th>Frame size</th><th>Location</th><th>Status</th></tr></thead>
           <tbody><!-- rows rendered from the store (assets/store.js); seeded from assets/catalog-seed.js on a fresh device --></tbody>
         </table>
       </div>
@@ -286,8 +286,8 @@
       pid:     tr.getAttribute('data-pid') || '',
       photo:   img ? img.getAttribute('src') : '',
       id:      c[1].textContent.trim(),
-      desc:    c[2].textContent.trim(),
-      artist:  c[3].textContent.trim(),
+      artist:  c[2].textContent.trim(),
+      desc:    c[3].textContent.trim(),
       medium:  c[4].textContent.trim(),
       art:     c[5].textContent.trim(),
       frame:   fr === '—' ? '' : fr,
@@ -323,11 +323,11 @@
   function openRow(tr){
     current = tr; var c = cells(tr);
     var _err = g('e_err'); if(_err){ _err.style.display = 'none'; }
-    // 0 photo | 1 id | 2 desc | 3 medium | 4 art | 5 frame | 6 location | 7 status
-    g('e_heading').textContent = c[2].textContent.trim() || 'Piece';
+    // 0 photo | 1 id | 2 artist | 3 desc | 4 medium | 5 art | 6 frame | 7 location | 8 status
+    g('e_heading').textContent = c[3].textContent.trim() || 'Piece';
     g('e_id').value     = c[1].textContent.trim();
-    g('e_desc').value   = c[2].textContent.trim();
-    setSelect(g('e_artist'), c[3].textContent.trim());
+    setSelect(g('e_artist'), c[2].textContent.trim());
+    g('e_desc').value   = c[3].textContent.trim();
     setSelect(g('e_medium'), c[4].textContent.trim());
     g('e_art').value    = c[5].textContent.trim();
     var fr = c[6].textContent.trim();
@@ -523,7 +523,7 @@
       if(tr.style.display === 'none'){ return; }
       var c = tr.querySelectorAll('td'), img = c[0].querySelector('img');
       var fr = c[6].textContent.trim(); if(fr === '—'){ fr = ''; }
-      lines.push([ c[1].textContent.trim(), c[2].textContent.trim(), c[3].textContent.trim(),
+      lines.push([ c[1].textContent.trim(), c[3].textContent.trim(), c[2].textContent.trim(),
         c[4].textContent.trim(), c[5].textContent.trim(), fr, c[7].textContent.trim(), c[8].textContent.trim(), img ? img.getAttribute('src') : '' ]);
     });
     var csv = lines.map(function(r){ return r.map(csvCell).join(','); }).join('\n');
@@ -567,7 +567,7 @@
     var photo = (d.photo && d.photo.trim()) ? d.photo.trim() : 'assets/images/artists/_placeholder.jpg';
     var tr = document.createElement('tr');
     tr.innerHTML = '<td><img src="' + esc(photo) + '" alt="" loading="lazy"></td>' +
-      '<td class="apc-id">' + esc(d.id) + '</td><td>' + esc(d.desc) + '</td><td>' + esc(d.artist) + '</td><td>' + esc(d.medium) + '</td>' +
+      '<td class="apc-id">' + esc(d.id) + '</td><td>' + esc(d.artist) + '</td><td>' + esc(d.desc) + '</td><td>' + esc(d.medium) + '</td>' +
       '<td>' + esc(d.art) + '</td><td>' + (esc(d.frame) || '—') + '</td><td>' + esc(d.loc) + '</td>' +
       '<td>' + statusPills(d.status) + '</td>';
     if(d.pid){ tr.setAttribute('data-pid', d.pid); }
