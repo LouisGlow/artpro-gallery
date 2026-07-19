@@ -147,7 +147,10 @@
 </div>
 
 <div id="load"><span class="spin"></span> Building the gallery…</div>
-<div class="err" id="err"><div><h2>Couldn't start the 3D view</h2><p id="errmsg"></p><p><a href="index.html" style="color:var(--gold)">← Back to the site</a></p></div></div>
+<div class="err" id="err"><div><h2>Couldn't start the 3D view</h2><p id="errmsg"></p>
+  <p style="margin-top:18px;"><button onclick="location.reload()" style="cursor:pointer;border:none;background:var(--gold);color:#0e0d0b;font:inherit;font-weight:700;text-transform:uppercase;letter-spacing:.06em;padding:12px 26px;border-radius:9px;">Try again</button></p>
+  <p style="margin-top:10px;font-size:12px;color:#8c8578;">Usually a brief connection drop — retrying normally fixes it.</p>
+  <p><a href="index.html" style="color:var(--gold)">← Back to the site</a></p></div></div>
 
 <!-- offline fallback for artist portraits (window.ARTPRO_ARTISTS) -->
 <script src="assets/artists-data.js"></script>
@@ -1140,7 +1143,13 @@ function animate(){
 (async function boot(){
   try{
     if(renderer.init) await renderer.init();
-    const gltf = await new GLTFLoader().loadAsync('assets/3d/artpro-gallery.glb');
+    // flaky connections (mobile hotspots) can drop the model download — retry before giving up
+    let gltf=null, lastErr=null;
+    for(let a=1; a<=3 && !gltf; a++){
+      try{ gltf = await new GLTFLoader().loadAsync('assets/3d/artpro-gallery.glb?r='+a); }
+      catch(e){ lastErr=e; await new Promise(r=>setTimeout(r, 800*a)); }
+    }
+    if(!gltf) throw lastErr || new Error('model download failed');
     scene.add(gltf.scene);
     dressScene(gltf.scene);
     addTrim();
