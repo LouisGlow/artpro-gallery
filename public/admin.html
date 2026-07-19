@@ -52,6 +52,8 @@
   .fhead{ font-family:"Barlow Condensed",sans-serif; font-weight:700; text-transform:uppercase; letter-spacing:.08em;
     font-size:17px; color:var(--gold-deep); margin:34px 0 16px; padding-bottom:8px; border-bottom:1px solid var(--border); }
   .fhead:first-child{ margin-top:4px; }
+  .fsub{ font-weight:600; font-size:12px; letter-spacing:.06em; text-transform:uppercase; color:var(--muted);
+    margin:22px 0 14px; padding-bottom:6px; border-bottom:1px dashed var(--border); }
   .field > label{ display:block; font-weight:600; font-size:14px; margin-bottom:7px; }
   .field .hint{ color:var(--muted); font-size:12px; margin:-3px 0 8px; }
   .field input, .field textarea{ width:100%; font:inherit; font-size:14.5px; color:var(--ink);
@@ -128,10 +130,19 @@ function svcFields(list){
   var out = [];
   list.forEach(function(s){
     out.push({ type:'heading', label:s[1] });
+    // --- the card on the Services page ---
+    out.push({ type:'subhead', label:'Card (on the Services page)' });
     out.push({ key:'svc.'+s[0]+'.name',    label:'Name',    type:'text', ph:s[1] });
     out.push({ key:'svc.'+s[0]+'.summary', label:'Summary', type:'textarea', ph:'Short one-line description shown on the card.' });
-    out.push({ key:'svc.'+s[0]+'.image',   label:'Image',   type:'image', media:'svc-'+s[0], def:s[3] });
-    out.push({ key:'svc.'+s[0]+'.link',    label:'Links to (page or URL)', type:'text', ph:s[2] });
+    out.push({ key:'svc.'+s[0]+'.image',   label:'Image',   type:'image', media:'svc-'+s[0], def:s[3], hint:'Shown on the card and at the top of the detail page.' });
+    out.push({ key:'svc.'+s[0]+'.link',    label:'Links to (page or URL)', type:'text', ph:s[2], hint:'The detail page ('+s[2]+'), or an external URL like https://framing.co.za.' });
+    // --- the detail page it links to ---
+    out.push({ type:'subhead', label:'Detail page ('+s[2]+')' });
+    out.push({ key:'svc.'+s[0]+'.headline', label:'Headline', type:'text' });
+    out.push({ key:'svc.'+s[0]+'.sub',      label:'Sub-line (under the headline)', type:'text' });
+    out.push({ key:'svc.'+s[0]+'.body',     label:'Body copy', type:'textarea', hint:'Leave a blank line between paragraphs. Leave empty to keep the current text.' });
+    out.push({ key:'svc.'+s[0]+'.points',   label:'Bullet points', type:'textarea', hint:'One per line. Leave empty to keep the current list.' });
+    out.push({ key:'svc.'+s[0]+'.cta',      label:'Button label', type:'text' });
   });
   return out;
 }
@@ -260,6 +271,7 @@ function show(id){
   var html = '';
   p.fields.forEach(function(f){
     if(f.type==='heading'){ html += '<div class="fhead">'+escAttr(f.label)+'</div>'; return; }
+    if(f.type==='subhead'){ html += '<div class="fsub">'+escAttr(f.label)+'</div>'; return; }
     var val = CONTENT[f.key] != null ? CONTENT[f.key] : '';
     html += '<div class="field">';
     html += '<label for="f_'+f.key+'">'+f.label+'</label>';

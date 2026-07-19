@@ -9,6 +9,9 @@
  *   data-cms-html="key"   -> replaces its HTML (newlines become <br>, text escaped)
  *   data-cms-src="key"    -> replaces an <img> src
  *   data-cms-href="key"   -> replaces an <a> href
+ *   data-cms-paras="key"  -> replaces the element's HTML with <p> paragraphs
+ *                            (blank line = new paragraph, single newline = <br>)
+ *   data-cms-list="key"   -> replaces a <ul>/<ol>'s items, one <li> per line
  *   data-cms-email="1|2"  -> a mailto link kept in sync with contact.email / contact.email2
  * Plus: every tel: link on the page is kept in sync with contact.phone.
  */
@@ -37,6 +40,18 @@
       });
       document.querySelectorAll('[data-cms-href]').forEach(function (el) {
         var k = el.getAttribute('data-cms-href'); if (has(k)) el.setAttribute('href', v(k));
+      });
+      document.querySelectorAll('[data-cms-paras]').forEach(function (el) {
+        var k = el.getAttribute('data-cms-paras'); if (!has(k)) return;
+        el.innerHTML = String(v(k)).split(/\n\s*\n/).map(function (para) {
+          var t = para.trim(); return t ? '<p>' + esc(t).replace(/\n/g, '<br>') + '</p>' : '';
+        }).join('');
+      });
+      document.querySelectorAll('[data-cms-list]').forEach(function (el) {
+        var k = el.getAttribute('data-cms-list'); if (!has(k)) return;
+        el.innerHTML = String(v(k)).split(/\n/).map(function (li) {
+          var t = li.trim(); return t ? '<li>' + esc(t) + '</li>' : '';
+        }).join('');
       });
 
       // Site-wide contact — updates every footer/contact block on the page.
