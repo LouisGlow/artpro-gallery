@@ -130,9 +130,9 @@
     </div>
     <div class="hero__meta">
       <div><div class="stat__num" id="stat-count">6</div><div class="stat__label">Pieces catalogued</div></div>
-      <div><div class="stat__num">4</div><div class="stat__label">Gallery locations</div></div>
+      <div><div class="stat__num" id="stat-artists">—</div><div class="stat__label">Artists represented</div></div>
+      <div><div class="stat__num" id="stat-display">—</div><div class="stat__label">On display now</div></div>
       <div><div class="stat__num">9</div><div class="stat__label">Details per piece</div></div>
-      <div><div class="stat__num">CSV</div><div class="stat__label">One-click BOM export</div></div>
     </div>
   </section>
 
@@ -449,10 +449,16 @@
   function refresh(){
     var rows = Array.prototype.slice.call(tbody.querySelectorAll('tr'));
     var q = query.trim().toLowerCase();
-    var nA = 0, nAr = 0, shown = 0;
+    var nA = 0, nAr = 0, shown = 0, onDisplay = 0, artistSet = {};
     rows.forEach(function(tr){
       var arch = tr.getAttribute('data-archived') === '1';
-      if(arch){ nAr++; } else { nA++; }
+      if(arch){ nAr++; } else {
+        nA++;
+        var c = cells(tr);
+        var artist = (c[2] ? c[2].textContent.trim() : '');
+        if(artist){ artistSet[artist.toLowerCase()] = 1; }
+        if((c[8] ? c[8].textContent : '').toLowerCase().indexOf('display') !== -1){ onDisplay++; }
+      }
       var loc = locOf(tr);
       var galOk = galleryFilter === 'all' || (galleryFilter === '__none__' ? loc === '' : loc === galleryFilter);
       var visible = ((view === 'archived') === arch) && galOk && matchesQuery(tr, q);
@@ -462,6 +468,8 @@
     g('n-active').textContent = nA;
     g('n-archived').textContent = nAr;
     var sc = g('stat-count'); if(sc){ sc.textContent = nA + nAr; }
+    var sa = g('stat-artists'); if(sa){ sa.textContent = Object.keys(artistSet).length; }
+    var sd = g('stat-display'); if(sd){ sd.textContent = onDisplay; }
     var em = g('apc-empty-msg');
     if(em){ em.style.display = shown === 0 ? '' : 'none'; }
   }
