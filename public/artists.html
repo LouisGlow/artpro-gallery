@@ -29,7 +29,7 @@
   .artist-grid { display:grid; grid-template-columns:repeat(2, 1fr); gap:clamp(18px, 2.2vw, 30px); }
   .artist-card {
     display:grid; grid-template-columns:minmax(130px, 40%) 1fr;
-    text-decoration:none; color:inherit; min-height:236px;
+    text-decoration:none; color:inherit; min-height:186px;
     border:1px solid var(--border); background:var(--surface); overflow:hidden;
     transition:border-color .25s ease, box-shadow .3s ease, transform .25s ease;
   }
@@ -43,10 +43,10 @@
   .artist-card__eyebrow { font-family:var(--font-display); text-transform:uppercase; letter-spacing:.24em; font-size:10px; color:var(--gold-deep); margin:0 0 10px; }
   .artist-card__name { font-family:var(--font-display); text-transform:uppercase; letter-spacing:.02em; font-weight:500; font-size:clamp(18px, 1.7vw, 23px); line-height:1.04; color:var(--ink); margin:0; }
   /* mini paintings strip */
-  .artist-card__works { display:flex; gap:7px; margin-top:16px; }
+  .artist-card__works { display:flex; gap:7px; margin-top:14px; }
   .artist-card__works span { flex:0 0 auto; width:46px; height:46px; overflow:hidden; border:1px solid var(--border); background:var(--paper); }
   .artist-card__works img { width:100%; height:100%; object-fit:cover; }
-  .artist-card__cta { margin-top:auto; padding-top:18px; display:flex; align-items:center; gap:10px; font-family:var(--font-display); text-transform:uppercase; letter-spacing:.14em; font-size:12px; color:var(--ink); }
+  .artist-card__cta { margin-top:auto; padding-top:14px; display:flex; align-items:center; gap:10px; font-family:var(--font-display); text-transform:uppercase; letter-spacing:.14em; font-size:12px; color:var(--ink); }
   .artist-card__cta .arw { color:var(--gold); transition:transform .2s ease; }
   .artist-card:hover .artist-card__cta .arw { transform:translateX(5px); }
   .artist-card__cta .count { margin-left:auto; color:var(--muted); letter-spacing:.1em; font-size:11px; }

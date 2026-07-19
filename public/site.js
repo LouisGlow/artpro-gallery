@@ -10,7 +10,7 @@
     back.className = 'nav-back';
     back.type = 'button';
     back.setAttribute('aria-label', 'Go back');
-    back.innerHTML = '<span aria-hidden="true">←</span>';
+    back.innerHTML = '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" aria-hidden="true" focusable="false"><path d="M15 5l-7 7 7 7" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>';
     back.addEventListener('click', function () {
       if (history.length > 1) history.back(); else location.href = 'index.html';
     });
