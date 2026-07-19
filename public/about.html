@@ -49,8 +49,8 @@
 <section class="page-hero wrap">
   <p class="breadcrumb"><a href="index.html">Home</a> / About</p>
   <div class="page-hero__row" style="margin-top:20px;">
-    <h1 class="display display--l" style="max-width:14ch;">A gallery grown across the city</h1>
-    <p class="muted" style="max-width:32ch;">From a humble start as Emmanuel Art to four galleries and fifty represented artists.</p>
+    <h1 class="display display--l" style="max-width:14ch;" data-cms="about.headline">A gallery grown across the city</h1>
+    <p class="muted" style="max-width:32ch;" data-cms="about.lead">From a humble start as Emmanuel Art to four galleries and fifty represented artists.</p>
   </div>
 </section>
 
@@ -127,10 +127,10 @@
 <footer class="site-footer">
   <div class="wrap wrap--wide">
     <div class="footer-top">
-      <div class="footer-brand"><div class="footer-brand__word">ArtPro Gallery</div><p>South African art across four galleries in and around Johannesburg. Delivered with care.</p></div>
+      <div class="footer-brand"><div class="footer-brand__word">ArtPro Gallery</div><p data-cms="footer.blurb">South African art across four galleries in and around Johannesburg. Delivered with care.</p></div>
       <div class="footer-col"><h4>Explore</h4><ul><li><a href="art-for-sale.html">Art for Sale</a></li><li><a href="artists.html">Artists</a></li><li><a href="services.html">Services</a></li><li><a href="about.html">About</a></li><li><a href="gallery-3d.html">3D Gallery (beta)</a></li><li><a href="catalog.html">Staff login</a></li></ul></div>
-      <div class="footer-col"><h4>Contact</h4><ul><li><a href="tel:+27825554272">+27 82 555 4272</a></li><li><a href="mailto:lee@artprogallery.co.za">lee@artprogallery.co.za</a></li><li><a href="mailto:admin@artprogallery.co.za">admin@artprogallery.co.za</a></li><li><a href="contact.html">Find a gallery</a></li></ul></div>
-      <div class="footer-col footer-newsletter"><h4>Newsletter</h4><p style="color:color-mix(in oklab,var(--paper) 60%,transparent);font-size:14px;margin:0 0 12px;">New arrivals and gallery events, occasionally.</p><form onsubmit="return false;"><input type="email" placeholder="Email address" aria-label="Email address"><button class="btn btn--gold" type="submit">Subscribe</button></form></div>
+      <div class="footer-col"><h4>Contact</h4><ul><li><a href="tel:+27825554272">+27 82 555 4272</a></li><li><a data-cms-email="1" href="mailto:lee@artprogallery.co.za">lee@artprogallery.co.za</a></li><li><a data-cms-email="2" href="mailto:admin@artprogallery.co.za">admin@artprogallery.co.za</a></li><li><a href="contact.html">Find a gallery</a></li></ul></div>
+      <div class="footer-col footer-newsletter"><h4>Newsletter</h4><p style="color:color-mix(in oklab,var(--paper) 60%,transparent);font-size:14px;margin:0 0 12px;" data-cms="footer.newsletter">New arrivals and gallery events, occasionally.</p><form onsubmit="return false;"><input type="email" placeholder="Email address" aria-label="Email address"><button class="btn btn--gold" type="submit">Subscribe</button></form></div>
     </div>
     <div class="footer-bottom">
       <p>© 2026 ArtPro Gallery · Lee Holloway. All rights reserved.</p>
@@ -140,5 +140,6 @@
 </footer>
 
 <script src="site.js"></script>
+<script src="assets/content.js"></script>
 </body>
 </html>

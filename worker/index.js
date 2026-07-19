@@ -132,7 +132,19 @@ async function ensureSchema(db) {
          created INTEGER NOT NULL DEFAULT 0, updated INTEGER NOT NULL DEFAULT 0
        )`
     ),
-    db.prepare(`CREATE INDEX IF NOT EXISTS idx_artists_sort ON artists(sort_order, name)`)
+    db.prepare(`CREATE INDEX IF NOT EXISTS idx_artists_sort ON artists(sort_order, name)`),
+    // Editable site content (CMS) — key/value text, and uploaded media blobs.
+    // Additive: this never touches the pieces/artists tables.
+    db.prepare(
+      `CREATE TABLE IF NOT EXISTS site_content (
+         key TEXT PRIMARY KEY, value TEXT NOT NULL DEFAULT '', updated INTEGER NOT NULL DEFAULT 0
+       )`
+    ),
+    db.prepare(
+      `CREATE TABLE IF NOT EXISTS site_media (
+         key TEXT PRIMARY KEY, blob BLOB, type TEXT, updated INTEGER NOT NULL DEFAULT 0
+       )`
+    )
   ]);
   // Add columns to a pre-existing pieces table (idempotent — ignore if present).
   try { await db.prepare(`ALTER TABLE pieces ADD COLUMN featured INTEGER NOT NULL DEFAULT 0`).run(); } catch (e) {}
@@ -196,6 +208,74 @@ async function handleApi(request, env, url) {
       `SELECT slug, name, photo, bio, represented, sort_order, updated FROM artists ORDER BY sort_order ASC, name ASC`
     ).all();
     return json({ artists: (results || []).map(rowToArtist) });
+  }
+
+  // ---- CMS: editable site content (public read; staff write) ----
+  // Public: the whole content map the website hydrates from.
+  if (pathname === '/api/public/content') {
+    const { results } = await env.DB.prepare(`SELECT key, value FROM site_content`).all();
+    const content = {};
+    (results || []).forEach(function (r) { content[r.key] = r.value; });
+    return new Response(JSON.stringify({ content }), {
+      status: 200, headers: { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'public, max-age=30' }
+    });
+  }
+  // Staff: save a batch of content keys.  Body: { content: { key: value, ... } }
+  if (pathname === '/api/content' && method === 'PUT') {
+    const body = await request.json().catch(() => ({}));
+    const entries = Object.entries((body && body.content) || {});
+    const now = Date.now();
+    if (entries.length) {
+      await env.DB.batch(entries.map(function (kv) {
+        return env.DB.prepare(
+          `INSERT INTO site_content (key, value, updated) VALUES (?,?,?)
+             ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated = excluded.updated`
+        ).bind(String(kv[0]).slice(0, 200), (kv[1] == null ? '' : String(kv[1])), now);
+      }));
+    }
+    return json({ ok: true, saved: entries.length });
+  }
+
+  // Uploaded CMS media, e.g. /api/media/home-hero  (public GET, staff PUT)
+  const mm = pathname.match(/^\/api\/media\/([a-z0-9._-]+)$/i);
+  if (mm) {
+    const key = mm[1];
+    if (method === 'GET') {
+      const { results } = await env.DB.prepare(`SELECT blob, type FROM site_media WHERE key = ?`).bind(key).all();
+      const row = results && results[0];
+      if (!row || !row.blob) return new Response('Not found', { status: 404 });
+      const bytes = row.blob instanceof ArrayBuffer ? new Uint8Array(row.blob) : Uint8Array.from(row.blob);
+      return new Response(bytes, { status: 200, headers: { 'content-type': row.type || 'application/octet-stream', 'cache-control': 'public, max-age=31536000' } });
+    }
+    if (method === 'PUT') {
+      const body = await request.json().catch(() => ({}));
+      const img = decodeDataUrl(body.photo);
+      if (!img) return json({ error: 'Expected an image data URL in { photo }' }, 400);
+      const now = Date.now();
+      await env.DB.prepare(
+        `INSERT INTO site_media (key, blob, type, updated) VALUES (?,?,?,?)
+           ON CONFLICT(key) DO UPDATE SET blob = excluded.blob, type = excluded.type, updated = excluded.updated`
+      ).bind(key, img.bytes, img.type, now).run();
+      return json({ ok: true, url: '/api/media/' + key + '?v=' + now });
+    }
+    return json({ error: 'Method not allowed' }, 405);
+  }
+
+  // Staff: full JSON backup — pieces + artists (metadata) + content.
+  if (pathname === '/api/admin/export' && method === 'GET') {
+    const [p, a, c] = await Promise.all([
+      env.DB.prepare(`SELECT pid, photo, art_id, descr, artist, medium, art_size, frame, loc, status, archived, featured, created, updated FROM pieces ORDER BY created ASC`).all(),
+      env.DB.prepare(`SELECT slug, name, photo, bio, represented, sort_order, created, updated FROM artists ORDER BY sort_order ASC, name ASC`).all(),
+      env.DB.prepare(`SELECT key, value, updated FROM site_content`).all()
+    ]);
+    const content = {}; (c.results || []).forEach(function (r) { content[r.key] = r.value; });
+    return json({
+      exportedAt: new Date().toISOString(),
+      counts: { pieces: (p.results || []).length, artists: (a.results || []).length, content: (c.results || []).length },
+      pieces: (p.results || []).map(rowToPiece),
+      artists: (a.results || []).map(rowToArtist),
+      content: content
+    });
   }
 
   // /api/artists (staff list + create)
@@ -352,14 +432,15 @@ async function handleApi(request, env, url) {
 // dashboard). Until it's set, nothing is locked (avoids locking ourselves out
 // before setup). /api/health stays open so the client can detect the API.
 // The username is ignored — staff just need the password.
-const GATED_PAGES = ['/catalog', '/add-a-piece', '/manage-artists'];
+const GATED_PAGES = ['/catalog', '/add-a-piece', '/manage-artists', '/admin'];
 function isGatedPage(pathname) {
   return GATED_PAGES.some(function (p) { return pathname === p || pathname === p + '.html'; });
 }
 function needsAuth(pathname, method) {
   if (pathname === '/api/health') return false;
-  if (pathname === '/api/public/pieces' || pathname === '/api/public/artists') return false; // public reads
+  if (pathname === '/api/public/pieces' || pathname === '/api/public/artists' || pathname === '/api/public/content') return false; // public reads
   if (method === 'GET' && /^\/api\/(pieces|artists)\/[^/]+\/photo$/.test(pathname)) return false; // public images
+  if (method === 'GET' && /^\/api\/media\/[a-z0-9._-]+$/i.test(pathname)) return false;           // public CMS media
   if (pathname.startsWith('/api/')) return true;                                // staff reads + all writes
   return isGatedPage(pathname);                                                 // staff HTML pages
 }

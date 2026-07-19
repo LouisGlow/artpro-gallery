@@ -67,17 +67,17 @@
 <section class="hero wrap">
   <div class="hero__grid">
     <div>
-      <p class="kicker">South African art · est. as Emmanuel Art</p>
-      <h1 class="display display--xl hero__headline">Four galleries.<br>Fifty artists.</h1>
-      <p class="lead" style="margin-top:22px;">A home for South African masterpieces, decorative art and investment pieces — gathered across four galleries in and around Johannesburg, and delivered to your wall with care.</p>
+      <p class="kicker" data-cms="home.hero.kicker">South African art · est. as Emmanuel Art</p>
+      <h1 class="display display--xl hero__headline" data-cms-html="home.hero.headline">Four galleries.<br>Fifty artists.</h1>
+      <p class="lead" style="margin-top:22px;" data-cms="home.hero.lead">A home for South African masterpieces, decorative art and investment pieces — gathered across four galleries in and around Johannesburg, and delivered to your wall with care.</p>
       <div class="hero__actions">
         <a class="btn" href="art-for-sale.html">View art for sale <span class="btn__arrow">→</span></a>
         <a class="btn btn--ghost" href="contact.html">Visit a gallery</a>
       </div>
     </div>
     <figure class="hero__figure" style="margin:0;">
-      <img src="assets/images/hero.jpg" alt="Interior of ArtPro Gallery, artworks hung salon-style" width="1000" height="750" fetchpriority="high" decoding="async">
-      <figcaption class="hero__figcap">Sunninghill Village — main floor</figcaption>
+      <img src="assets/images/hero.jpg" data-cms-src="home.hero.image" alt="Interior of ArtPro Gallery, artworks hung salon-style" width="1000" height="750" fetchpriority="high" decoding="async">
+      <figcaption class="hero__figcap" data-cms="home.hero.figcap">Sunninghill Village — main floor</figcaption>
     </figure>
   </div>
 
@@ -94,10 +94,10 @@
 <!-- ============ INTRO ============ -->
 <section class="section wrap">
   <div class="hero__grid" style="align-items:start;">
-    <p class="eyebrow reveal" style="max-width:16ch;">From a humble start as Emmanuel Art — a gallery grown across the city.</p>
+    <p class="eyebrow reveal" style="max-width:16ch;" data-cms="home.intro.eyebrow">From a humble start as Emmanuel Art — a gallery grown across the city.</p>
     <div class="reveal">
-      <p class="lead">ArtPro Gallery presents a wide spectrum of South African artists alongside a considered range of interior decorative design. Traditional masterpieces and investment art sit next to modern carpets, statues and decorative lamps.</p>
-      <p class="muted" style="margin-top:18px;max-width:60ch;">Beyond the walls, we offer framing, commission work, validation certificates, interior-design support and auctions — the full support an art collection needs, from the first piece to the fiftieth.</p>
+      <p class="lead" data-cms="home.intro.lead">ArtPro Gallery presents a wide spectrum of South African artists alongside a considered range of interior decorative design. Traditional masterpieces and investment art sit next to modern carpets, statues and decorative lamps.</p>
+      <p class="muted" style="margin-top:18px;max-width:60ch;" data-cms="home.intro.muted">Beyond the walls, we offer framing, commission work, validation certificates, interior-design support and auctions — the full support an art collection needs, from the first piece to the fiftieth.</p>
       <a class="tlink" href="about.html" style="margin-top:22px;display:inline-block;">Our story</a>
     </div>
   </div>
@@ -144,35 +144,53 @@
     <p class="muted reveal" style="max-width:34ch;">Each gallery carries its own character — one doubles as our art-classes studio.</p>
   </div>
   <div class="loc-grid reveal">
-    <div class="loc">
-      <span class="loc__idx">01 — Sandton</span>
-      <span class="loc__name">Sunninghill Village</span>
-      <span class="loc__addr">Lower level, shop LL 8<br>Sunninghill Village, Sandton, 2157</span>
-      <span class="loc__tag"><span>Head office</span></span>
+    <div class="loc" data-gallery="sunninghill-village">
+      <span class="loc__idx" data-cms="gallery.sunninghill.area">01 — Sandton</span>
+      <span class="loc__name" data-cms="gallery.sunninghill.name">Sunninghill Village</span>
+      <span class="loc__addr" data-cms-html="gallery.sunninghill.address">Lower level, shop LL 8<br>Sunninghill Village, Sandton, 2157</span>
+      <span class="loc__tag"><span data-cms="gallery.sunninghill.tag">Head office</span></span>
       <a class="tlink" href="gallery.html?g=sunninghill-village" style="margin-top:10px;">See the gallery →</a>
     </div>
-    <div class="loc">
-      <span class="loc__idx">02 — Kyalami</span>
-      <span class="loc__name">Prison Break Market</span>
-      <span class="loc__addr">Cnr Main &amp; 10 MacMillan Road, Lachlan Rd<br>Glenferness AH, Midrand, 2191</span>
-      <span class="loc__tag"><span>Art-classes studio</span></span>
+    <div class="loc" data-gallery="prison-break-market">
+      <span class="loc__idx" data-cms="gallery.prison.area">02 — Kyalami</span>
+      <span class="loc__name" data-cms="gallery.prison.name">Prison Break Market</span>
+      <span class="loc__addr" data-cms-html="gallery.prison.address">Cnr Main &amp; 10 MacMillan Road, Lachlan Rd<br>Glenferness AH, Midrand, 2191</span>
+      <span class="loc__tag"><span data-cms="gallery.prison.tag">Art-classes studio</span></span>
       <a class="tlink" href="gallery.html?g=prison-break-market" style="margin-top:10px;">See the gallery →</a>
     </div>
-    <div class="loc">
-      <span class="loc__idx">03 — Randpark Ridge</span>
-      <span class="loc__name">ArtPro @ Lifestyle</span>
-      <span class="loc__addr">Shop E, Lifestyle Garden Centre<br>22 Ysterhout Dr, Johannesburg, 2115</span>
-      <span class="loc__tag"><span>Garden centre</span></span>
+    <div class="loc" data-gallery="artpro-lifestyle">
+      <span class="loc__idx" data-cms="gallery.lifestyle.area">03 — Randpark Ridge</span>
+      <span class="loc__name" data-cms="gallery.lifestyle.name">ArtPro @ Lifestyle</span>
+      <span class="loc__addr" data-cms-html="gallery.lifestyle.address">Shop E, Lifestyle Garden Centre<br>22 Ysterhout Dr, Johannesburg, 2115</span>
+      <span class="loc__tag"><span data-cms="gallery.lifestyle.tag">Garden centre</span></span>
       <a class="tlink" href="gallery.html?g=artpro-lifestyle" style="margin-top:10px;">See the gallery →</a>
     </div>
+    <script>
+    // Auto-use each gallery's own 01.jpg on its card once photos are dropped in.
+    document.querySelectorAll('.loc[data-gallery]').forEach(function(card){
+      if(card.querySelector('.loc__photo')) return;              // already has a photo
+      var g = card.dataset.gallery, name = (card.querySelector('.loc__name')||{}).textContent || '';
+      var src = 'assets/images/galleries/' + g + '/01.jpg';
+      var probe = new Image();
+      probe.onload = function(){
+        var a = document.createElement('a');
+        a.className = 'loc__photo'; a.href = 'gallery.html?g=' + g;
+        a.setAttribute('aria-label', 'See the ' + name + ' gallery');
+        var img = document.createElement('img');
+        img.loading = 'lazy'; img.decoding = 'async'; img.src = src; img.alt = 'Inside ' + name;
+        a.appendChild(img); card.insertBefore(a, card.firstElementChild);
+      };
+      probe.src = src;
+    });
+    </script>
     <div class="loc">
       <a class="loc__photo" href="gallery.html?g=maggies-farm" aria-label="See the Maggies Farm gallery">
         <img loading="lazy" decoding="async" src="assets/images/loc-maggies-farm.jpg" alt="Inside Maggies Farm — salon-hung artworks and sculpture plinths">
       </a>
-      <span class="loc__idx">04 — Lanseria</span>
-      <span class="loc__name">Maggies Farm</span>
-      <span class="loc__addr">R512 Pelindaba Rd, Lanseria, 1748<br>Maggies Home of the Chicken Pie</span>
-      <span class="loc__tag"><span>Farm gallery</span></span>
+      <span class="loc__idx" data-cms="gallery.maggies.area">04 — Lanseria</span>
+      <span class="loc__name" data-cms="gallery.maggies.name">Maggies Farm</span>
+      <span class="loc__addr" data-cms-html="gallery.maggies.address">R512 Pelindaba Rd, Lanseria, 1748<br>Maggies Home of the Chicken Pie</span>
+      <span class="loc__tag"><span data-cms="gallery.maggies.tag">Farm gallery</span></span>
       <a class="tlink" href="gallery.html?g=maggies-farm" style="margin-top:10px;">See the gallery →</a>
     </div>
   </div>
@@ -235,7 +253,7 @@
     <div class="footer-top">
       <div class="footer-brand">
         <div class="footer-brand__word">ArtPro Gallery</div>
-        <p>South African art across four galleries in and around Johannesburg. Delivered with care.</p>
+        <p data-cms="footer.blurb">South African art across four galleries in and around Johannesburg. Delivered with care.</p>
       </div>
       <div class="footer-col">
         <h4>Explore</h4>
@@ -250,14 +268,14 @@
         <h4>Contact</h4>
         <ul>
           <li><a href="tel:+27825554272">+27 82 555 4272</a></li>
-          <li><a href="mailto:lee@artprogallery.co.za">lee@artprogallery.co.za</a></li>
-          <li><a href="mailto:admin@artprogallery.co.za">admin@artprogallery.co.za</a></li>
+          <li><a data-cms-email="1" href="mailto:lee@artprogallery.co.za">lee@artprogallery.co.za</a></li>
+          <li><a data-cms-email="2" href="mailto:admin@artprogallery.co.za">admin@artprogallery.co.za</a></li>
           <li><a href="contact.html">Find a gallery</a></li>
         </ul>
       </div>
       <div class="footer-col footer-newsletter">
         <h4>Newsletter</h4>
-        <p style="color:color-mix(in oklab,var(--paper) 60%,transparent);font-size:14px;margin:0 0 12px;">New arrivals and gallery events, occasionally.</p>
+        <p style="color:color-mix(in oklab,var(--paper) 60%,transparent);font-size:14px;margin:0 0 12px;" data-cms="footer.newsletter">New arrivals and gallery events, occasionally.</p>
         <form onsubmit="return false;">
           <input type="email" placeholder="Email address" aria-label="Email address">
           <button class="btn btn--gold" type="submit">Subscribe</button>
@@ -277,6 +295,7 @@
 
 <script src="assets/lightbox.js"></script>
 <script src="site.js"></script>
+<script src="assets/content.js"></script>
 <script>
 (function(){
   var grid = document.getElementById('feat-grid');
