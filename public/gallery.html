@@ -151,24 +151,36 @@
       });
     }
   }
-  // Use the listed photos, or auto-discover NN.jpg in the gallery's folder.
-  // DROP-IN: just add 01.jpg, 02.jpg… to assets/images/galleries/<slug>/ — no code edit needed.
-  if((g.photos || []).length){
-    renderPhotos(g.photos);
-  } else {
-    (function discover(){
-      var base = 'assets/images/galleries/' + g.slug + '/';
-      var found = [], i = 1, misses = 0;
-      (function next(){
-        if(i > 80 || misses >= 3){ renderPhotos(found); return; }
-        var n = (i < 10 ? '0' : '') + i;
-        fetch(base + n + '.jpg', { method: 'HEAD' })
-          .then(function(r){ if(r.ok){ found.push(base + n + '.jpg'); misses = 0; } else { misses++; } })
-          .catch(function(){ misses++; })
-          .then(function(){ i++; next(); });
-      })();
+  function discoverPhotos(){
+    // Auto-discover NN.jpg in the gallery's folder (drop-in, no code edit).
+    var base = 'assets/images/galleries/' + g.slug + '/';
+    var found = [], i = 1, misses = 0;
+    (function next(){
+      if(i > 80 || misses >= 3){ renderPhotos(found); return; }
+      var n = (i < 10 ? '0' : '') + i;
+      fetch(base + n + '.jpg', { method: 'HEAD' })
+        .then(function(r){ if(r.ok){ found.push(base + n + '.jpg'); misses = 0; } else { misses++; } })
+        .catch(function(){ misses++; })
+        .then(function(){ i++; next(); });
     })();
   }
+  // Prefer the admin-managed photo list (DB) when it exists; otherwise use the
+  // static list from galleries-data.js, else auto-discover the folder.
+  fetch('/api/public/content', { cache: 'no-store' })
+    .then(function(r){ return r.ok ? r.json() : { content:{} }; })
+    .then(function(res){
+      var override = null;
+      var raw = ((res && res.content) || {})['gallery.' + (g.key || '') + '.photos'];
+      if(typeof raw === 'string' && raw.trim()){
+        try { var arr = JSON.parse(raw); if(Array.isArray(arr)) override = arr; } catch(e){}
+      }
+      if(override){ renderPhotos(override); }
+      else if((g.photos || []).length){ renderPhotos(g.photos); }
+      else { discoverPhotos(); }
+    })
+    .catch(function(){
+      if((g.photos || []).length){ renderPhotos(g.photos); } else { discoverPhotos(); }
+    });
 
   // ---- art currently at this gallery (from the catalogue, by location) ----
   var artGrid = document.getElementById('g-art');

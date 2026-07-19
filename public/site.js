@@ -1,5 +1,26 @@
 // ArtPro Gallery — shared behaviour
 (function () {
+  // back button — sits to the left of the logo on every page (except home)
+  var inner = document.querySelector('.site-header__inner');
+  var brand = inner && inner.querySelector('.brand');
+  var path = location.pathname.replace(/\/+$/, '');
+  var isHome = path === '' || /\/index(\.html)?$/.test(path) || path === '/index';
+  if (inner && brand && !isHome) {
+    var back = document.createElement('button');
+    back.className = 'nav-back';
+    back.type = 'button';
+    back.setAttribute('aria-label', 'Go back');
+    back.innerHTML = '<span aria-hidden="true">←</span>';
+    back.addEventListener('click', function () {
+      if (history.length > 1) history.back(); else location.href = 'index.html';
+    });
+    var group = document.createElement('div');
+    group.className = 'header-left';
+    inner.insertBefore(group, brand);
+    group.appendChild(back);
+    group.appendChild(brand);
+  }
+
   // mobile nav
   var toggle = document.querySelector('.nav-toggle');
   var nav = document.getElementById('primary-nav');

@@ -66,6 +66,19 @@
     font-weight:600; font-size:13px; padding:10px 18px; border-radius:8px; cursor:pointer; text-decoration:none; }
   .btn2:hover{ background:var(--gold); color:#241d10; }
   .load{ padding:60px; text-align:center; color:var(--muted); }
+  /* gallery photo manager */
+  .pgrid{ display:grid; grid-template-columns:repeat(auto-fill, minmax(140px,1fr)); gap:12px; margin:4px 0 18px; }
+  .pcell{ position:relative; aspect-ratio:4/3; border:1px solid var(--border); border-radius:8px; overflow:hidden; background:#efe9dd; }
+  .pcell img{ width:100%; height:100%; object-fit:cover; display:block; }
+  .pcell .num{ position:absolute; left:6px; bottom:6px; background:rgba(33,29,24,.78); color:#fff; font-size:11px; font-weight:600; padding:2px 7px; border-radius:20px; }
+  .pcell .hero{ background:var(--gold); color:#241d10; }
+  .pcell .del{ position:absolute; top:6px; right:6px; width:26px; height:26px; border:0; border-radius:50%;
+    background:rgba(33,29,24,.72); color:#fff; font-size:15px; line-height:1; cursor:pointer; display:flex; align-items:center; justify-content:center; }
+  .pcell .del:hover{ background:#a5382f; }
+  .padd{ display:flex; align-items:center; justify-content:center; aspect-ratio:4/3; border:1.5px dashed var(--gold);
+    border-radius:8px; color:var(--gold-deep); background:none; font:inherit; font-weight:600; font-size:13px; cursor:pointer; text-align:center; padding:8px; }
+  .padd:hover{ background:rgba(184,145,47,.08); }
+  .pempty{ color:var(--muted); font-size:13px; margin:4px 0 14px; }
   @media (max-width:760px){ .app{ flex-direction:column; } .side{ width:100%; height:auto; position:static; flex-basis:auto; } }
 </style>
 </head>
@@ -138,11 +151,13 @@ const SCHEMA = [
     ['sunninghill','Sunninghill Village'], ['prison','Prison Break Market'],
     ['lifestyle','ArtPro @ Lifestyle'], ['maggies','Maggies Farm']
   ].map(function(g){ return {
-    id:'g-'+g[0], title:g[1], desc:'Shown on the homepage “Four galleries” card.', fields:[
+    id:'g-'+g[0], title:g[1], desc:'Card on the homepage “Four galleries” + the gallery’s own page.', fields:[
       { key:'gallery.'+g[0]+'.area',    label:'Area line (small, above name)', type:'text' },
       { key:'gallery.'+g[0]+'.name',    label:'Gallery name', type:'text' },
       { key:'gallery.'+g[0]+'.address', label:'Address', type:'textarea', hint:'Each new line becomes a line break.' },
       { key:'gallery.'+g[0]+'.tag',     label:'Tag (small badge)', type:'text' },
+      { key:'gallery.'+g[0]+'.photos',  label:'Gallery photos', type:'photos', gallery:g[0],
+        hint:'Photos of the physical gallery, shown on its page. Add or remove — the first one is the large hero.' },
     ] };
   })},
   { group:'Tools', panels:[
@@ -151,11 +166,31 @@ const SCHEMA = [
 ];
 
 const PANELS = {}; SCHEMA.forEach(function(g){ g.panels.forEach(function(p){ PANELS[p.id]=p; }); });
+
+// Starting photo set for each gallery when nothing has been saved yet — the
+// files already shipped in assets/images/galleries/<slug>/. Once saved (or
+// edited), the DB list takes over. Keeps existing photos deletable from here.
+const DEFAULT_PHOTOS = {
+  sunninghill: [], prison: [], lifestyle: [],
+  maggies: [
+    'assets/images/galleries/maggies-farm/01.jpg','assets/images/galleries/maggies-farm/02.jpg',
+    'assets/images/galleries/maggies-farm/03.jpg','assets/images/galleries/maggies-farm/04.jpg',
+    'assets/images/galleries/maggies-farm/05.jpg','assets/images/galleries/maggies-farm/06.jpg',
+    'assets/images/galleries/maggies-farm/07.jpg','assets/images/galleries/maggies-farm/08.jpg',
+    'assets/images/galleries/maggies-farm/09.jpg','assets/images/galleries/maggies-farm/10.jpg',
+    'assets/images/galleries/maggies-farm/11.jpg','assets/images/galleries/maggies-farm/12.jpg',
+    'assets/images/galleries/maggies-farm/13.jpg','assets/images/galleries/maggies-farm/14.jpg',
+    'assets/images/galleries/maggies-farm/15.jpg','assets/images/galleries/maggies-farm/16.jpg',
+    'assets/images/galleries/maggies-farm/17.jpg'
+  ]
+};
+
 const $ = function(s){ return document.querySelector(s); };
 let CONTENT = {};          // live values from the DB
 let current = null;        // current panel id
 let dirty = {};            // pending text changes {key:value}
 let pendingImages = {};    // {mediaKey: dataURL}
+let galPhotos = null;      // active photos field: { key, gallery, list:[urls] }
 
 // ---------- sidebar ----------
 (function buildNav(){
@@ -178,7 +213,7 @@ function escAttr(s){ return String(s==null?'':s).replace(/[&<>"]/g,function(c){r
 
 // ---------- render a panel ----------
 function show(id){
-  current = id; dirty = {}; pendingImages = {};
+  current = id; dirty = {}; pendingImages = {}; galPhotos = null;
   document.querySelectorAll('.side__item').forEach(function(b){ b.classList.toggle('active', b.dataset.panel===id); });
   var p = PANELS[id]; if(!p) return;
   $('#ptitle').textContent = p.title; $('#pdesc').textContent = p.desc || '';
@@ -193,7 +228,15 @@ function show(id){
     html += '<div class="field">';
     html += '<label for="f_'+f.key+'">'+f.label+'</label>';
     if(f.hint) html += '<div class="hint">'+f.hint+'</div>';
-    if(f.type==='textarea'){
+    if(f.type==='photos'){
+      // seed the working list from the DB value, else the shipped defaults
+      var list = null;
+      if(typeof val==='string' && val.trim()){ try{ var a=JSON.parse(val); if(Array.isArray(a)) list=a; }catch(e){} }
+      if(!list) list = (DEFAULT_PHOTOS[f.gallery] || []).slice();
+      galPhotos = { key:f.key, gallery:f.gallery, list:list };
+      html += '<div id="pwrap"></div>'
+            + '<input type="file" id="pfile" accept="image/*" multiple hidden>';
+    } else if(f.type==='textarea'){
       html += '<textarea id="f_'+f.key+'" data-key="'+f.key+'" placeholder="'+escAttr(f.ph||'')+'">'+escAttr(val)+'</textarea>';
     } else if(f.type==='image'){
       var cur = val || '';
@@ -219,6 +262,56 @@ function show(id){
     } else {
       inp.addEventListener('input', function(){ dirty[inp.dataset.key] = inp.value; markDirty(); });
     }
+  });
+
+  if(galPhotos) initPhotoField();
+}
+
+// ---------- gallery photo manager ----------
+function initPhotoField(){
+  renderPhotoGrid();
+  var file = $('#pfile');
+  file.addEventListener('change', function(){
+    var files = Array.prototype.slice.call(file.files || []);
+    file.value = '';
+    if(!files.length) return;
+    setStatus('Adding photo'+(files.length>1?'s':'')+'…');
+    // upload each, in order, appending as they land
+    (function nextFile(i){
+      if(i >= files.length){ setStatus('Photo'+(files.length>1?'s':'')+' added — Save to publish'); return; }
+      readImage(files[i], 1600, function(dataUrl){
+        var mk = 'gal-' + galPhotos.gallery + '-' + Math.random().toString(36).slice(2,10);
+        fetch('/api/media/'+mk, { method:'PUT', headers:{'content-type':'application/json'}, body:JSON.stringify({ photo:dataUrl }) })
+          .then(function(r){ return r.json(); })
+          .then(function(res){ if(res && res.url){ galPhotos.list.push(res.url); renderPhotoGrid(); markDirty(); } })
+          .catch(function(){ setStatus('Upload failed — check your connection','err'); })
+          .then(function(){ nextFile(i+1); });
+      });
+    })(0);
+  });
+}
+
+function renderPhotoGrid(){
+  var wrap = $('#pwrap'); if(!wrap || !galPhotos) return;
+  var html = '';
+  if(!galPhotos.list.length){ html += '<div class="pempty">No photos yet — add the first one below.</div>'; }
+  html += '<div class="pgrid">';
+  galPhotos.list.forEach(function(url, i){
+    html += '<div class="pcell">'
+      + '<img src="'+escAttr(url)+'" alt="">'
+      + '<span class="num'+(i===0?' hero':'')+'">'+(i===0?'Hero':('#'+(i+1)))+'</span>'
+      + '<button class="del" type="button" data-i="'+i+'" title="Remove">&times;</button>'
+      + '</div>';
+  });
+  html += '<button type="button" class="padd" id="paddbtn">+ Add photos</button>';
+  html += '</div>';
+  wrap.innerHTML = html;
+  wrap.querySelector('#paddbtn').addEventListener('click', function(){ $('#pfile').click(); });
+  wrap.querySelectorAll('.del').forEach(function(b){
+    b.addEventListener('click', function(){
+      galPhotos.list.splice(parseInt(b.dataset.i,10), 1);
+      renderPhotoGrid(); markDirty();
+    });
   });
 }
 
@@ -261,6 +354,11 @@ function readImage(file, maxDim, cb){
 // ---------- save ----------
 $('#save').addEventListener('click', function(){
   var btn = this; btn.disabled = true; setStatus('Saving…');
+  // fold the gallery photo list into the pending text changes if it changed
+  if(galPhotos){
+    var serialized = JSON.stringify(galPhotos.list);
+    if(serialized !== (CONTENT[galPhotos.key] || '')) dirty[galPhotos.key] = serialized;
+  }
   var mediaKeys = Object.keys(pendingImages);
   // 1) upload any new images, collecting their URLs into `dirty`
   Promise.all(mediaKeys.map(function(mk){

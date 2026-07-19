@@ -4,7 +4,7 @@
  * assets/images/galleries/<slug>/NN.jpg. */
 window.ARTPRO_GALLERIES = [
   {
-    slug: 'sunninghill-village', name: 'Sunninghill Village', loc: 'Sunninghill Village',
+    slug: 'sunninghill-village', key: 'sunninghill', name: 'Sunninghill Village', loc: 'Sunninghill Village',
     area: 'Sandton', role: 'Head office',
     address: 'Lower level, shop LL 8, Sunninghill Village, Sandton, 2157',
     tagline: 'Our flagship gallery and head office.',
@@ -12,7 +12,7 @@ window.ARTPRO_GALLERIES = [
     photos: []
   },
   {
-    slug: 'prison-break-market', name: 'Prison Break Market', loc: 'Prison Break Market',
+    slug: 'prison-break-market', key: 'prison', name: 'Prison Break Market', loc: 'Prison Break Market',
     area: 'Kyalami', role: 'Art-classes studio',
     address: 'Cnr Main & 10 MacMillan Road, Lachlan Rd, Glenferness AH, Midrand, 2191',
     tagline: 'Also home to our art-classes studio.',
@@ -20,7 +20,7 @@ window.ARTPRO_GALLERIES = [
     photos: []
   },
   {
-    slug: 'artpro-lifestyle', name: 'ArtPro @ Lifestyle', loc: 'ArtPro @ Lifestyle',
+    slug: 'artpro-lifestyle', key: 'lifestyle', name: 'ArtPro @ Lifestyle', loc: 'ArtPro @ Lifestyle',
     area: 'Randpark Ridge', role: 'Garden-centre gallery',
     address: 'Shop E, Lifestyle Garden Centre, 22 Ysterhout Dr, Johannesburg, 2115',
     tagline: 'Set within the Lifestyle Garden Centre.',
@@ -28,7 +28,7 @@ window.ARTPRO_GALLERIES = [
     photos: []
   },
   {
-    slug: 'maggies-farm', name: 'Maggies Farm', loc: 'Maggies Farm',
+    slug: 'maggies-farm', key: 'maggies', name: 'Maggies Farm', loc: 'Maggies Farm',
     area: 'Lanseria', role: 'Farm gallery',
     address: 'R512 Pelindaba Rd, Lanseria, 1748 — at Maggies, Home of the Chicken Pie',
     tagline: 'Our farm gallery — South African art among the country air.',
