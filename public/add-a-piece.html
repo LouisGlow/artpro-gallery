@@ -85,7 +85,7 @@
     <div class="apc">
       <p class="apc__kicker">Staff · Art catalog</p>
       <h2 class="apc__title">Add a piece</h2>
-      <p class="apc__hint">Add a photo and the piece details, choose the gallery it's in and its status, then tap <b>Save &amp; add next</b>. The form clears each time so you can capture piece after piece.</p>
+      <p class="apc__hint">Add a photo and the piece details, choose the gallery it's in and its status, then tap <b>Save</b>. You'll be taken to the catalog once it's saved.</p>
 
       <form class="apc-form" onsubmit="return false;">
         <div class="apc-field">
@@ -168,7 +168,7 @@
         </div>
 
         <div class="apc-actions">
-          <button type="submit" class="apc-btn">Save &amp; add next</button>
+          <button type="submit" class="apc-btn">Save</button>
           <a class="apc-btn apc-btn--ghost" href="add-a-piece.html">Clear</a>
         </div>
       </form>
@@ -276,11 +276,12 @@
     var descSafe = piece.desc.replace(/</g,'&lt;');
     flash('Saving…');
     ArtProStore.create(piece).then(function(){
-      flash('Saved &ldquo;' + descSafe + '&rdquo; to the catalog. <a class="tlink" href="catalog.html">View catalog &rarr;</a>');
-      resetForm();
+      flash('Saved &ldquo;' + descSafe + '&rdquo; — opening the catalog…');
+      window.location.href = 'catalog.html';   // redirect to the catalog after saving
     }).catch(function(err){
       flash((err && err.message) ? err.message : 'Could not save — check your connection and try again.');
-    }).then(function(){ saving = false; });
+      saving = false;
+    });
   }
 
   if(form){
