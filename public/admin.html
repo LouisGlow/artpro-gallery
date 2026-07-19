@@ -49,6 +49,9 @@
 
   .panel{ padding:clamp(22px,4vw,44px); max-width:820px; }
   .field{ margin-bottom:26px; }
+  .fhead{ font-family:"Barlow Condensed",sans-serif; font-weight:700; text-transform:uppercase; letter-spacing:.08em;
+    font-size:17px; color:var(--gold-deep); margin:34px 0 16px; padding-bottom:8px; border-bottom:1px solid var(--border); }
+  .fhead:first-child{ margin-top:4px; }
   .field > label{ display:block; font-weight:600; font-size:14px; margin-bottom:7px; }
   .field .hint{ color:var(--muted); font-size:12px; margin:-3px 0 8px; }
   .field input, .field textarea{ width:100%; font:inherit; font-size:14.5px; color:var(--ink);
@@ -105,6 +108,34 @@
 </div>
 
 <script>
+// ---------- services on the Services page ----------
+// [id, default name, default link, default shipped image]
+const CORE_SERVICES = [
+  ['framing',    'Framing',    'framing.html',              'assets/images/services/framing.jpg'],
+  ['commission', 'Commission', 'commission.html',           'assets/images/services/commission.jpg'],
+  ['valuations', 'Valuations', 'valuations.html',           'assets/images/services/valuations.jpg'],
+  ['hanging',    'Hanging',    'hanging-of-paintings.html', 'assets/images/services/hanging-of-paintings.jpg'],
+  ['delivery',   'Delivery',   'delivery.html',             'assets/images/services/delivery.jpg'],
+  ['auctions',   'Auctions',   'auctions.html',             'assets/images/services/auctions.jpg'],
+];
+const DECOR_SERVICES = [
+  ['statues', 'Statues', 'statues.html', 'assets/images/services/statues.jpg'],
+  ['carpets', 'Carpets', 'carpets.html', 'assets/images/services/carpets.jpg'],
+  ['lamps',   'Lamps',   'lamps.html',   'assets/images/services/lamps.jpg'],
+];
+// Build the editable fields for a list of services — a heading + 4 fields each.
+function svcFields(list){
+  var out = [];
+  list.forEach(function(s){
+    out.push({ type:'heading', label:s[1] });
+    out.push({ key:'svc.'+s[0]+'.name',    label:'Name',    type:'text', ph:s[1] });
+    out.push({ key:'svc.'+s[0]+'.summary', label:'Summary', type:'textarea', ph:'Short one-line description shown on the card.' });
+    out.push({ key:'svc.'+s[0]+'.image',   label:'Image',   type:'image', media:'svc-'+s[0], def:s[3] });
+    out.push({ key:'svc.'+s[0]+'.link',    label:'Links to (page or URL)', type:'text', ph:s[2] });
+  });
+  return out;
+}
+
 // ---------- editable content structure ----------
 const SCHEMA = [
   { group:'Site-wide', panels:[
@@ -137,15 +168,19 @@ const SCHEMA = [
       { key:'about.headline', label:'Headline', type:'text' },
       { key:'about.lead',     label:'Lead paragraph', type:'textarea' },
     ]},
-    { id:'services', title:'Services page', desc:'The intro at the top of the Services page.', fields:[
-      { key:'services.headline', label:'Headline', type:'text' },
-      { key:'services.lead',     label:'Lead paragraph', type:'textarea' },
-    ]},
     { id:'contact-page', title:'Contact page', desc:'The header and enquiry-form intro on the Contact page.', fields:[
       { key:'contactpage.headline',  label:'Headline', type:'text' },
       { key:'contactpage.lead',      label:'Lead paragraph', type:'textarea' },
       { key:'contactpage.formintro', label:'Enquiry form intro', type:'textarea' },
     ]},
+  ]},
+  { group:'Services page', panels:[
+    { id:'services-intro', title:'Page intro', desc:'The headline and lead at the top of the Services page.', fields:[
+      { key:'services.headline', label:'Headline', type:'text' },
+      { key:'services.lead',     label:'Lead paragraph', type:'textarea' },
+    ]},
+    { id:'services-core', title:'Core services', desc:'The six “Around your collection” cards — image, name and summary of each.', fields: svcFields(CORE_SERVICES) },
+    { id:'services-decor', title:'Decorative & homeware', desc:'The three “Also in the gallery” cards.', fields: svcFields(DECOR_SERVICES) },
   ]},
   { group:'Galleries', panels: [
     ['sunninghill','Sunninghill Village'], ['prison','Prison Break Market'],
@@ -224,6 +259,7 @@ function show(id){
 
   var html = '';
   p.fields.forEach(function(f){
+    if(f.type==='heading'){ html += '<div class="fhead">'+escAttr(f.label)+'</div>'; return; }
     var val = CONTENT[f.key] != null ? CONTENT[f.key] : '';
     html += '<div class="field">';
     html += '<label for="f_'+f.key+'">'+f.label+'</label>';
@@ -239,7 +275,7 @@ function show(id){
     } else if(f.type==='textarea'){
       html += '<textarea id="f_'+f.key+'" data-key="'+f.key+'" placeholder="'+escAttr(f.ph||'')+'">'+escAttr(val)+'</textarea>';
     } else if(f.type==='image'){
-      var cur = val || '';
+      var cur = val || f.def || '';
       html += '<div class="imgrow"><div class="prev" id="prev_'+f.media+'">'+(cur?'<img src="'+escAttr(cur)+'?cb='+Date.now()+'">':'No image')+'</div>'
             + '<div><input class="file" type="file" accept="image/*" data-media="'+f.media+'" data-key="'+f.key+'"><div class="hint" style="margin-top:8px;">JPG/PNG. Auto-resized on upload.</div></div></div>';
     } else {
