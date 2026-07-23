@@ -200,50 +200,53 @@
     buttons.render('#paypal-buttons');
   }
 
+  // load the catalogue into the artwork picker (pre-selects ?piece=)
+  function loadCatalogue(){
+    fetch('/api/public/pieces').then(function(r){ return r.json(); }).then(function(res){
+      var pieces = (res && res.pieces) || [];
+      var sel = $('pay-piece');
+      sel.innerHTML = '<option value="">Select the artwork…</option><option value="__other">Other / not listed</option>';
+      pieces.forEach(function(p){
+        var o = document.createElement('option');
+        o.value = p.id || p.pid || '';
+        o.setAttribute('data-desc', p.desc || '');
+        o.setAttribute('data-artist', p.artist || '');
+        o.textContent = (p.desc || 'Untitled') + (p.artist ? ' - ' + p.artist : '') + (p.id ? ' (' + p.id + ')' : '');
+        sel.appendChild(o);
+      });
+      if(wantPiece){
+        Array.prototype.some.call(sel.options, function(o){
+          if((o.value||'').toLowerCase() === wantPiece){ o.selected = true; return true; }
+          return false;
+        });
+      }
+      updateSummary();
+    }).catch(function(){ $('pay-piece').innerHTML = '<option value="__other">Tell us which artwork</option>'; });
+  }
+
   // ---- boot ----
   fetch('/api/pay/config', { cache:'no-store' })
     .then(function(r){ return r.json(); })
     .then(function(cfg){
-      CFG = cfg;
+      CFG = cfg || {};
       $('pay-loading').classList.add('pay-hide');
-      if(!cfg.enabled || !cfg.clientId){ $('pay-disabled').classList.remove('pay-hide'); return; }
-
-      // currency options
-      var curSel = $('pay-currency');
-      (cfg.currencies || ['USD']).forEach(function(c){
-        var o = document.createElement('option'); o.value=c; o.textContent=c; if(c===cfg.currency) o.selected=true; curSel.appendChild(o);
-      });
-
-      $('pay-form').classList.remove('pay-hide');
-
-      // load the catalogue for the artwork picker
-      fetch('/api/public/pieces').then(function(r){ return r.json(); }).then(function(res){
-        var pieces = (res && res.pieces) || [];
-        var sel = $('pay-piece');
-        sel.innerHTML = '<option value="">Select the artwork…</option><option value="__other">Other / not listed</option>';
-        pieces.forEach(function(p){
-          var o = document.createElement('option');
-          o.value = p.id || p.pid || '';
-          o.setAttribute('data-desc', p.desc || '');
-          o.setAttribute('data-artist', p.artist || '');
-          o.textContent = (p.desc || 'Untitled') + (p.artist ? ' - ' + p.artist : '') + (p.id ? ' (' + p.id + ')' : '');
-          sel.appendChild(o);
-        });
-        if(wantPiece){
-          Array.prototype.some.call(sel.options, function(o){
-            if((o.value||'').toLowerCase() === wantPiece){ o.selected = true; return true; }
-            return false;
-          });
-        }
-        updateSummary();
-      }).catch(function(){ $('pay-piece').innerHTML = '<option value="__other">Enter the artwork with us</option>'; });
-
-      // events
+      $('pay-form').classList.remove('pay-hide');   // the picker + amount always show
+      loadCatalogue();
       $('pay-piece').addEventListener('change', updateSummary);
       $('pay-amount').addEventListener('input', updateSummary);
-      $('pay-currency').addEventListener('change', function(){ updateSummary(); mountButtons($('pay-currency').value); });
 
-      mountButtons($('pay-currency').value);
+      if(CFG.enabled && CFG.clientId){
+        var curSel = $('pay-currency');
+        (CFG.currencies || ['USD']).forEach(function(c){
+          var o = document.createElement('option'); o.value=c; o.textContent=c; if(c===CFG.currency) o.selected=true; curSel.appendChild(o);
+        });
+        $('pay-currency').addEventListener('change', function(){ updateSummary(); mountButtons($('pay-currency').value); });
+        mountButtons($('pay-currency').value);
+      } else {
+        // payments not switched on yet: keep the picker, but explain how to pay
+        $('pay-currency').classList.add('pay-hide');
+        $('paypal-buttons').innerHTML = '<div class="pay-msg" style="border-color:var(--gold);">Online card payment is being switched on. To pay for this piece now, <a class="tlink" href="contact.html">contact us</a> or call <a href="tel:+27825554272">+27 82 555 4272</a> and we’ll send you a secure payment link.</div>';
+      }
     })
     .catch(function(){
       $('pay-loading').classList.add('pay-hide');
