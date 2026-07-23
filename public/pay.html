@@ -1,0 +1,255 @@
+<!doctype html>
+<html lang="en">
+<head>
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-0P4BWM3VNY"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag("js", new Date());
+  gtag("config", "G-0P4BWM3VNY");
+</script>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pay for a piece - ArtPro Gallery</title>
+<meta name="description" content="Make a secure payment for an agreed artwork purchase from ArtPro Gallery.">
+<link rel="icon" href="assets/images/favicon.jpg">
+<meta name="robots" content="noindex">
+<link rel="stylesheet" href="styles.css">
+<style>
+  .pay-wrap { max-width: 620px; }
+  .pay-field { margin-bottom: 22px; }
+  .pay-field label { display:block; font-family:var(--font-display); text-transform:uppercase; letter-spacing:.12em; font-size:12px; color:var(--muted); margin-bottom:8px; }
+  .pay-field select, .pay-field input { width:100%; background:var(--surface); border:1px solid var(--border); padding:14px 16px; font-family:var(--font-body); font-size:16px; color:var(--ink); }
+  .pay-field select:focus, .pay-field input:focus { outline:none; border-color:var(--gold); }
+  .pay-amount-row { display:flex; gap:12px; }
+  .pay-amount-row .amt { flex:1; }
+  .pay-amount-row .cur { flex:0 0 110px; }
+  .pay-summary { background:var(--surface); border:1px solid var(--border); padding:18px 20px; margin:6px 0 22px; font-size:15px; }
+  .pay-summary b { color:var(--ink-deep); }
+  #paypal-buttons { margin-top:10px; min-height:50px; }
+  .pay-note { color:var(--muted); font-size:13px; margin-top:14px; line-height:1.6; }
+  .pay-msg { padding:16px 18px; border:1px solid var(--border); background:var(--surface); font-size:15px; line-height:1.6; }
+  .pay-msg--ok { border-color:#3c7a45; }
+  .pay-msg--err { border-color:#a5382f; color:#8f2f27; }
+  .pay-hide { display:none !important; }
+</style>
+</head>
+<body>
+
+<header class="site-header">
+  <div class="wrap site-header__inner">
+    <a class="brand" href="index.html" aria-label="ArtPro Gallery - home"><img src="assets/images/logo.png" alt="ArtPro Gallery"></a>
+    <nav class="nav" id="primary-nav" aria-label="Primary">
+      <a href="index.html">Home</a>
+      <a href="about.html">About</a>
+      <a href="services.html">Services</a>
+      <a href="artists.html">Artists</a>
+      <a href="art-by-artists.html">Art by Artists</a>
+      <a href="art-for-sale.html">Art for Sale</a>
+      <a href="interactive-gallery.html">Virtual Gallery</a>
+      <a href="contact.html">Contact</a>
+    </nav>
+    <a class="btn btn--gold header-cta" href="art-for-sale.html">Browse art <span class="btn__arrow">&#8594;</span></a>
+    <button class="nav-toggle" aria-label="Menu" aria-controls="primary-nav" aria-expanded="false"><span></span></button>
+  </div>
+</header>
+
+<main>
+  <section class="page-hero wrap">
+    <p class="breadcrumb"><a href="index.html">Home</a> / Pay for a piece</p>
+    <div class="page-hero__row" style="margin-top:20px;">
+      <h1 class="display display--l" style="max-width:16ch;">Pay for a piece</h1>
+      <p class="muted" style="max-width:34ch;">Already agreed a price with us? Choose the artwork, enter the amount and pay securely.</p>
+    </div>
+  </section>
+
+  <section class="section section--tight wrap">
+    <div class="pay-wrap">
+
+      <!-- shown while we check whether payments are configured -->
+      <div id="pay-loading" class="pay-msg">Loading secure payment…</div>
+
+      <!-- shown when PayPal isn't set up yet -->
+      <div id="pay-disabled" class="pay-msg pay-hide">
+        Online payment isn't switched on yet. Please <a class="tlink" href="contact.html">contact us</a> to arrange payment - by EFT or card - and we'll help you complete the purchase.
+      </div>
+
+      <!-- the checkout -->
+      <form id="pay-form" class="pay-hide reveal" onsubmit="return false;">
+        <div class="pay-field">
+          <label for="pay-piece">Artwork</label>
+          <select id="pay-piece"><option value="">Loading the catalogue…</option></select>
+        </div>
+        <div class="pay-field">
+          <label for="pay-amount">Agreed amount</label>
+          <div class="pay-amount-row">
+            <input class="amt" id="pay-amount" type="number" min="1" step="0.01" inputmode="decimal" placeholder="0.00">
+            <select class="cur" id="pay-currency"></select>
+          </div>
+        </div>
+        <div class="pay-summary" id="pay-summary">Enter the artwork and the amount you agreed with us.</div>
+        <div id="paypal-buttons"></div>
+        <div id="pay-result" class="pay-hide" style="margin-top:14px;"></div>
+        <p class="pay-note">Payments are handled securely by PayPal - your card details are entered on PayPal and never touch this site. You can pay with a PayPal account or a card.</p>
+      </form>
+
+    </div>
+  </section>
+</main>
+
+<footer class="site-footer">
+  <div class="wrap wrap--wide">
+    <div class="footer-top">
+      <div class="footer-brand"><div class="footer-brand__word">ArtPro Gallery</div><p data-cms="footer.blurb">South African art across four galleries in and around Johannesburg. Delivered with care.</p></div>
+      <div class="footer-col"><h4>Explore</h4><ul><li><a href="art-for-sale.html">Art for Sale</a></li><li><a href="artists.html">Artists</a></li><li><a href="art-by-artists.html">Art by Artists</a></li><li><a href="services.html">Services</a></li><li><a href="catalog.html">Staff login</a></li></ul></div>
+      <div class="footer-col"><h4>Contact</h4><ul><li><a href="tel:+27825554272">+27 82 555 4272</a></li><li><a data-cms-email="1" href="mailto:lee@artprogallery.co.za">lee@artprogallery.co.za</a></li><li><a data-cms-email="2" href="mailto:admin@artprogallery.co.za">admin@artprogallery.co.za</a></li><li><a href="contact.html">Find a gallery</a></li></ul></div>
+      <div class="footer-col footer-newsletter"><h4>Newsletter</h4><p style="color:color-mix(in oklab,var(--paper) 60%,transparent);font-size:14px;margin:0 0 12px;" data-cms="footer.newsletter">New arrivals and gallery events, occasionally.</p><form onsubmit="return false;"><input type="email" placeholder="Email address" aria-label="Email address"><button class="btn btn--gold" type="submit">Subscribe</button></form></div>
+    </div>
+    <div class="footer-bottom">
+      <p>&#169; 2026 ArtPro Gallery &#183; Lee Holloway. All rights reserved.</p>
+      <div class="footer-social"><a data-cms-href="social.facebook" href="https://web.facebook.com/ArtProGalleries" target="_blank" rel="noopener">Facebook</a><a data-cms-href="social.instagram" href="https://www.instagram.com/artprogallery/" target="_blank" rel="noopener">Instagram</a><a data-cms-href="social.youtube" href="https://www.youtube.com/@ArtProGallery" target="_blank" rel="noopener">YouTube</a></div>
+    </div>
+  </div>
+</footer>
+
+<script src="site.js"></script>
+<script src="assets/content.js"></script>
+<script>
+(function(){
+  var $ = function(id){ return document.getElementById(id); };
+  var params = new URLSearchParams(location.search);
+  var wantPiece = (params.get('piece') || '').toLowerCase();
+  var CFG = null, sdkCurrency = null, buttons = null;
+
+  function esc(s){ var d=document.createElement('div'); d.textContent=String(s==null?'':s); return d.innerHTML; }
+  function fmt(n, cur){ try{ return new Intl.NumberFormat(undefined,{style:'currency',currency:cur}).format(n); }catch(e){ return cur+' '+n.toFixed(2); } }
+
+  function order(){
+    var sel = $('pay-piece'), opt = sel.options[sel.selectedIndex] || {};
+    return {
+      pieceId: sel.value || '',
+      desc: opt.getAttribute ? (opt.getAttribute('data-desc') || '') : '',
+      artist: opt.getAttribute ? (opt.getAttribute('data-artist') || '') : '',
+      amount: parseFloat($('pay-amount').value),
+      currency: $('pay-currency').value
+    };
+  }
+
+  function updateSummary(){
+    var o = order();
+    var s = $('pay-summary');
+    if(o.amount > 0){
+      s.innerHTML = 'You are paying <b>' + esc(fmt(o.amount, o.currency)) + '</b>' + (o.desc ? ' for <b>' + esc(o.desc) + '</b>' + (o.artist ? ' by ' + esc(o.artist) : '') : '') + '.';
+    } else {
+      s.textContent = 'Enter the artwork and the amount you agreed with us.';
+    }
+  }
+
+  function showResult(kind, html){
+    var r = $('pay-result'); r.className = 'pay-msg pay-msg--' + kind; r.innerHTML = html; r.classList.remove('pay-hide');
+  }
+
+  // (re)load the PayPal SDK for a currency and render the buttons
+  function mountButtons(currency){
+    if(sdkCurrency === currency && window.paypal){ renderButtons(); return; }
+    var old = $('paypal-sdk'); if(old) old.remove();
+    try { window.paypal = undefined; } catch(e){}
+    var s = document.createElement('script');
+    s.id = 'paypal-sdk';
+    s.src = 'https://www.paypal.com/sdk/js?client-id=' + encodeURIComponent(CFG.clientId) + '&currency=' + encodeURIComponent(currency) + '&intent=capture';
+    s.onload = function(){ sdkCurrency = currency; renderButtons(); };
+    s.onerror = function(){ $('paypal-buttons').innerHTML = '<div class="pay-msg pay-msg--err">Couldn’t load PayPal. Refresh, or contact us to pay another way.</div>'; };
+    document.head.appendChild(s);
+  }
+
+  function renderButtons(){
+    var wrap = $('paypal-buttons'); wrap.innerHTML = '';
+    if(!window.paypal) return;
+    buttons = paypal.Buttons({
+      style: { color:'gold', shape:'rect', label:'pay', height:48 },
+      createOrder: function(){
+        var o = order();
+        if(!(o.amount > 0)){ showResult('err','Please enter the agreed amount first.'); return Promise.reject(new Error('no amount')); }
+        $('pay-result').classList.add('pay-hide');
+        return fetch('/api/pay/create', { method:'POST', headers:{'content-type':'application/json'}, body: JSON.stringify(o) })
+          .then(function(r){ return r.json(); })
+          .then(function(d){ if(d.error) throw new Error(d.error); return d.id; })
+          .catch(function(e){ showResult('err', esc(e.message || 'Could not start the payment.')); throw e; });
+      },
+      onApprove: function(data){
+        return fetch('/api/pay/capture', { method:'POST', headers:{'content-type':'application/json'}, body: JSON.stringify({ orderId: data.orderID }) })
+          .then(function(r){ return r.json(); })
+          .then(function(d){
+            if(d.ok){
+              $('pay-form').classList.add('pay-hide');
+              $('pay-disabled').classList.add('pay-hide');
+              var box = document.createElement('div');
+              box.className = 'pay-wrap';
+              box.innerHTML = '<div class="pay-msg pay-msg--ok"><b>Thank you - your payment is complete.</b><br>Reference: ' + esc(d.ref) + '<br>We’ll be in touch to arrange delivery or collection. A receipt has been emailed to you by PayPal.</div>';
+              $('pay-form').parentNode.appendChild(box);
+              window.scrollTo({ top: 0, behavior:'smooth' });
+            } else {
+              showResult('err', esc(d.error || 'Payment could not be completed.'));
+            }
+          })
+          .catch(function(){ showResult('err','We couldn’t confirm the payment. If you were charged, contact us with your PayPal reference.'); });
+      },
+      onError: function(){ showResult('err','Something went wrong with PayPal. Please try again.'); }
+    });
+    buttons.render('#paypal-buttons');
+  }
+
+  // ---- boot ----
+  fetch('/api/pay/config', { cache:'no-store' })
+    .then(function(r){ return r.json(); })
+    .then(function(cfg){
+      CFG = cfg;
+      $('pay-loading').classList.add('pay-hide');
+      if(!cfg.enabled || !cfg.clientId){ $('pay-disabled').classList.remove('pay-hide'); return; }
+
+      // currency options
+      var curSel = $('pay-currency');
+      (cfg.currencies || ['USD']).forEach(function(c){
+        var o = document.createElement('option'); o.value=c; o.textContent=c; if(c===cfg.currency) o.selected=true; curSel.appendChild(o);
+      });
+
+      $('pay-form').classList.remove('pay-hide');
+
+      // load the catalogue for the artwork picker
+      fetch('/api/public/pieces').then(function(r){ return r.json(); }).then(function(res){
+        var pieces = (res && res.pieces) || [];
+        var sel = $('pay-piece');
+        sel.innerHTML = '<option value="">Select the artwork…</option><option value="__other">Other / not listed</option>';
+        pieces.forEach(function(p){
+          var o = document.createElement('option');
+          o.value = p.id || p.pid || '';
+          o.setAttribute('data-desc', p.desc || '');
+          o.setAttribute('data-artist', p.artist || '');
+          o.textContent = (p.desc || 'Untitled') + (p.artist ? ' - ' + p.artist : '') + (p.id ? ' (' + p.id + ')' : '');
+          sel.appendChild(o);
+        });
+        if(wantPiece){
+          Array.prototype.some.call(sel.options, function(o){
+            if((o.value||'').toLowerCase() === wantPiece){ o.selected = true; return true; }
+            return false;
+          });
+        }
+        updateSummary();
+      }).catch(function(){ $('pay-piece').innerHTML = '<option value="__other">Enter the artwork with us</option>'; });
+
+      // events
+      $('pay-piece').addEventListener('change', updateSummary);
+      $('pay-amount').addEventListener('input', updateSummary);
+      $('pay-currency').addEventListener('change', function(){ updateSummary(); mountButtons($('pay-currency').value); });
+
+      mountButtons($('pay-currency').value);
+    })
+    .catch(function(){
+      $('pay-loading').classList.add('pay-hide');
+      $('pay-disabled').classList.remove('pay-hide');
+    });
+})();
+</script>
+</body>
+</html>

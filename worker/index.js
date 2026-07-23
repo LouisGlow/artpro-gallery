@@ -147,6 +147,16 @@ async function ensureSchema(db) {
       `CREATE TABLE IF NOT EXISTS site_media (
          key TEXT PRIMARY KEY, blob BLOB, type TEXT, updated INTEGER NOT NULL DEFAULT 0
        )`
+    ),
+    // PayPal orders — a record of each attempted/completed payment.
+    // Additive: never touches pieces/artists.
+    db.prepare(
+      `CREATE TABLE IF NOT EXISTS orders (
+         oid TEXT PRIMARY KEY, piece_id TEXT NOT NULL DEFAULT '', descr TEXT NOT NULL DEFAULT '',
+         artist TEXT NOT NULL DEFAULT '', amount TEXT NOT NULL DEFAULT '', currency TEXT NOT NULL DEFAULT '',
+         status TEXT NOT NULL DEFAULT '', payer TEXT NOT NULL DEFAULT '',
+         created INTEGER NOT NULL DEFAULT 0, updated INTEGER NOT NULL DEFAULT 0
+       )`
     )
   ]);
   // Add columns to a pre-existing pieces table (idempotent — ignore if present).
@@ -186,6 +196,34 @@ function artistColumns(body, slug, now) {
     sort_order: Number.isFinite(body.sortOrder) ? body.sortOrder : 0,
     now
   };
+}
+
+// ---- PayPal (server-side order create + capture) ----
+// Configured via Cloudflare env: PAYPAL_CLIENT_ID, PAYPAL_SECRET (secret),
+// PAYPAL_ENV ('sandbox'|'live'), PAYPAL_CURRENCY (default 'USD'). Until the
+// client id + secret are set, payments stay disabled and the page says so.
+const PAYPAL_CURRENCIES = ['USD', 'GBP', 'EUR', 'AUD', 'CAD'];
+function paypalConfigured(env) { return !!(env.PAYPAL_CLIENT_ID && env.PAYPAL_SECRET); }
+function paypalBase(env) { return env.PAYPAL_ENV === 'live' ? 'https://api-m.paypal.com' : 'https://api-m.sandbox.paypal.com'; }
+async function paypalToken(env) {
+  const auth = btoa(env.PAYPAL_CLIENT_ID + ':' + env.PAYPAL_SECRET);
+  const r = await fetch(paypalBase(env) + '/v1/oauth2/token', {
+    method: 'POST',
+    headers: { 'Authorization': 'Basic ' + auth, 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: 'grant_type=client_credentials'
+  });
+  if (!r.ok) throw new Error('PayPal authentication failed');
+  return (await r.json()).access_token;
+}
+async function paypalApi(env, path, token, body) {
+  const r = await fetch(paypalBase(env) + path, {
+    method: 'POST',
+    headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' },
+    body: body ? JSON.stringify(body) : undefined
+  });
+  const j = await r.json().catch(() => ({}));
+  if (!r.ok) throw new Error((j && j.message) || ('PayPal error ' + r.status));
+  return j;
 }
 
 async function handleApi(request, env, url) {
@@ -280,6 +318,78 @@ async function handleApi(request, env, url) {
       artists: (a.results || []).map(rowToArtist),
       content: content
     });
+  }
+
+  // ---- PayPal checkout ----
+  // Public: whether payments are on, plus the (publishable) client id + currency.
+  if (pathname === '/api/pay/config') {
+    return json({
+      enabled: paypalConfigured(env),
+      clientId: env.PAYPAL_CLIENT_ID || '',
+      currency: (env.PAYPAL_CURRENCY || 'USD').toUpperCase(),
+      env: env.PAYPAL_ENV === 'live' ? 'live' : 'sandbox',
+      currencies: PAYPAL_CURRENCIES
+    });
+  }
+  // Public: create an order for the agreed amount (server sets the amount, so it
+  // can't be tampered with after this point), and record it as pending.
+  if (pathname === '/api/pay/create' && method === 'POST') {
+    if (!paypalConfigured(env)) return json({ error: 'Online payments are not set up yet.' }, 400);
+    const body = await request.json().catch(() => ({}));
+    const amount = parseFloat(body.amount);
+    const currency = String(body.currency || env.PAYPAL_CURRENCY || 'USD').toUpperCase();
+    if (!(amount > 0) || amount > 5000000) return json({ error: 'Please enter a valid amount.' }, 400);
+    if (PAYPAL_CURRENCIES.indexOf(currency) < 0) return json({ error: 'That currency is not supported.' }, 400);
+    const value = amount.toFixed(2);
+    const desc = ('ArtPro Gallery' + (body.desc ? ' - ' + String(body.desc) : '')).slice(0, 127);
+    try {
+      const token = await paypalToken(env);
+      const order = await paypalApi(env, '/v2/checkout/orders', token, {
+        intent: 'CAPTURE',
+        purchase_units: [{
+          amount: { currency_code: currency, value: value },
+          description: desc,
+          custom_id: String(body.pieceId || '').slice(0, 127)
+        }]
+      });
+      const now = Date.now();
+      await env.DB.prepare(
+        `INSERT INTO orders (oid, piece_id, descr, artist, amount, currency, status, payer, created, updated)
+         VALUES (?,?,?,?,?,?,?,?,?,?)`
+      ).bind(order.id, String(body.pieceId || ''), String(body.desc || ''), String(body.artist || ''), value, currency, 'created', '', now, now).run();
+      return json({ id: order.id });
+    } catch (e) { return json({ error: String((e && e.message) || e) }, 502); }
+  }
+  // Public: capture the approved order, verify the captured amount matches what
+  // we created, and mark it paid.
+  if (pathname === '/api/pay/capture' && method === 'POST') {
+    if (!paypalConfigured(env)) return json({ error: 'Online payments are not set up yet.' }, 400);
+    const body = await request.json().catch(() => ({}));
+    const orderId = String(body.orderId || '');
+    if (!orderId) return json({ error: 'Missing order reference.' }, 400);
+    try {
+      const token = await paypalToken(env);
+      const cap = await paypalApi(env, '/v2/checkout/orders/' + encodeURIComponent(orderId) + '/capture', token);
+      const { results } = await env.DB.prepare(`SELECT amount, currency FROM orders WHERE oid = ?`).bind(orderId).all();
+      const rec = results && results[0];
+      let captured = null;
+      try { captured = cap.purchase_units[0].payments.captures[0].amount; } catch (e) {}
+      const ok = cap.status === 'COMPLETED' && rec && captured &&
+        captured.value === rec.amount && captured.currency_code === rec.currency;
+      let payer = '';
+      try { payer = JSON.stringify({ email: cap.payer.email_address, name: cap.payer.name }); } catch (e) {}
+      await env.DB.prepare(`UPDATE orders SET status=?, payer=?, updated=? WHERE oid=?`)
+        .bind(ok ? 'paid' : (cap.status || 'failed'), payer, Date.now(), orderId).run();
+      if (!ok) return json({ ok: false, error: 'Payment was not completed.' }, 400);
+      return json({ ok: true, ref: orderId });
+    } catch (e) { return json({ error: String((e && e.message) || e) }, 502); }
+  }
+  // Staff: recent orders.
+  if (pathname === '/api/admin/orders' && method === 'GET') {
+    const { results } = await env.DB.prepare(
+      `SELECT oid, piece_id, descr, artist, amount, currency, status, payer, created, updated FROM orders ORDER BY created DESC LIMIT 200`
+    ).all();
+    return json({ orders: results || [] });
   }
 
   // /api/artists (staff list + create)
@@ -445,6 +555,7 @@ function needsAuth(pathname, method) {
   if (pathname === '/api/public/pieces' || pathname === '/api/public/artists' || pathname === '/api/public/content') return false; // public reads
   if (method === 'GET' && /^\/api\/(pieces|artists)\/[^/]+\/photo$/.test(pathname)) return false; // public images
   if (method === 'GET' && /^\/api\/media\/[a-z0-9._-]+$/i.test(pathname)) return false;           // public CMS media
+  if (pathname === '/api/pay/config' || pathname === '/api/pay/create' || pathname === '/api/pay/capture') return false; // buyer checkout
   if (pathname.startsWith('/api/')) return true;                                // staff reads + all writes
   return isGatedPage(pathname);                                                 // staff HTML pages
 }
