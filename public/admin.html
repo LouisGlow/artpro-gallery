@@ -125,26 +125,22 @@ const DECOR_SERVICES = [
   ['carpets', 'Carpets', 'carpets.html', 'assets/images/services/carpets.jpg'],
   ['lamps',   'Lamps',   'lamps.html',   'assets/images/services/lamps.jpg'],
 ];
-// Build the editable fields for a list of services - a heading + 4 fields each.
-function svcFields(list){
-  var out = [];
-  list.forEach(function(s){
-    out.push({ type:'heading', label:s[1] });
-    // --- the card on the Services page ---
-    out.push({ type:'subhead', label:'Card (on the Services page)' });
-    out.push({ key:'svc.'+s[0]+'.name',    label:'Name',    type:'text', ph:s[1] });
-    out.push({ key:'svc.'+s[0]+'.summary', label:'Summary', type:'textarea', ph:'Short one-line description shown on the card.' });
-    out.push({ key:'svc.'+s[0]+'.image',   label:'Image',   type:'image', media:'svc-'+s[0], def:s[3], hint:'Shown on the card and at the top of the detail page.' });
-    out.push({ key:'svc.'+s[0]+'.link',    label:'Links to (page or URL)', type:'text', ph:s[2], hint:'The detail page ('+s[2]+'), or an external URL like https://framing.co.za.' });
-    // --- the detail page it links to ---
-    out.push({ type:'subhead', label:'Detail page ('+s[2]+')' });
-    out.push({ key:'svc.'+s[0]+'.headline', label:'Headline', type:'text' });
-    out.push({ key:'svc.'+s[0]+'.sub',      label:'Sub-line (under the headline)', type:'text' });
-    out.push({ key:'svc.'+s[0]+'.body',     label:'Body copy', type:'textarea', hint:'Leave a blank line between paragraphs. Leave empty to keep the current text.' });
-    out.push({ key:'svc.'+s[0]+'.points',   label:'Bullet points', type:'textarea', hint:'One per line. Leave empty to keep the current list.' });
-    out.push({ key:'svc.'+s[0]+'.cta',      label:'Button label', type:'text' });
-  });
-  return out;
+// Build the editable fields for ONE service (the panel title carries its name):
+// the card fields, then the fields for the detail page it links to.
+function svcFields(s){
+  return [
+    { type:'subhead', label:'Card (on the Services page)' },
+    { key:'svc.'+s[0]+'.name',    label:'Name',    type:'text', ph:s[1] },
+    { key:'svc.'+s[0]+'.summary', label:'Summary', type:'textarea', ph:'Short one-line description shown on the card.' },
+    { key:'svc.'+s[0]+'.image',   label:'Image',   type:'image', media:'svc-'+s[0], def:s[3], hint:'Shown on the card and at the top of the detail page.' },
+    { key:'svc.'+s[0]+'.link',    label:'Links to (page or URL)', type:'text', ph:s[2], hint:'The detail page ('+s[2]+'), or an external URL like https://framing.co.za.' },
+    { type:'subhead', label:'Detail page ('+s[2]+')' },
+    { key:'svc.'+s[0]+'.headline', label:'Headline', type:'text' },
+    { key:'svc.'+s[0]+'.sub',      label:'Sub-line (under the headline)', type:'text' },
+    { key:'svc.'+s[0]+'.body',     label:'Body copy', type:'textarea', hint:'Leave a blank line between paragraphs. Leave empty to keep the current text.' },
+    { key:'svc.'+s[0]+'.points',   label:'Bullet points', type:'textarea', hint:'One per line. Leave empty to keep the current list.' },
+    { key:'svc.'+s[0]+'.cta',      label:'Button label', type:'text' },
+  ];
 }
 
 // ---------- editable content structure ----------
@@ -233,9 +229,16 @@ const SCHEMA = [
       { key:'services.headline', label:'Headline', type:'text' },
       { key:'services.lead',     label:'Lead paragraph', type:'textarea' },
     ]},
-    { id:'services-core', title:'Core services', desc:'Services page - the six “Around your collection” cards, plus the detail page each card links to (framing, commission, etc.).', fields: svcFields(CORE_SERVICES) },
-    { id:'services-decor', title:'Decorative & homeware', desc:'Services page - the three “Also in the gallery” cards (Statues, Carpets, Lamps) and their detail pages.', fields: svcFields(DECOR_SERVICES) },
-  ]},
+  ].concat(CORE_SERVICES.map(function(s){ return {
+      id:'svc-'+s[0], title:s[1],
+      desc:'Services page - the “'+s[1]+'” card (Around your collection) and the detail page it links to ('+s[2]+').',
+      fields: svcFields(s)
+  }; })) },
+  { group:'Decorative & homeware', panels: DECOR_SERVICES.map(function(s){ return {
+      id:'svc-'+s[0], title:s[1],
+      desc:'Services page - the “'+s[1]+'” card (Also in the gallery) and the detail page it links to ('+s[2]+').',
+      fields: svcFields(s)
+  }; }) },
   { group:'Galleries', panels: [
     ['sunninghill','Sunninghill Village'], ['prison','Prison Break Market'],
     ['lifestyle','ArtPro @ Lifestyle'], ['maggies','Maggies Farm']
