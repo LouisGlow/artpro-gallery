@@ -22,5 +22,8 @@ public/assets/images/Gallery/
 # Blender backup files
 *.blend1
 
+# Archived experiments kept locally (e.g. the 3D gallery snapshot)
+*.zip
+
 # Local DB backups (live data — keep out of the public repo)
 backups/

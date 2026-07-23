@@ -3,10 +3,10 @@
 Local preview server for ArtPro Gallery (use while offline / on a hotspot).
 
     python dev-server.py
-    -> open  http://127.0.0.1:8099/gallery-3d   (or any page, e.g. /index.html)
+    -> open  http://127.0.0.1:8099/index   (or any page, e.g. /catalog)
 
 Serves the ./public folder AND fakes GET /api/public/pieces from the artwork
-images in public/assets/images/artworks/, so the 3D gallery's walls fill even
+images in public/assets/images/artworks/, so catalogue-driven pages fill even
 without the live Cloudflare Worker. Ctrl+C to stop.
 """
 import http.server, socketserver, os, glob, json
@@ -42,13 +42,13 @@ class H(http.server.SimpleHTTPRequestHandler):
             self.end_headers(); self.wfile.write(b'{"ok":true}'); return
         if path.endswith("/"):
             self.path = path + "index.html"
-        elif "." not in os.path.basename(path):   # extensionless -> .html (e.g. /gallery-3d)
+        elif "." not in os.path.basename(path):   # extensionless -> .html (e.g. /catalog)
             self.path = path + ".html"
         return super().do_GET()
     def log_message(self, *a): pass
 
 socketserver.TCPServer.allow_reuse_address = True
 with socketserver.TCPServer(("127.0.0.1", PORT), H) as httpd:
-    print(f"ArtPro local preview:  http://127.0.0.1:{PORT}/gallery-3d")
+    print(f"ArtPro local preview:  http://127.0.0.1:{PORT}/index")
     print(f"({len(pieces)} preview artworks)  Ctrl+C to stop.")
     httpd.serve_forever()
