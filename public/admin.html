@@ -120,11 +120,6 @@ const CORE_SERVICES = [
   ['delivery',   'Delivery',   'delivery.html',             'assets/images/services/delivery.jpg'],
   ['auctions',   'Auctions',   'auctions.html',             'assets/images/services/auctions.jpg'],
 ];
-const DECOR_SERVICES = [
-  ['statues', 'Statues', 'statues.html', 'assets/images/services/statues.jpg'],
-  ['carpets', 'Carpets', 'carpets.html', 'assets/images/services/carpets.jpg'],
-  ['lamps',   'Lamps',   'lamps.html',   'assets/images/services/lamps.jpg'],
-];
 // Build the editable fields for ONE service (the panel title carries its name):
 // the card fields, then the fields for the detail page it links to.
 function svcFields(s){
@@ -234,11 +229,30 @@ const SCHEMA = [
       desc:'Services page - the “'+s[1]+'” card (Around your collection) and the detail page it links to ('+s[2]+').',
       fields: svcFields(s)
   }; })) },
-  { group:'Decorative & homeware', panels: DECOR_SERVICES.map(function(s){ return {
-      id:'svc-'+s[0], title:s[1],
-      desc:'Services page - the “'+s[1]+'” card (Also in the gallery) and the detail page it links to ('+s[2]+').',
-      fields: svcFields(s)
-  }; }) },
+  { group:'Furniture shop', panels:[
+    { id:'furniture', title:'Furniture shop', desc:'The furniture shop next to Maggies Farm: its card on the Services page, the Furniture page (furniture.html), and its listing under “Where to find us” on the homepage & Contact page.', fields:[
+      { type:'subhead', label:'Card (on the Services page)' },
+      { key:'furniture.name',    label:'Name', type:'text', ph:'Furniture' },
+      { key:'furniture.summary', label:'Summary', type:'textarea', ph:'Furniture, statues, carpets and lamps - our shop next to Maggies Farm.' },
+      { key:'furniture.image',   label:'Image', type:'image', media:'furniture', def:'assets/images/services/statues.jpg', hint:'Shown on the card and at the top of the Furniture page. Upload a photo of the shop when you have one.' },
+      { key:'furniture.link',    label:'Links to (page or URL)', type:'text', ph:'furniture.html' },
+      { type:'subhead', label:'Furniture page (furniture.html)' },
+      { key:'furniture.headline', label:'Headline', type:'text', ph:'The furniture shop' },
+      { key:'furniture.sub',      label:'Sub-line (under the headline)', type:'text' },
+      { key:'furniture.body',     label:'Body copy', type:'textarea', hint:'Leave a blank line between paragraphs. Leave empty to keep the current text.' },
+      { key:'furniture.points',   label:'Bullet points', type:'textarea', hint:'One per line. Leave empty to keep the current list.' },
+      { key:'furniture.cta',      label:'Button label', type:'text', ph:'Get directions' },
+      { type:'subhead', label:'What we carry' },
+      { key:'furniture.statues', label:'Statues description', type:'textarea' },
+      { key:'furniture.carpets', label:'Carpets description', type:'textarea' },
+      { key:'furniture.lamps',   label:'Lamps description', type:'textarea' },
+      { type:'subhead', label:'Location (Where to find us)' },
+      { key:'furniture.area',    label:'Area line (small, above name)', type:'text', ph:'05 - Lanseria' },
+      { key:'furniture.address', label:'Address', type:'textarea', hint:'Each new line becomes a line break.' },
+      { key:'furniture.map',     label:'Google Maps link', type:'text', hint:'Powers the “Open in Maps” / “Get directions” buttons. Paste the share link from Google Maps.' },
+      { key:'furniture.tag',     label:'Tag (small badge)', type:'text', ph:'Furniture shop' },
+    ]},
+  ]},
   { group:'Galleries', panels: [
     ['sunninghill','Sunninghill Village'], ['prison','Prison Break Market'],
     ['lifestyle','ArtPro @ Lifestyle'], ['maggies','Maggies Farm']
