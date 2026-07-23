@@ -224,7 +224,42 @@
     }).catch(function(){ $('pay-piece').innerHTML = '<option value="__other">Tell us which artwork</option>'; });
   }
 
+  // ZAR -> PayFast (redirect); other currencies -> PayPal.
+  function mountForCurrency(cur){
+    if(cur === 'ZAR' && CFG.payfast && CFG.payfast.enabled){ mountPayFast(); }
+    else if(CFG.enabled && CFG.clientId){ mountButtons(cur); }
+  }
+  function mountPayFast(){
+    var wrap = $('paypal-buttons');
+    wrap.innerHTML = '<button type="button" class="btn btn--gold" id="pf-btn" style="width:100%;justify-content:center;">Pay by card or Instant EFT (Rand) <span class="btn__arrow">&#8594;</span></button>'
+      + '<div class="pay-note" style="margin-top:8px;">You’ll be taken to PayFast to complete payment securely.</div>';
+    $('pf-btn').addEventListener('click', function(){
+      var o = order();
+      if(!(o.amount > 0)){ showResult('err','Please enter the agreed amount first.'); return; }
+      var btn = this; btn.disabled = true; btn.textContent = 'Redirecting to PayFast…';
+      fetch('/api/pay/payfast/create', { method:'POST', headers:{'content-type':'application/json'}, body: JSON.stringify(o) })
+        .then(function(r){ return r.json(); })
+        .then(function(d){
+          if(d.error) throw new Error(d.error);
+          var f = document.createElement('form'); f.method = 'POST'; f.action = d.action;
+          Object.keys(d.fields).forEach(function(k){ var inp=document.createElement('input'); inp.type='hidden'; inp.name=k; inp.value=d.fields[k]; f.appendChild(inp); });
+          document.body.appendChild(f); f.submit();
+        })
+        .catch(function(e){ showResult('err', esc(e.message || 'Could not start the payment.')); btn.disabled=false; btn.innerHTML='Pay by card or Instant EFT (Rand) <span class="btn__arrow">&#8594;</span>'; });
+    });
+  }
+
   // ---- boot ----
+  // returning from PayFast
+  if(params.get('paid')){
+    $('pay-loading').classList.add('pay-hide');
+    var okBox = document.createElement('div'); okBox.className = 'pay-wrap';
+    okBox.innerHTML = '<div class="pay-msg pay-msg--ok"><b>Thank you - your payment is being processed.</b><br>We’ll confirm it and be in touch to arrange delivery or collection. A receipt has been emailed to you.</div>';
+    var host = document.querySelector('.pay-wrap'); host.parentNode.insertBefore(okBox, host);
+    return;
+  }
+  var cancelled = !!params.get('cancelled');
+
   fetch('/api/pay/config', { cache:'no-store' })
     .then(function(r){ return r.json(); })
     .then(function(cfg){
@@ -234,19 +269,28 @@
       loadCatalogue();
       $('pay-piece').addEventListener('change', updateSummary);
       $('pay-amount').addEventListener('input', updateSummary);
+      if(cancelled){ showResult('err','Payment cancelled. You can try again below, or contact us to pay another way.'); }
 
-      if(CFG.enabled && CFG.clientId){
-        var curSel = $('pay-currency');
-        (CFG.currencies || ['USD']).forEach(function(c){
-          var o = document.createElement('option'); o.value=c; o.textContent=c; if(c===CFG.currency) o.selected=true; curSel.appendChild(o);
-        });
-        $('pay-currency').addEventListener('change', function(){ updateSummary(); mountButtons($('pay-currency').value); });
-        mountButtons($('pay-currency').value);
-      } else {
-        // payments not switched on yet: keep the picker, but explain how to pay
+      var paypalOn = !!(CFG.enabled && CFG.clientId);
+      var payfastOn = !!(CFG.payfast && CFG.payfast.enabled);
+
+      if(!paypalOn && !payfastOn){
         $('pay-currency').classList.add('pay-hide');
         $('paypal-buttons').innerHTML = '<div class="pay-msg" style="border-color:var(--gold);">Online card payment is being switched on. To pay for this piece now, <a class="tlink" href="contact.html">contact us</a> or call <a href="tel:+27825554272">+27 82 555 4272</a> and we’ll send you a secure payment link.</div>';
+        return;
       }
+
+      // currencies from whichever gateways are on
+      var curSel = $('pay-currency'); curSel.innerHTML = '';
+      var opts = [];
+      if(paypalOn){ (CFG.currencies || ['USD']).forEach(function(c){ opts.push(c); }); }
+      if(payfastOn){ opts.push('ZAR'); }
+      opts.forEach(function(c){ var o=document.createElement('option'); o.value=c; o.textContent = c + (c==='ZAR' ? ' (Rand)' : ''); curSel.appendChild(o); });
+      curSel.value = paypalOn ? (CFG.currency || 'USD') : 'ZAR';
+
+      $('pay-currency').addEventListener('change', function(){ updateSummary(); mountForCurrency(curSel.value); });
+      updateSummary();
+      mountForCurrency(curSel.value);
     })
     .catch(function(){
       $('pay-loading').classList.add('pay-hide');

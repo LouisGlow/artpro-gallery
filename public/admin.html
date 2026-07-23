@@ -503,30 +503,30 @@ function renderPayments(el){
     fetch('/api/pay/config',{cache:'no-store'}).then(function(r){return r.json();}).catch(function(){return {enabled:false};}),
     fetch('/api/admin/orders').then(function(r){return r.ok?r.json():{orders:[]};}).catch(function(){return {orders:[]};})
   ]).then(function(res){
-    var cfg=res[0]||{}, orders=(res[1]&&res[1].orders)||[];
-    var status = cfg.enabled
-      ? '<b style="color:#3c7a45;">Payments are ON</b> ('+(cfg.env==='live'?'LIVE':'Sandbox / test mode')+', default currency '+escAttr(cfg.currency||'USD')+').'
-      : '<b style="color:#a5382f;">Payments are OFF.</b> Add your PayPal keys (below) to switch on. Nothing is charged until you do.';
-    var html = '<div class="note" style="margin-bottom:20px;">'+status+'</div>'
-      + '<div class="note" style="margin-bottom:24px;line-height:1.7;"><b>How to switch on</b><br>'
-      + '1. Create a <b>PayPal Business</b> account, then in the <b>PayPal Developer</b> dashboard make an app and copy its <b>Client ID</b> and <b>Secret</b>.<br>'
-      + '2. In <b>Cloudflare</b> → your Worker → <b>Settings → Variables</b>, add:<br>'
-      + '&nbsp;&nbsp;• <code>PAYPAL_CLIENT_ID</code><br>'
-      + '&nbsp;&nbsp;• <code>PAYPAL_SECRET</code> &nbsp;(tick <b>Encrypt</b>)<br>'
-      + '&nbsp;&nbsp;• <code>PAYPAL_ENV</code> = <code>sandbox</code> to test, <code>live</code> when ready<br>'
-      + '&nbsp;&nbsp;• <code>PAYPAL_CURRENCY</code> = <code>USD</code> (or GBP / EUR)<br>'
-      + '3. Deploy. The buyer pays at <b><a href="pay.html" target="_blank">/pay</a></b> - you can also send a direct link like <code>/pay?piece=DS-001</code>.<br>'
-      + 'The amount is fixed by our server when the order starts, and every payment is verified before it is marked paid.</div>'
+    var cfg=res[0]||{}, orders=(res[1]&&res[1].orders)||[], pf=cfg.payfast||{};
+    function tag(on, envv){ return on ? '<span style="color:#3c7a45;font-weight:600;">ON</span> ('+(envv==='live'?'live':'sandbox / test')+')' : '<span style="color:#a5382f;font-weight:600;">off</span>'; }
+    var html = '<div class="note" style="margin-bottom:20px;line-height:1.8;">'
+      + '<b>PayPal</b> (USD / GBP / EUR): '+tag(cfg.enabled, cfg.env)+'<br>'
+      + '<b>PayFast</b> (Rand - card + Instant EFT): '+tag(pf.enabled, pf.env)
+      + (cfg.enabled||pf.enabled ? '' : '<br>Neither is on yet - nothing can be charged until you switch one on below.')+'</div>'
+      + '<div class="note" style="margin-bottom:20px;line-height:1.7;"><b>PayPal - for overseas buyers (USD/GBP/EUR)</b><br>'
+      + 'In a <b>PayPal Business</b> account → <b>Developer</b> dashboard, make an app and copy its Client ID + Secret. In <b>Cloudflare → your Worker → Settings → Variables</b> add:<br>'
+      + '&nbsp;&nbsp;• <code>PAYPAL_CLIENT_ID</code>, <code>PAYPAL_SECRET</code> (Encrypt), <code>PAYPAL_ENV</code> = <code>sandbox</code>/<code>live</code>, <code>PAYPAL_CURRENCY</code> = <code>USD</code></div>'
+      + '<div class="note" style="margin-bottom:24px;line-height:1.7;"><b>PayFast - for buyers paying in Rand</b><br>'
+      + 'In your <b>PayFast</b> account → Settings, copy the Merchant ID, Merchant Key and (recommended) a Passphrase. In Cloudflare add:<br>'
+      + '&nbsp;&nbsp;• <code>PAYFAST_MERCHANT_ID</code>, <code>PAYFAST_MERCHANT_KEY</code>, <code>PAYFAST_PASSPHRASE</code> (Encrypt), <code>PAYFAST_ENV</code> = <code>sandbox</code>/<code>live</code><br>'
+      + 'Set the PayFast ITN / notify URL to <code>/api/pay/payfast/notify</code>. Test in sandbox first.<br>'
+      + 'Buyers pay at <b><a href="pay.html" target="_blank">/pay</a></b> - choose Rand for PayFast, or USD/GBP/EUR for PayPal. Every payment is verified before it is marked paid.</div>'
       + '<div class="fsub">Recent orders</div>';
     if(!orders.length){ html += '<div class="hint">No orders yet.</div>'; }
     else {
       html += '<div style="overflow-x:auto;"><table style="width:100%;border-collapse:collapse;font-size:13px;">'
-        + '<tr style="text-align:left;color:var(--muted);"><th style="padding:7px 8px;">When</th><th style="padding:7px 8px;">Item</th><th style="padding:7px 8px;">Amount</th><th style="padding:7px 8px;">Status</th><th style="padding:7px 8px;">Payer</th></tr>';
+        + '<tr style="text-align:left;color:var(--muted);"><th style="padding:7px 8px;">When</th><th style="padding:7px 8px;">Item</th><th style="padding:7px 8px;">Amount</th><th style="padding:7px 8px;">Via</th><th style="padding:7px 8px;">Status</th><th style="padding:7px 8px;">Payer</th></tr>';
       orders.forEach(function(o){
         var when=''; try{ when = new Date(o.created).toLocaleString(); }catch(e){}
         var payer=''; try{ payer=(JSON.parse(o.payer||'{}').email)||''; }catch(e){}
         var col = o.status==='paid' ? '#3c7a45' : (o.status==='created' ? 'var(--muted)' : '#a5382f');
-        html += '<tr style="border-top:1px solid var(--border);"><td style="padding:7px 8px;">'+escAttr(when)+'</td><td style="padding:7px 8px;">'+escAttr(o.descr||o.piece_id||'-')+'</td><td style="padding:7px 8px;white-space:nowrap;">'+escAttr((o.currency||'')+' '+(o.amount||''))+'</td><td style="padding:7px 8px;color:'+col+';font-weight:600;">'+escAttr(o.status||'')+'</td><td style="padding:7px 8px;">'+escAttr(payer)+'</td></tr>';
+        html += '<tr style="border-top:1px solid var(--border);"><td style="padding:7px 8px;">'+escAttr(when)+'</td><td style="padding:7px 8px;">'+escAttr(o.descr||o.piece_id||'-')+'</td><td style="padding:7px 8px;white-space:nowrap;">'+escAttr((o.currency||'')+' '+(o.amount||''))+'</td><td style="padding:7px 8px;">'+escAttr(o.provider||'')+'</td><td style="padding:7px 8px;color:'+col+';font-weight:600;">'+escAttr(o.status||'')+'</td><td style="padding:7px 8px;">'+escAttr(payer)+'</td></tr>';
       });
       html += '</table></div>';
     }

@@ -157,5 +157,34 @@
 
 <script src="site.js"></script>
 <script src="assets/content.js"></script>
+<script>
+// Pre-fill the enquiry form when arriving from an "Enquire" link (?piece=&artist=).
+(function(){
+  function esc(s){ var d=document.createElement('div'); d.textContent=String(s==null?'':s); return d.innerHTML; }
+  var p = new URLSearchParams(location.search);
+  var piece = (p.get('piece') || '').trim();
+  var artist = (p.get('artist') || '').trim();
+  if(!piece && !artist) return;
+
+  var label = piece ? ('“' + piece + '”' + (artist ? ' by ' + artist : '')) : ('work by ' + artist);
+
+  var interest = document.getElementById('c-interest');
+  if(interest){ interest.selectedIndex = 0; }   // "A specific artwork or artist"
+
+  var msg = document.getElementById('c-msg');
+  if(msg && !msg.value){
+    msg.value = 'I’d like to enquire about ' + label + '. Please could you let me know about availability, price and delivery.';
+  }
+
+  // A clear "you're enquiring about X" banner above the form fields.
+  var form = document.querySelector('.contact-grid form');
+  if(form){
+    var note = document.createElement('div');
+    note.style.cssText = 'margin-bottom:20px;padding:12px 16px;background:var(--paper);border:1px solid var(--gold);font-size:14px;line-height:1.5;';
+    note.innerHTML = '<span style="font-family:var(--font-display);text-transform:uppercase;letter-spacing:.14em;font-size:11px;color:var(--gold-deep);display:block;margin-bottom:4px;">You’re enquiring about</span><b>' + esc(piece || ('work by ' + artist)) + '</b>' + (piece && artist ? ' by ' + esc(artist) : '') + '.';
+    form.insertBefore(note, form.firstChild);
+  }
+})();
+</script>
 </body>
 </html>

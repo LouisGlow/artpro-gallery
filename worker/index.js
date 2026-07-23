@@ -154,7 +154,7 @@ async function ensureSchema(db) {
       `CREATE TABLE IF NOT EXISTS orders (
          oid TEXT PRIMARY KEY, piece_id TEXT NOT NULL DEFAULT '', descr TEXT NOT NULL DEFAULT '',
          artist TEXT NOT NULL DEFAULT '', amount TEXT NOT NULL DEFAULT '', currency TEXT NOT NULL DEFAULT '',
-         status TEXT NOT NULL DEFAULT '', payer TEXT NOT NULL DEFAULT '',
+         status TEXT NOT NULL DEFAULT '', payer TEXT NOT NULL DEFAULT '', provider TEXT NOT NULL DEFAULT '',
          created INTEGER NOT NULL DEFAULT 0, updated INTEGER NOT NULL DEFAULT 0
        )`
     )
@@ -162,6 +162,7 @@ async function ensureSchema(db) {
   // Add columns to a pre-existing pieces table (idempotent — ignore if present).
   try { await db.prepare(`ALTER TABLE pieces ADD COLUMN featured INTEGER NOT NULL DEFAULT 0`).run(); } catch (e) {}
   try { await db.prepare(`ALTER TABLE pieces ADD COLUMN glass INTEGER NOT NULL DEFAULT 0`).run(); } catch (e) {}
+  try { await db.prepare(`ALTER TABLE orders ADD COLUMN provider TEXT NOT NULL DEFAULT ''`).run(); } catch (e) {}
   schemaReady = true;
 }
 
@@ -224,6 +225,54 @@ async function paypalApi(env, path, token, body) {
   const j = await r.json().catch(() => ({}));
   if (!r.ok) throw new Error((j && j.message) || ('PayPal error ' + r.status));
   return j;
+}
+
+// ---- PayFast (South African gateway; charges in ZAR, settles to a SA bank) ----
+// Env: PAYFAST_MERCHANT_ID, PAYFAST_MERCHANT_KEY, PAYFAST_PASSPHRASE (secret,
+// optional but recommended), PAYFAST_ENV ('sandbox'|'live'). Dormant until set.
+function payfastConfigured(env) { return !!(env.PAYFAST_MERCHANT_ID && env.PAYFAST_MERCHANT_KEY); }
+function payfastBase(env) { return env.PAYFAST_ENV === 'live' ? 'https://www.payfast.co.za' : 'https://sandbox.payfast.co.za'; }
+// PHP urlencode-compatible (spaces as +, encodes ! ' ( ) * ~) for the signature.
+function pfEnc(s) {
+  return encodeURIComponent(String(s)).replace(/%20/g, '+')
+    .replace(/[!'()*~]/g, function (c) { return '%' + c.charCodeAt(0).toString(16).toUpperCase(); });
+}
+// MD5 (Paul Johnston's implementation) — Workers' WebCrypto has no MD5.
+function md5(str) {
+  str = unescape(encodeURIComponent(str));
+  function rl(n, c) { return (n << c) | (n >>> (32 - c)); }
+  function au(x, y) { var l = (x & 0xFFFF) + (y & 0xFFFF), m = (x >> 16) + (y >> 16) + (l >> 16); return (m << 16) | (l & 0xFFFF); }
+  function cm(q, a, b, x, s, t) { return au(rl(au(au(a, q), au(x, t)), s), b); }
+  function ff(a, b, c, d, x, s, t) { return cm((b & c) | ((~b) & d), a, b, x, s, t); }
+  function gg(a, b, c, d, x, s, t) { return cm((b & d) | (c & (~d)), a, b, x, s, t); }
+  function hh(a, b, c, d, x, s, t) { return cm(b ^ c ^ d, a, b, x, s, t); }
+  function ii(a, b, c, d, x, s, t) { return cm(c ^ (b | (~d)), a, b, x, s, t); }
+  function b2w(s) { var w = [], i; for (i = 0; i < s.length * 8; i += 8) w[i >> 5] |= (s.charCodeAt(i / 8) & 0xFF) << (i % 32); return w; }
+  function w2h(w) { var h = '0123456789abcdef', o = '', i; for (i = 0; i < w.length * 4; i++) o += h.charAt((w[i >> 2] >> ((i % 4) * 8 + 4)) & 0xF) + h.charAt((w[i >> 2] >> ((i % 4) * 8)) & 0xF); return o; }
+  var x = b2w(str), len = str.length * 8, i;
+  x[len >> 5] |= 0x80 << (len % 32); x[(((len + 64) >>> 9) << 4) + 14] = len;
+  var a = 1732584193, b = -271733879, c = -1732584194, d = 271733878;
+  for (i = 0; i < x.length; i += 16) {
+    var oa = a, ob = b, oc = c, od = d;
+    a = ff(a, b, c, d, x[i], 7, -680876936); d = ff(d, a, b, c, x[i + 1], 12, -389564586); c = ff(c, d, a, b, x[i + 2], 17, 606105819); b = ff(b, c, d, a, x[i + 3], 22, -1044525330);
+    a = ff(a, b, c, d, x[i + 4], 7, -176418897); d = ff(d, a, b, c, x[i + 5], 12, 1200080426); c = ff(c, d, a, b, x[i + 6], 17, -1473231341); b = ff(b, c, d, a, x[i + 7], 22, -45705983);
+    a = ff(a, b, c, d, x[i + 8], 7, 1770035416); d = ff(d, a, b, c, x[i + 9], 12, -1958414417); c = ff(c, d, a, b, x[i + 10], 17, -42063); b = ff(b, c, d, a, x[i + 11], 22, -1990404162);
+    a = ff(a, b, c, d, x[i + 12], 7, 1804603682); d = ff(d, a, b, c, x[i + 13], 12, -40341101); c = ff(c, d, a, b, x[i + 14], 17, -1502002290); b = ff(b, c, d, a, x[i + 15], 22, 1236535329);
+    a = gg(a, b, c, d, x[i + 1], 5, -165796510); d = gg(d, a, b, c, x[i + 6], 9, -1069501632); c = gg(c, d, a, b, x[i + 11], 14, 643717713); b = gg(b, c, d, a, x[i], 20, -373897302);
+    a = gg(a, b, c, d, x[i + 5], 5, -701558691); d = gg(d, a, b, c, x[i + 10], 9, 38016083); c = gg(c, d, a, b, x[i + 15], 14, -660478335); b = gg(b, c, d, a, x[i + 4], 20, -405537848);
+    a = gg(a, b, c, d, x[i + 9], 5, 568446438); d = gg(d, a, b, c, x[i + 14], 9, -1019803690); c = gg(c, d, a, b, x[i + 3], 14, -187363961); b = gg(b, c, d, a, x[i + 8], 20, 1163531501);
+    a = gg(a, b, c, d, x[i + 13], 5, -1444681467); d = gg(d, a, b, c, x[i + 2], 9, -51403784); c = gg(c, d, a, b, x[i + 7], 14, 1735328473); b = gg(b, c, d, a, x[i + 12], 20, -1926607734);
+    a = hh(a, b, c, d, x[i + 5], 4, -378558); d = hh(d, a, b, c, x[i + 8], 11, -2022574463); c = hh(c, d, a, b, x[i + 11], 16, 1839030562); b = hh(b, c, d, a, x[i + 14], 23, -35309556);
+    a = hh(a, b, c, d, x[i + 1], 4, -1530992060); d = hh(d, a, b, c, x[i + 4], 11, 1272893353); c = hh(c, d, a, b, x[i + 7], 16, -155497632); b = hh(b, c, d, a, x[i + 10], 23, -1094730640);
+    a = hh(a, b, c, d, x[i + 13], 4, 681279174); d = hh(d, a, b, c, x[i], 11, -358537222); c = hh(c, d, a, b, x[i + 3], 16, -722521979); b = hh(b, c, d, a, x[i + 6], 23, 76029189);
+    a = hh(a, b, c, d, x[i + 9], 4, -640364487); d = hh(d, a, b, c, x[i + 12], 11, -421815835); c = hh(c, d, a, b, x[i + 15], 16, 530742520); b = hh(b, c, d, a, x[i + 2], 23, -995338651);
+    a = ii(a, b, c, d, x[i], 6, -198630844); d = ii(d, a, b, c, x[i + 7], 10, 1126891415); c = ii(c, d, a, b, x[i + 14], 15, -1416354905); b = ii(b, c, d, a, x[i + 5], 21, -57434055);
+    a = ii(a, b, c, d, x[i + 12], 6, 1700485571); d = ii(d, a, b, c, x[i + 3], 10, -1894986606); c = ii(c, d, a, b, x[i + 10], 15, -1051523); b = ii(b, c, d, a, x[i + 1], 21, -2054922799);
+    a = ii(a, b, c, d, x[i + 8], 6, 1873313359); d = ii(d, a, b, c, x[i + 15], 10, -30611744); c = ii(c, d, a, b, x[i + 6], 15, -1560198380); b = ii(b, c, d, a, x[i + 13], 21, 1309151649);
+    a = ii(a, b, c, d, x[i + 4], 6, -145523070); d = ii(d, a, b, c, x[i + 11], 10, -1120210379); c = ii(c, d, a, b, x[i + 2], 15, 718787259); b = ii(b, c, d, a, x[i + 9], 21, -343485551);
+    a = au(a, oa); b = au(b, ob); c = au(c, oc); d = au(d, od);
+  }
+  return w2h([a, b, c, d]);
 }
 
 async function handleApi(request, env, url) {
@@ -320,16 +369,82 @@ async function handleApi(request, env, url) {
     });
   }
 
-  // ---- PayPal checkout ----
-  // Public: whether payments are on, plus the (publishable) client id + currency.
+  // ---- checkout config ----
+  // Public: which gateways are on (PayPal for USD/GBP/EUR, PayFast for ZAR).
   if (pathname === '/api/pay/config') {
     return json({
-      enabled: paypalConfigured(env),
+      enabled: paypalConfigured(env),                 // PayPal (kept flat for back-compat)
       clientId: env.PAYPAL_CLIENT_ID || '',
       currency: (env.PAYPAL_CURRENCY || 'USD').toUpperCase(),
       env: env.PAYPAL_ENV === 'live' ? 'live' : 'sandbox',
-      currencies: PAYPAL_CURRENCIES
+      currencies: PAYPAL_CURRENCIES,
+      payfast: { enabled: payfastConfigured(env), env: env.PAYFAST_ENV === 'live' ? 'live' : 'sandbox' }
     });
+  }
+  // Public: build a signed PayFast redirect (charges in ZAR). The client posts
+  // the returned fields to `action`, which takes the buyer to PayFast.
+  if (pathname === '/api/pay/payfast/create' && method === 'POST') {
+    if (!payfastConfigured(env)) return json({ error: 'Rand payments are not set up yet.' }, 400);
+    const body = await request.json().catch(() => ({}));
+    const amount = parseFloat(body.amount);
+    if (!(amount > 0) || amount > 5000000) return json({ error: 'Please enter a valid amount.' }, 400);
+    const value = amount.toFixed(2);
+    const oid = crypto.randomUUID();
+    const fields = {
+      merchant_id: env.PAYFAST_MERCHANT_ID,
+      merchant_key: env.PAYFAST_MERCHANT_KEY,
+      return_url: url.origin + '/pay?paid=1',
+      cancel_url: url.origin + '/pay?cancelled=1',
+      notify_url: url.origin + '/api/pay/payfast/notify',
+      m_payment_id: oid,
+      amount: value,
+      item_name: ('ArtPro Gallery' + (body.desc ? ' - ' + String(body.desc) : '')).slice(0, 100)
+    };
+    if (body.desc) fields.item_description = String(body.desc).slice(0, 255);
+    let sigStr = Object.keys(fields).map(function (k) { return k + '=' + pfEnc(fields[k]); }).join('&');
+    if (env.PAYFAST_PASSPHRASE) sigStr += '&passphrase=' + pfEnc(env.PAYFAST_PASSPHRASE);
+    fields.signature = md5(sigStr);
+    const now = Date.now();
+    await env.DB.prepare(
+      `INSERT INTO orders (oid, piece_id, descr, artist, amount, currency, status, payer, provider, created, updated)
+       VALUES (?,?,?,?,?,?,?,?,?,?,?)`
+    ).bind(oid, String(body.pieceId || ''), String(body.desc || ''), String(body.artist || ''), value, 'ZAR', 'created', '', 'payfast', now, now).run();
+    return json({ action: payfastBase(env) + '/eng/process', fields: fields });
+  }
+  // PayFast ITN (server-to-server). Verify signature + validate with PayFast +
+  // check amount + status, then mark the order paid. Always answer 200.
+  if (pathname === '/api/pay/payfast/notify' && method === 'POST') {
+    if (!payfastConfigured(env)) return new Response('', { status: 200 });
+    try {
+      const raw = await request.text();
+      const parts = raw.split('&').filter(Boolean).map(function (p) {
+        const i = p.indexOf('='); return [p.slice(0, i), decodeURIComponent(p.slice(i + 1).replace(/\+/g, ' '))];
+      });
+      const data = {}; parts.forEach(function (kv) { data[kv[0]] = kv[1]; });
+      let sigStr = parts.filter(function (kv) { return kv[0] !== 'signature'; })
+        .map(function (kv) { return kv[0] + '=' + pfEnc(kv[1]); }).join('&');
+      if (env.PAYFAST_PASSPHRASE) sigStr += '&passphrase=' + pfEnc(env.PAYFAST_PASSPHRASE);
+      const sigOk = md5(sigStr) === (data.signature || '');
+      let valid = false;
+      try {
+        const vr = await fetch(payfastBase(env) + '/eng/query/validate', {
+          method: 'POST', headers: { 'content-type': 'application/x-www-form-urlencoded' }, body: raw
+        });
+        valid = (await vr.text()).trim() === 'VALID';
+      } catch (e) {}
+      const oid = data.m_payment_id || '';
+      const rows = await env.DB.prepare(`SELECT amount FROM orders WHERE oid = ?`).bind(oid).all();
+      const rec = rows.results && rows.results[0];
+      const amountOk = rec && data.amount_gross && parseFloat(data.amount_gross).toFixed(2) === rec.amount;
+      const ok = sigOk && valid && amountOk && data.payment_status === 'COMPLETE';
+      if (oid) {
+        await env.DB.prepare(`UPDATE orders SET status=?, payer=?, updated=? WHERE oid=?`)
+          .bind(ok ? 'paid' : (data.payment_status || 'failed'),
+            JSON.stringify({ email: data.email_address || '', name: ((data.name_first || '') + ' ' + (data.name_last || '')).trim() }),
+            Date.now(), oid).run();
+      }
+    } catch (e) {}
+    return new Response('', { status: 200 });
   }
   // Public: create an order for the agreed amount (server sets the amount, so it
   // can't be tampered with after this point), and record it as pending.
@@ -354,9 +469,9 @@ async function handleApi(request, env, url) {
       });
       const now = Date.now();
       await env.DB.prepare(
-        `INSERT INTO orders (oid, piece_id, descr, artist, amount, currency, status, payer, created, updated)
-         VALUES (?,?,?,?,?,?,?,?,?,?)`
-      ).bind(order.id, String(body.pieceId || ''), String(body.desc || ''), String(body.artist || ''), value, currency, 'created', '', now, now).run();
+        `INSERT INTO orders (oid, piece_id, descr, artist, amount, currency, status, payer, provider, created, updated)
+         VALUES (?,?,?,?,?,?,?,?,?,?,?)`
+      ).bind(order.id, String(body.pieceId || ''), String(body.desc || ''), String(body.artist || ''), value, currency, 'created', '', 'paypal', now, now).run();
       return json({ id: order.id });
     } catch (e) { return json({ error: String((e && e.message) || e) }, 502); }
   }
@@ -387,7 +502,7 @@ async function handleApi(request, env, url) {
   // Staff: recent orders.
   if (pathname === '/api/admin/orders' && method === 'GET') {
     const { results } = await env.DB.prepare(
-      `SELECT oid, piece_id, descr, artist, amount, currency, status, payer, created, updated FROM orders ORDER BY created DESC LIMIT 200`
+      `SELECT oid, piece_id, descr, artist, amount, currency, status, payer, provider, created, updated FROM orders ORDER BY created DESC LIMIT 200`
     ).all();
     return json({ orders: results || [] });
   }
@@ -555,7 +670,7 @@ function needsAuth(pathname, method) {
   if (pathname === '/api/public/pieces' || pathname === '/api/public/artists' || pathname === '/api/public/content') return false; // public reads
   if (method === 'GET' && /^\/api\/(pieces|artists)\/[^/]+\/photo$/.test(pathname)) return false; // public images
   if (method === 'GET' && /^\/api\/media\/[a-z0-9._-]+$/i.test(pathname)) return false;           // public CMS media
-  if (pathname === '/api/pay/config' || pathname === '/api/pay/create' || pathname === '/api/pay/capture') return false; // buyer checkout
+  if (pathname.startsWith('/api/pay/')) return false;                           // buyer checkout (config/create/capture/payfast)
   if (pathname.startsWith('/api/')) return true;                                // staff reads + all writes
   return isGatedPage(pathname);                                                 // staff HTML pages
 }
