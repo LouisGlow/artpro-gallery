@@ -84,6 +84,18 @@
     border-radius:8px; color:var(--gold-deep); background:none; font:inherit; font-weight:600; font-size:13px; cursor:pointer; text-align:center; padding:8px; }
   .padd:hover{ background:rgba(184,145,47,.08); }
   .pempty{ color:var(--muted); font-size:13px; margin:4px 0 14px; }
+  /* item manager (photo + description per item) */
+  .igrid{ display:grid; grid-template-columns:repeat(auto-fill, minmax(190px,1fr)); gap:14px; margin:4px 0 18px; }
+  .icell{ border:1px solid var(--border); border-radius:9px; overflow:hidden; background:var(--surface); display:flex; flex-direction:column; }
+  .icell .ithumb{ position:relative; aspect-ratio:4/3; background:#efe9dd; }
+  .icell .ithumb img{ width:100%; height:100%; object-fit:cover; display:block; }
+  .icell .del{ position:absolute; top:6px; right:6px; width:26px; height:26px; border:0; border-radius:50%; background:rgba(33,29,24,.72); color:#fff; font-size:15px; line-height:1; cursor:pointer; display:flex; align-items:center; justify-content:center; }
+  .icell .del:hover{ background:#a5382f; }
+  .icell textarea{ border:0; border-top:1px solid var(--border); background:none; font:inherit; font-size:13px; padding:9px 10px; min-height:58px; resize:vertical; line-height:1.5; width:100%; }
+  .icell textarea:focus{ outline:none; box-shadow:inset 0 0 0 2px rgba(184,145,47,.22); }
+  .iadd{ display:flex; align-items:center; justify-content:center; aspect-ratio:4/3; border:1.5px dashed var(--gold); border-radius:9px; color:var(--gold-deep); background:none; font:inherit; font-weight:600; font-size:13px; cursor:pointer; text-align:center; padding:8px; }
+  .iadd:hover{ background:rgba(184,145,47,.08); }
+  .iempty{ color:var(--muted); font-size:13px; margin:4px 0 12px; }
   @media (max-width:760px){ .app{ flex-direction:column; } .side{ width:100%; height:auto; position:static; flex-basis:auto; } }
 </style>
 </head>
@@ -230,36 +242,34 @@ const SCHEMA = [
       fields: svcFields(s)
   }; })) },
   { group:'Furniture shop', panels:[
-    { id:'furniture', title:'Furniture shop', desc:'The furniture shop next to Maggies Farm: its card on the Services page, the Furniture page (furniture.html), and its listing under “Where to find us” on the homepage & Contact page.', fields:[
+    { id:'furniture', title:'Shop & location', desc:'The furniture shop next to Maggies Farm: its card on the Services page, the Furniture page intro, and its listing under “Where to find us” on the homepage & Contact page. (Edit the Statues / Carpets / Lamps categories in their own screens below.)', fields:[
       { type:'subhead', label:'Card (on the Services page)' },
       { key:'furniture.name',    label:'Name', type:'text', ph:'Furniture' },
       { key:'furniture.summary', label:'Summary', type:'textarea', ph:'Furniture, statues, carpets and lamps - our shop next to Maggies Farm.' },
-      { key:'furniture.image',   label:'Image', type:'image', media:'furniture', def:'assets/images/services/statues.jpg', hint:'Shown on the card and at the top of the Furniture page. Upload a photo of the shop when you have one.' },
+      { key:'furniture.image',   label:'Image', type:'image', media:'furniture', def:'assets/images/services/statues.jpg', hint:'Shown on the Services-page card. Upload a photo of the shop when you have one.' },
       { key:'furniture.link',    label:'Links to (page or URL)', type:'text', ph:'furniture.html' },
-      { type:'subhead', label:'Furniture page (furniture.html)' },
+      { type:'subhead', label:'Furniture page intro' },
       { key:'furniture.headline', label:'Headline', type:'text', ph:'The furniture shop' },
       { key:'furniture.sub',      label:'Sub-line (under the headline)', type:'text' },
       { key:'furniture.body',     label:'Intro paragraph', type:'textarea', hint:'Leave a blank line between paragraphs. Leave empty to keep the current text.' },
       { key:'furniture.cta',      label:'Button label', type:'text', ph:'Get directions' },
-      { type:'subhead', label:'Statues (shown on the shop page & homepage strip)' },
-      { key:'furniture.statues.title', label:'Title', type:'text', ph:'Statues' },
-      { key:'furniture.statues.desc',  label:'Description', type:'textarea' },
-      { key:'furniture.statues.image', label:'Image', type:'image', media:'furn-statues', def:'assets/images/services/statues.jpg' },
-      { type:'subhead', label:'Carpets (shown on the shop page & homepage strip)' },
-      { key:'furniture.carpets.title', label:'Title', type:'text', ph:'Carpets' },
-      { key:'furniture.carpets.desc',  label:'Description', type:'textarea' },
-      { key:'furniture.carpets.image', label:'Image', type:'image', media:'furn-carpets', def:'assets/images/services/carpets.jpg' },
-      { type:'subhead', label:'Lamps (shown on the shop page & homepage strip)' },
-      { key:'furniture.lamps.title', label:'Title', type:'text', ph:'Lamps' },
-      { key:'furniture.lamps.desc',  label:'Description', type:'textarea' },
-      { key:'furniture.lamps.image', label:'Image', type:'image', media:'furn-lamps', def:'assets/images/services/lamps.jpg' },
       { type:'subhead', label:'Location (Where to find us)' },
       { key:'furniture.area',    label:'Area line (small, above name)', type:'text', ph:'05 - Lanseria' },
       { key:'furniture.address', label:'Address', type:'textarea', hint:'Each new line becomes a line break.' },
       { key:'furniture.map',     label:'Google Maps link', type:'text', hint:'Powers the “Open in Maps” / “Get directions” buttons. Paste the share link from Google Maps.' },
       { key:'furniture.tag',     label:'Tag (small badge)', type:'text', ph:'Furniture shop' },
     ]},
-  ]},
+  ].concat(['statues','carpets','lamps'].map(function(c){
+    var cap = c.charAt(0).toUpperCase() + c.slice(1);
+    return { id:'furn-'+c, title:cap, desc:'Furniture shop - the “'+cap+'” category. The heading image & summary show on the shop page, the homepage strip and Contact. The items below are what visitors see when they click '+cap+' - add a photo and description for each piece.', fields:[
+      { type:'subhead', label:'Category heading' },
+      { key:'furniture.'+c+'.title', label:'Title', type:'text', ph:cap },
+      { key:'furniture.'+c+'.desc',  label:'Short description', type:'textarea' },
+      { key:'furniture.'+c+'.image', label:'Heading image', type:'image', media:'furn-'+c, def:'assets/images/services/'+c+'.jpg', hint:'Shown on the shop page, the homepage strip and Contact.' },
+      { type:'subhead', label:'Items - what the store carries' },
+      { key:'furniture.'+c+'.items', label:'', type:'items', hint:'Add a photo and a short description for each piece. These show when someone clicks '+cap+'. Drag the bottom of a box to resize the description.' },
+    ] };
+  })) },
   { group:'Galleries', panels: [
     ['sunninghill','Sunninghill Village'], ['prison','Prison Break Market'],
     ['lifestyle','ArtPro @ Lifestyle'], ['maggies','Maggies Farm']
@@ -305,6 +315,7 @@ let current = null;        // current panel id
 let dirty = {};            // pending text changes {key:value}
 let pendingImages = {};    // {mediaKey: dataURL}
 let galPhotos = null;      // active photos field: { key, gallery, list:[urls] }
+let galItems = null;       // active items field: { key, list:[{url,desc}] }
 
 // ---------- sidebar ----------
 (function buildNav(){
@@ -327,7 +338,7 @@ function escAttr(s){ return String(s==null?'':s).replace(/[&<>"]/g,function(c){r
 
 // ---------- render a panel ----------
 function show(id){
-  current = id; dirty = {}; pendingImages = {}; galPhotos = null;
+  current = id; dirty = {}; pendingImages = {}; galPhotos = null; galItems = null;
   document.querySelectorAll('.side__item').forEach(function(b){ b.classList.toggle('active', b.dataset.panel===id); });
   var p = PANELS[id]; if(!p) return;
   $('#ptitle').textContent = p.title; $('#pdesc').textContent = p.desc || '';
@@ -352,6 +363,12 @@ function show(id){
       galPhotos = { key:f.key, gallery:f.gallery, list:list };
       html += '<div id="pwrap"></div>'
             + '<input type="file" id="pfile" accept="image/*" multiple hidden>';
+    } else if(f.type==='items'){
+      var ilist = [];
+      if(typeof val==='string' && val.trim()){ try{ var ia=JSON.parse(val); if(Array.isArray(ia)) ilist=ia; }catch(e){} }
+      ilist = ilist.map(function(it){ return (it && typeof it==='object') ? {url:it.url||'', desc:it.desc||''} : {url:String(it||''), desc:''}; });
+      galItems = { key:f.key, list:ilist };
+      html += '<div id="iwrap"></div><input type="file" id="ifile" accept="image/*" multiple hidden>';
     } else if(f.type==='textarea'){
       html += '<textarea id="f_'+f.key+'" data-key="'+f.key+'" placeholder="'+escAttr(f.ph||'')+'">'+escAttr(val)+'</textarea>';
     } else if(f.type==='image'){
@@ -381,6 +398,53 @@ function show(id){
   });
 
   if(galPhotos) initPhotoField();
+  if(galItems) initItemsField();
+}
+
+// ---------- item manager (photo + description per item) ----------
+function initItemsField(){
+  renderItemsGrid();
+  var file = $('#ifile');
+  file.addEventListener('change', function(){
+    var files = Array.prototype.slice.call(file.files || []);
+    file.value = '';
+    if(!files.length) return;
+    setStatus('Adding item'+(files.length>1?'s':'')+'…');
+    (function nextFile(i){
+      if(i >= files.length){ setStatus('Item'+(files.length>1?'s':'')+' added - add descriptions, then Save'); return; }
+      readImage(files[i], 1400, function(dataUrl){
+        var mk = 'fit-' + Math.random().toString(36).slice(2,10);
+        fetch('/api/media/'+mk, { method:'PUT', headers:{'content-type':'application/json'}, body:JSON.stringify({ photo:dataUrl }) })
+          .then(function(r){ return r.json(); })
+          .then(function(res){ if(res && res.url){ galItems.list.push({url:res.url, desc:''}); renderItemsGrid(); markDirty(); } })
+          .catch(function(){ setStatus('Upload failed - check your connection','err'); })
+          .then(function(){ nextFile(i+1); });
+      });
+    })(0);
+  });
+}
+
+function renderItemsGrid(){
+  var wrap = $('#iwrap'); if(!wrap || !galItems) return;
+  var html = '';
+  if(!galItems.list.length){ html += '<div class="iempty">No items yet - add the first one below.</div>'; }
+  html += '<div class="igrid">';
+  galItems.list.forEach(function(it, i){
+    html += '<div class="icell">'
+      + '<div class="ithumb"><img src="'+escAttr(it.url)+'" alt=""><button class="del" type="button" data-i="'+i+'" title="Remove">&times;</button></div>'
+      + '<textarea data-i="'+i+'" placeholder="Describe this piece…">'+escAttr(it.desc||'')+'</textarea>'
+      + '</div>';
+  });
+  html += '<button type="button" class="iadd" id="iaddbtn">+ Add items</button>';
+  html += '</div>';
+  wrap.innerHTML = html;
+  wrap.querySelector('#iaddbtn').addEventListener('click', function(){ $('#ifile').click(); });
+  wrap.querySelectorAll('.icell .del').forEach(function(b){
+    b.addEventListener('click', function(){ galItems.list.splice(parseInt(b.dataset.i,10),1); renderItemsGrid(); markDirty(); });
+  });
+  wrap.querySelectorAll('.icell textarea').forEach(function(t){
+    t.addEventListener('input', function(){ var idx=parseInt(t.dataset.i,10); if(galItems.list[idx]) galItems.list[idx].desc = t.value; markDirty(); });
+  });
 }
 
 // ---------- gallery photo manager ----------
@@ -474,6 +538,10 @@ $('#save').addEventListener('click', function(){
   if(galPhotos){
     var serialized = JSON.stringify(galPhotos.list);
     if(serialized !== (CONTENT[galPhotos.key] || '')) dirty[galPhotos.key] = serialized;
+  }
+  if(galItems){
+    var iserialized = JSON.stringify(galItems.list);
+    if(iserialized !== (CONTENT[galItems.key] || '')) dirty[galItems.key] = iserialized;
   }
   var mediaKeys = Object.keys(pendingImages);
   // 1) upload any new images, collecting their URLs into `dirty`

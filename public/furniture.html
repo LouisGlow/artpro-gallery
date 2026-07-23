@@ -27,6 +27,12 @@
   .furn-row__body h2 { margin: 0; }
   .furn-row__body p { color: var(--muted); margin-top: 12px; max-width: 46ch; }
   .furn-row--flip .furn-row__media { order: 2; }
+  a.furn-row { text-decoration: none; color: inherit; }
+  a.furn-row:focus-visible { outline: 2px solid var(--gold); outline-offset: 4px; }
+  a.furn-row:hover .furn-row__media img { transform: scale(1.04); }
+  .furn-row__more { display: inline-flex; align-items: center; gap: .5em; margin-top: 16px; font-family: var(--font-display); text-transform: uppercase; letter-spacing: .14em; font-size: 12px; color: var(--ink); }
+  .furn-row__more .btn__arrow { color: var(--gold); transition: transform .2s ease; }
+  a.furn-row:hover .furn-row__more .btn__arrow { transform: translateX(5px); }
   @media (max-width: 760px) {
     .furn-row { grid-template-columns: 1fr; gap: 16px; }
     .furn-row--flip .furn-row__media { order: 0; }
@@ -86,29 +92,32 @@
 <section class="section section--tight wrap">
   <div class="section-head"><div class="section-head__text reveal"><p class="kicker">In the shop</p><h2 class="display display--m">What we carry</h2></div></div>
 
-  <div class="furn-row reveal">
+  <a class="furn-row reveal" href="furniture-items.html?cat=statues">
     <figure class="furn-row__media"><img data-cms-src="furniture.statues.image" src="assets/images/services/statues.jpg" alt="Statues and sculpture" loading="lazy"></figure>
     <div class="furn-row__body">
       <h2 class="display display--m" data-cms="furniture.statues.title">Statues</h2>
       <p data-cms-html="furniture.statues.desc">Bronze, aluminium and steel sculpture from sought-after South African artists - indoor and outdoor pieces.</p>
+      <span class="furn-row__more"><span data-cms="furniture.statues.title">Statues</span> - see the range <span class="btn__arrow">&#8594;</span></span>
     </div>
-  </div>
+  </a>
 
-  <div class="furn-row furn-row--flip reveal">
+  <a class="furn-row furn-row--flip reveal" href="furniture-items.html?cat=carpets">
     <figure class="furn-row__media"><img data-cms-src="furniture.carpets.image" src="assets/images/services/carpets.jpg" alt="Persian and Oriental carpets" loading="lazy"></figure>
     <div class="furn-row__body">
       <h2 class="display display--m" data-cms="furniture.carpets.title">Carpets</h2>
       <p data-cms-html="furniture.carpets.desc">Persian and Oriental rugs across Kashan, Tabriz, Nain and more - plus expert cleaning and repairs, guaranteed.</p>
+      <span class="furn-row__more"><span data-cms="furniture.carpets.title">Carpets</span> - see the range <span class="btn__arrow">&#8594;</span></span>
     </div>
-  </div>
+  </a>
 
-  <div class="furn-row reveal">
+  <a class="furn-row reveal" href="furniture-items.html?cat=lamps">
     <figure class="furn-row__media"><img data-cms-src="furniture.lamps.image" src="assets/images/services/lamps.jpg" alt="Decorative lamps" loading="lazy"></figure>
     <div class="furn-row__body">
       <h2 class="display display--m" data-cms="furniture.lamps.title">Lamps</h2>
       <p data-cms-html="furniture.lamps.desc">Turkish mosaic, funk-art, resin and carved wooden lamps to complete any room.</p>
+      <span class="furn-row__more"><span data-cms="furniture.lamps.title">Lamps</span> - see the range <span class="btn__arrow">&#8594;</span></span>
     </div>
-  </div>
+  </a>
 </section>
 
 <section class="section section--tight wrap">
