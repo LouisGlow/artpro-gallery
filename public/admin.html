@@ -243,7 +243,8 @@ const SCHEMA = [
     id:'g-'+g[0], title:g[1], desc:'This gallery’s card on the homepage “Four galleries” grid, and the top + photo strip of its own gallery page.', fields:[
       { key:'gallery.'+g[0]+'.area',    label:'Area line (small, above name)', type:'text' },
       { key:'gallery.'+g[0]+'.name',    label:'Gallery name', type:'text' },
-      { key:'gallery.'+g[0]+'.address', label:'Address', type:'textarea', hint:'Each new line becomes a line break.' },
+      { key:'gallery.'+g[0]+'.address', label:'Address', type:'textarea', hint:'Each new line becomes a line break. Shows on the homepage, the Contact page and the gallery page.' },
+      { key:'gallery.'+g[0]+'.map',     label:'Google Maps link', type:'text', hint:'Paste the share link from Google Maps. Powers the “Get directions” / “Open in Maps” buttons. If a gallery moves, update this. Leave empty to keep the current one.' },
       { key:'gallery.'+g[0]+'.tag',     label:'Tag (small badge)', type:'text' },
       { key:'gallery.'+g[0]+'.photos',  label:'Gallery photos', type:'photos', gallery:g[0],
         hint:'Photos of the physical gallery, shown on its page. Add or remove - the first one is the large hero.' },

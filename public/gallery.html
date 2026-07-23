@@ -169,8 +169,20 @@
   fetch('/api/public/content', { cache: 'no-store' })
     .then(function(r){ return r.ok ? r.json() : { content:{} }; })
     .then(function(res){
+      var C = (res && res.content) || {};
+      var key = g.key || '';
+      // Admin overrides: address (line breaks preserved) and Google Maps link.
+      var addr = C['gallery.' + key + '.address'];
+      if(typeof addr === 'string' && addr.trim()){
+        document.getElementById('g-address').innerHTML = esc(addr).replace(/\n/g, '<br>');
+      }
+      var mapUrl = C['gallery.' + key + '.map'];
+      if(typeof mapUrl === 'string' && mapUrl.trim()){
+        document.getElementById('g-directions').href = mapUrl.trim();
+      }
+      // Photos: admin-managed list if present, else static, else auto-discover.
       var override = null;
-      var raw = ((res && res.content) || {})['gallery.' + (g.key || '') + '.photos'];
+      var raw = C['gallery.' + key + '.photos'];
       if(typeof raw === 'string' && raw.trim()){
         try { var arr = JSON.parse(raw); if(Array.isArray(arr)) override = arr; } catch(e){}
       }
