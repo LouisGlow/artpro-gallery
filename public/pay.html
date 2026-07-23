@@ -17,29 +17,43 @@
 <meta name="robots" content="noindex">
 <link rel="stylesheet" href="styles.css">
 <style>
-  .pay-wrap { max-width: 620px; }
+  .pay-shell { max-width: 1000px; margin-inline: auto; }
+  .pay-hide { display:none !important; }
+  .pay-msg { padding:18px 20px; border:1px solid var(--border); background:var(--surface); font-size:15px; line-height:1.6; }
+  .pay-msg--ok { border-color:#3c7a45; border-left:3px solid #3c7a45; }
+  .pay-msg--err { border-color:#a5382f; color:#8f2f27; }
+
+  /* two-column checkout */
+  .pay-grid { display:grid; grid-template-columns: minmax(0,1fr) minmax(0,1fr); gap: clamp(26px,4vw,60px); align-items:start; }
+  @media (max-width:820px){ .pay-grid { grid-template-columns:1fr; gap:30px; } }
+
+  /* left: the artwork */
+  .pay-art__card { position:sticky; top:96px; background:var(--surface); border:1px solid var(--border); padding:16px; }
+  @media (max-width:820px){ .pay-art__card { position:static; } }
+  .pay-art__img { border:1px solid var(--border); background:var(--paper); overflow:hidden; }
+  .pay-art__img img { width:100%; max-height:56vh; object-fit:contain; display:block; }
+  .pay-art__info { padding:18px 4px 4px; }
+  .pay-art__title { font-family:var(--font-display); text-transform:uppercase; letter-spacing:.04em; font-weight:500; font-size:clamp(20px,2.4vw,27px); color:var(--ink-deep); line-height:1.08; }
+  .pay-art__artist { color:var(--muted); font-size:15px; margin-top:8px; }
+  .pay-art__facts { display:flex; flex-wrap:wrap; gap:6px 26px; margin-top:16px; padding-top:14px; border-top:1px solid var(--border); }
+  .pay-art__facts span { font-size:13.5px; color:var(--ink); }
+  .pay-art__facts b { font-family:var(--font-display); text-transform:uppercase; letter-spacing:.1em; font-size:10px; color:var(--gold-deep); margin-right:7px; }
+  .pay-art__empty { aspect-ratio:4/3; display:flex; align-items:center; justify-content:center; text-align:center; color:var(--muted); font-family:var(--font-display); text-transform:uppercase; letter-spacing:.16em; font-size:12px; line-height:1.8; border:1px dashed var(--border); background:var(--paper); }
+
+  /* right: fields */
+  .pay-fields { padding-top:2px; }
   .pay-field { margin-bottom: 22px; }
   .pay-field label { display:block; font-family:var(--font-display); text-transform:uppercase; letter-spacing:.12em; font-size:12px; color:var(--muted); margin-bottom:8px; }
   .pay-field select, .pay-field input { width:100%; background:var(--surface); border:1px solid var(--border); padding:14px 16px; font-family:var(--font-body); font-size:16px; color:var(--ink); }
-  .pay-field select:focus, .pay-field input:focus { outline:none; border-color:var(--gold); }
+  .pay-field select:focus, .pay-field input:focus { outline:none; border-color:var(--gold); box-shadow:0 0 0 3px rgba(184,145,47,.14); }
   .pay-amount-row { display:flex; gap:12px; }
   .pay-amount-row .amt { flex:1; }
-  .pay-amount-row .cur { flex:0 0 110px; }
-  .pay-summary { background:var(--surface); border:1px solid var(--border); padding:18px 20px; margin:6px 0 22px; font-size:15px; }
+  .pay-amount-row .cur { flex:0 0 116px; }
+  .pay-summary { background:var(--paper); border:1px solid var(--border); border-left:3px solid var(--gold); padding:16px 18px; margin:2px 0 22px; font-size:15px; line-height:1.55; color:var(--muted); }
   .pay-summary b { color:var(--ink-deep); }
-  #paypal-buttons { margin-top:10px; min-height:50px; }
-  .pay-note { color:var(--muted); font-size:13px; margin-top:14px; line-height:1.6; }
-  .pay-msg { padding:16px 18px; border:1px solid var(--border); background:var(--surface); font-size:15px; line-height:1.6; }
-  .pay-msg--ok { border-color:#3c7a45; }
-  .pay-msg--err { border-color:#a5382f; color:#8f2f27; }
-  .pay-hide { display:none !important; }
-  .pay-preview { display:flex; gap:16px; align-items:center; background:var(--surface); border:1px solid var(--border); padding:14px; margin-bottom:24px; }
-  .pay-preview img { width:120px; height:96px; object-fit:cover; flex:0 0 120px; border:1px solid var(--border); background:var(--paper); }
-  .pay-preview__title { font-family:var(--font-display); text-transform:uppercase; letter-spacing:.05em; font-weight:500; font-size:18px; color:var(--ink-deep); line-height:1.15; }
-  .pay-preview__artist { color:var(--muted); font-size:14px; margin-top:5px; }
-  .pay-preview__size { color:var(--muted); font-size:13px; margin-top:6px; }
-  .pay-preview__size b { color:var(--gold-deep); font-family:var(--font-display); text-transform:uppercase; letter-spacing:.08em; font-size:10px; margin-right:6px; }
-  @media (max-width:520px){ .pay-preview { flex-direction:column; align-items:flex-start; } .pay-preview img { width:100%; height:180px; flex:none; } }
+  #paypal-buttons { margin-top:8px; min-height:48px; }
+  .pay-secure { display:flex; align-items:flex-start; gap:9px; color:var(--muted); font-size:13px; margin-top:18px; line-height:1.55; }
+  .pay-secure svg { flex:0 0 auto; margin-top:1px; color:var(--gold-deep); }
 </style>
 </head>
 <body>
@@ -72,34 +86,43 @@
   </section>
 
   <section class="section section--tight wrap">
-    <div class="pay-wrap">
+    <div class="pay-shell">
 
       <!-- shown while we check whether payments are configured -->
       <div id="pay-loading" class="pay-msg">Loading secure payment…</div>
 
-      <!-- shown when PayPal isn't set up yet -->
+      <!-- shown only if the config check fails entirely -->
       <div id="pay-disabled" class="pay-msg pay-hide">
         Online payment isn't switched on yet. Please <a class="tlink" href="contact.html">contact us</a> to arrange payment - by EFT or card - and we'll help you complete the purchase.
       </div>
 
       <!-- the checkout -->
-      <form id="pay-form" class="pay-hide reveal" onsubmit="return false;">
-        <div id="pay-preview" class="pay-preview" style="display:none;"></div>
-        <div class="pay-field">
-          <label for="pay-piece">Artwork</label>
-          <select id="pay-piece"><option value="">Loading the catalogue…</option></select>
-        </div>
-        <div class="pay-field">
-          <label for="pay-amount">Agreed amount</label>
-          <div class="pay-amount-row">
-            <input class="amt" id="pay-amount" type="number" min="1" step="0.01" inputmode="decimal" placeholder="0.00">
-            <select class="cur" id="pay-currency"></select>
+      <form id="pay-form" class="pay-grid pay-hide reveal" onsubmit="return false;">
+        <aside class="pay-art">
+          <div id="pay-preview" class="pay-art__card">
+            <div class="pay-art__empty"><span>Choose an artwork<br>to see it here</span></div>
           </div>
+        </aside>
+        <div class="pay-fields">
+          <div class="pay-field">
+            <label for="pay-piece">Artwork</label>
+            <select id="pay-piece"><option value="">Loading the catalogue…</option></select>
+          </div>
+          <div class="pay-field">
+            <label for="pay-amount">Agreed amount</label>
+            <div class="pay-amount-row">
+              <input class="amt" id="pay-amount" type="number" min="1" step="0.01" inputmode="decimal" placeholder="0.00">
+              <select class="cur" id="pay-currency"></select>
+            </div>
+          </div>
+          <div class="pay-summary" id="pay-summary">Enter the artwork and the amount you agreed with us.</div>
+          <div id="paypal-buttons"></div>
+          <div id="pay-result" class="pay-hide" style="margin-top:14px;"></div>
+          <p class="pay-secure">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M6 10V8a6 6 0 0 1 12 0v2" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><rect x="4.5" y="10" width="15" height="10.5" rx="1.5" stroke="currentColor" stroke-width="1.6"/><circle cx="12" cy="15" r="1.3" fill="currentColor"/></svg>
+            <span>Secure checkout. Card details are entered on PayPal / PayFast, never on this site - pay with a card or a PayPal account.</span>
+          </p>
         </div>
-        <div class="pay-summary" id="pay-summary">Enter the artwork and the amount you agreed with us.</div>
-        <div id="paypal-buttons"></div>
-        <div id="pay-result" class="pay-hide" style="margin-top:14px;"></div>
-        <p class="pay-note">Payments are handled securely by PayPal - your card details are entered on PayPal and never touch this site. You can pay with a PayPal account or a card.</p>
       </form>
 
     </div>
@@ -190,12 +213,7 @@
           .then(function(r){ return r.json(); })
           .then(function(d){
             if(d.ok){
-              $('pay-form').classList.add('pay-hide');
-              $('pay-disabled').classList.add('pay-hide');
-              var box = document.createElement('div');
-              box.className = 'pay-wrap';
-              box.innerHTML = '<div class="pay-msg pay-msg--ok"><b>Thank you - your payment is complete.</b><br>Reference: ' + esc(d.ref) + '<br>We’ll be in touch to arrange delivery or collection. A receipt has been emailed to you by PayPal.</div>';
-              $('pay-form').parentNode.appendChild(box);
+              document.querySelector('.pay-shell').innerHTML = '<div class="pay-msg pay-msg--ok"><b>Thank you - your payment is complete.</b><br>Reference: ' + esc(d.ref) + '<br>We’ll be in touch to arrange delivery or collection. A receipt has been emailed to you by PayPal.</div>';
               window.scrollTo({ top: 0, behavior:'smooth' });
             } else {
               showResult('err', esc(d.error || 'Payment could not be completed.'));
@@ -234,18 +252,20 @@
     }).catch(function(){ $('pay-piece').innerHTML = '<option value="__other">Tell us which artwork</option>'; });
   }
 
-  // show the chosen artwork (image + details) so the buyer sees what they're paying for
+  // show the chosen artwork (large, with details) so the buyer sees what they're paying for
   function renderPreview(){
     var sel = $('pay-piece'), opt = sel.options[sel.selectedIndex];
     var box = $('pay-preview');
     var photo = opt && opt.getAttribute ? opt.getAttribute('data-photo') : '';
-    if(!photo){ box.style.display = 'none'; box.innerHTML = ''; return; }
-    var desc = opt.getAttribute('data-desc') || '', artist = opt.getAttribute('data-artist') || '', size = opt.getAttribute('data-art') || '';
-    box.innerHTML = '<img src="' + esc(photo) + '" alt="">'
-      + '<div class="pay-preview__info"><div class="pay-preview__title">' + esc(desc || 'Untitled') + '</div>'
-      + (artist ? '<div class="pay-preview__artist">By ' + esc(artist) + '</div>' : '')
-      + (size ? '<div class="pay-preview__size"><b>Size</b>' + esc(size) + '</div>' : '') + '</div>';
-    box.style.display = 'flex';
+    if(!photo){ box.innerHTML = '<div class="pay-art__empty"><span>Choose an artwork<br>to see it here</span></div>'; return; }
+    var desc = opt.getAttribute('data-desc') || '', artist = opt.getAttribute('data-artist') || '',
+        size = opt.getAttribute('data-art') || '', id = (opt.value === '__other') ? '' : (opt.value || '');
+    var facts = (size ? '<span><b>Size</b>' + esc(size) + '</span>' : '') + (id ? '<span><b>Ref</b>' + esc(id) + '</span>' : '');
+    box.innerHTML = '<div class="pay-art__img"><img src="' + esc(photo) + '" alt="' + esc(desc) + '"></div>'
+      + '<div class="pay-art__info"><div class="pay-art__title">' + esc(desc || 'Untitled') + '</div>'
+      + (artist ? '<div class="pay-art__artist">By ' + esc(artist) + '</div>' : '')
+      + (facts ? '<div class="pay-art__facts">' + facts + '</div>' : '')
+      + '</div>';
   }
 
   // ZAR -> PayFast (redirect); other currencies -> PayPal.
@@ -256,7 +276,7 @@
   function mountPayFast(){
     var wrap = $('paypal-buttons');
     wrap.innerHTML = '<button type="button" class="btn btn--gold" id="pf-btn" style="width:100%;justify-content:center;">Pay by card or Instant EFT (Rand) <span class="btn__arrow">&#8594;</span></button>'
-      + '<div class="pay-note" style="margin-top:8px;">You’ll be taken to PayFast to complete payment securely.</div>';
+      + '<div style="color:var(--muted);font-size:13px;margin-top:8px;">You’ll be taken to PayFast to complete payment securely.</div>';
     $('pf-btn').addEventListener('click', function(){
       var o = order();
       if(!(o.amount > 0)){ showResult('err','Please enter the agreed amount first.'); return; }
@@ -277,9 +297,7 @@
   // returning from PayFast
   if(params.get('paid')){
     $('pay-loading').classList.add('pay-hide');
-    var okBox = document.createElement('div'); okBox.className = 'pay-wrap';
-    okBox.innerHTML = '<div class="pay-msg pay-msg--ok"><b>Thank you - your payment is being processed.</b><br>We’ll confirm it and be in touch to arrange delivery or collection. A receipt has been emailed to you.</div>';
-    var host = document.querySelector('.pay-wrap'); host.parentNode.insertBefore(okBox, host);
+    document.querySelector('.pay-shell').innerHTML = '<div class="pay-msg pay-msg--ok"><b>Thank you - your payment is being processed.</b><br>We’ll confirm it and be in touch to arrange delivery or collection. A receipt has been emailed to you.</div>';
     return;
   }
   var cancelled = !!params.get('cancelled');
