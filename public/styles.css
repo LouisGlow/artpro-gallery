@@ -436,6 +436,8 @@ a { color: inherit; }
 .card__body { padding: 16px 18px 20px; display: flex; flex-direction: column; gap: 4px; }
 .card__title { font-family: var(--font-display); font-weight: 500; text-transform: uppercase; letter-spacing: 0.06em; font-size: 18px; color: var(--ink-deep); line-height: 1.15; }
 .card__artist { color: var(--muted); font-size: 13px; }
+.card__size { color: var(--muted); font-size: 12px; letter-spacing: 0.02em; }
+.card__size b { font-weight: 600; color: var(--gold-deep); font-family: var(--font-display); text-transform: uppercase; letter-spacing: 0.08em; font-size: 10px; margin-right: 6px; }
 .card__foot { display: flex; justify-content: space-between; align-items: center; margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--border); }
 .card__price { font-family: var(--font-display); letter-spacing: 0.08em; font-size: 15px; color: var(--ink-deep); }
 

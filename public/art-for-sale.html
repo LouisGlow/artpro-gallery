@@ -144,7 +144,7 @@
       return;
     }
     grid.innerHTML = pieces.map(function(p){
-      var enquire = 'contact.html?artist=' + encodeURIComponent(p.artist || '') + '&piece=' + encodeURIComponent(p.desc || '');
+      var enquire = 'contact.html?artist=' + encodeURIComponent(p.artist || '') + '&piece=' + encodeURIComponent(p.desc || '') + (p.id ? '&id=' + encodeURIComponent(p.id) : '');
       var payId = encodeURIComponent(p.id || p.pid || '');
       var img = p.photo ? esc(p.photo) : 'assets/images/artists/_placeholder.jpg';
       var tag = p.medium ? '<span class="card__tag">' + esc(p.medium) + '</span>' : '';
@@ -153,13 +153,14 @@
           '<img src="' + img + '" alt="' + esc(p.desc) + '" loading="lazy"></a>' +
         '<div class="card__body"><span class="card__title">' + esc(p.desc || 'Untitled') + '</span>' +
         '<span class="card__artist">' + artistLink(p.artist) + '</span>' +
+        (p.art ? '<span class="card__size"><b>Size</b>' + esc(p.art) + '</span>' : '') +
         '<div class="card__foot"><span class="card__price">POA</span>' +
         '<span style="display:inline-flex;gap:12px;"><a class="tlink" href="' + esc(enquire) + '" style="font-size:11px;">Enquire</a>' +
         '<a class="tlink" href="pay.html?piece=' + payId + '" style="font-size:11px;">Pay</a></span></div></div></article>';
     }).join('');
 
     // Open the shared lightbox instead of navigating away.
-    var LBITEMS = pieces.map(function(p){ return { url: p.photo, title: p.desc, meta: p.medium, artist: p.artist, artistSlug: ARTMAP[(p.artist || '').toLowerCase()], payId: p.id || p.pid || '' }; });
+    var LBITEMS = pieces.map(function(p){ return { url: p.photo, title: p.desc, meta: p.medium, size: p.art, id: p.id, artist: p.artist, artistSlug: ARTMAP[(p.artist || '').toLowerCase()], payId: p.id || p.pid || '' }; });
     Array.prototype.forEach.call(grid.querySelectorAll('.card__media'), function(el, i){
       el.addEventListener('click', function(e){
         e.preventDefault();

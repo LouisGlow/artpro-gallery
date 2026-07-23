@@ -207,14 +207,15 @@
     artGrid.innerHTML = pieces.map(function(p){
       var img = p.photo ? esc(p.photo) : 'assets/images/artists/_placeholder.jpg';
       var tag = p.medium ? '<span class="card__tag">' + esc(p.medium) + '</span>' : '';
-      var enquire = 'contact.html?artist=' + encodeURIComponent(p.artist || '') + '&piece=' + encodeURIComponent(p.desc || '');
+      var enquire = 'contact.html?artist=' + encodeURIComponent(p.artist || '') + '&piece=' + encodeURIComponent(p.desc || '') + (p.id ? '&id=' + encodeURIComponent(p.id) : '');
       return '<article class="card"><a class="card__media" href="#" role="button">' + tag +
         '<img src="' + img + '" alt="' + esc(p.desc) + '" loading="lazy"></a>' +
         '<div class="card__body"><span class="card__title">' + esc(p.desc || 'Untitled') + '</span>' +
         '<span class="card__artist">' + artistLink(p.artist) + '</span>' +
+        (p.art ? '<span class="card__size"><b>Size</b>' + esc(p.art) + '</span>' : '') +
         '<div class="card__foot"><span class="card__price">POA</span><a class="tlink" href="' + esc(enquire) + '" style="font-size:11px;">Enquire</a></div></div></article>';
     }).join('');
-    var LBITEMS = pieces.map(function(p){ return { url: p.photo, title: p.desc, meta: p.medium, artist: p.artist, artistSlug: ARTMAP[(p.artist || '').toLowerCase()] }; });
+    var LBITEMS = pieces.map(function(p){ return { url: p.photo, title: p.desc, meta: p.medium, size: p.art, id: p.id, artist: p.artist, artistSlug: ARTMAP[(p.artist || '').toLowerCase()] }; });
     Array.prototype.forEach.call(artGrid.querySelectorAll('.card__media'), function(el, i){
       el.addEventListener('click', function(e){ e.preventDefault(); if(window.ArtProLightbox){ ArtProLightbox.open(LBITEMS, i); } });
     });

@@ -117,7 +117,7 @@
   var params = new URLSearchParams(location.search);
   var slug = (params.get('a') || '').toLowerCase();
 
-  function pieceToWork(p){ return { title: p.desc || 'Untitled', img: p.photo || '', medium: p.medium || '' }; }
+  function pieceToWork(p){ return { title: p.desc || 'Untitled', img: p.photo || '', medium: p.medium || '', size: p.art || '', id: p.id || '' }; }
 
   // Profile from the live artists DB; available works from the catalogue.
   // Falls back to the bundled artists-data.js if the API is unreachable.
@@ -183,7 +183,7 @@
       var wrap = document.getElementById('bio-works-wrap');
       var grid = document.getElementById('bio-works');
       wrap.hidden = false;
-      var LBITEMS = works.map(function(w){ return { url:w.img, title:w.title, meta:w.medium, artist:artist.name, artistSlug:artist.slug }; });
+      var LBITEMS = works.map(function(w){ return { url:w.img, title:w.title, meta:w.medium, size:w.size, id:w.id, artist:artist.name, artistSlug:artist.slug }; });
       works.forEach(function(w, i){
         var a = document.createElement('a'); a.className='artwork'; a.href='#'; a.setAttribute('role','button');
         a.addEventListener('click', function(e){ e.preventDefault(); if(window.ArtProLightbox){ ArtProLightbox.open(LBITEMS, i); } });
@@ -191,7 +191,7 @@
         var im = document.createElement('img'); im.src=w.img||'assets/images/artists/_placeholder.jpg'; im.alt=w.title||artist.name; im.loading='lazy'; im.decoding='async';
         fig.appendChild(im);
         var t = document.createElement('span'); t.className='artwork__title'; t.textContent=w.title||'Untitled';
-        var mt = document.createElement('span'); mt.className='artwork__meta'; mt.textContent=w.medium||'Original work';
+        var mt = document.createElement('span'); mt.className='artwork__meta'; mt.textContent=(w.medium||'Original work')+(w.size ? '  ·  '+w.size : '');
         a.appendChild(fig); a.appendChild(t); a.appendChild(mt);
         grid.appendChild(a);
       });

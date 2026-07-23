@@ -16,7 +16,10 @@
     '.lb-stage__caption{color:#ece7df;font-family:"Montserrat",-apple-system,"Segoe UI",system-ui,sans-serif;}' +
     '.lb-stage__eyebrow{font-family:"Barlow Condensed","Oswald",sans-serif;font-weight:600;font-size:12px;letter-spacing:.24em;text-transform:uppercase;color:#b8912f;margin:0 0 14px;}' +
     '.lb-stage__title{font-family:"Barlow Condensed","Oswald",sans-serif;font-weight:600;font-size:clamp(28px,3vw,44px);letter-spacing:.03em;text-transform:uppercase;line-height:1;margin:0 0 12px;color:#f4efe6;}' +
-    '.lb-stage__meta{font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:#c9c0b1;margin:0 0 18px;}' +
+    '.lb-stage__meta{font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:#c9c0b1;margin:0 0 12px;}' +
+    '.lb-stage__size{font-size:15px;color:#efe7d9;margin:0 0 18px;letter-spacing:.02em;}' +
+    '.lb-stage__size[hidden]{display:none;}' +
+    '.lb-stage__size b{font-weight:600;color:#b8912f;font-family:"Barlow Condensed","Oswald",sans-serif;letter-spacing:.08em;text-transform:uppercase;font-size:12px;margin-right:8px;}' +
     '.lb-stage__artist{font-size:14px;line-height:1.6;color:#d8cfbf;margin:0 0 24px;}' +
     '.lb-stage__artist a{color:#f4efe6;text-decoration:underline;text-underline-offset:3px;transition:color .2s;}' +
     '.lb-stage__artist a:hover{color:#b8912f;}' +
@@ -33,7 +36,7 @@
     '.lb-stage__nav[hidden]{display:none;}' +
     '@media(max-width:1024px){.lb-stage__inner{grid-template-columns:1fr;gap:18px;text-align:center;}.lb-stage__img{max-height:56vh;}.lb-stage__nav{width:44px;height:44px;font-size:24px;}.lb-stage__prev{left:10px;}.lb-stage__next{right:10px;}}';
 
-  var stage, img, indexEl, titleEl, metaEl, artistEl, cta, payCta, prevBtn, nextBtn;
+  var stage, img, indexEl, titleEl, metaEl, sizeEl, artistEl, cta, payCta, prevBtn, nextBtn;
   var items = [], idx = 0;
 
   function esc(s) { var d = document.createElement('div'); d.textContent = String(s == null ? '' : s); return d.innerHTML; }
@@ -59,6 +62,7 @@
           '<p class="lb-stage__eyebrow"><span class="lb-stage__index">1 / 1</span></p>' +
           '<h2 class="lb-stage__title">-</h2>' +
           '<p class="lb-stage__meta">-</p>' +
+          '<p class="lb-stage__size" hidden><b>Size</b><span></span></p>' +
           '<p class="lb-stage__artist">-</p>' +
           '<a class="lb-stage__cta" href="contact.html">Enquire about this piece</a>' +
           '<a class="lb-stage__cta lb-stage__cta--pay" href="pay.html" hidden>Pay for this piece</a>' +
@@ -73,6 +77,7 @@
     indexEl  = stage.querySelector('.lb-stage__index');
     titleEl  = stage.querySelector('.lb-stage__title');
     metaEl   = stage.querySelector('.lb-stage__meta');
+    sizeEl   = stage.querySelector('.lb-stage__size');
     artistEl = stage.querySelector('.lb-stage__artist');
     cta      = stage.querySelector('.lb-stage__cta');
     payCta   = stage.querySelector('.lb-stage__cta--pay');
@@ -103,12 +108,14 @@
     indexEl.textContent = (idx + 1) + ' / ' + items.length;
     titleEl.textContent = it.title || 'Untitled';
     metaEl.textContent = it.meta || 'ArtPro Gallery';
+    if (it.size) { sizeEl.hidden = false; sizeEl.querySelector('span').textContent = it.size; }
+    else { sizeEl.hidden = true; }
     if (it.artist && it.artistSlug) {
       artistEl.innerHTML = 'By <a href="artist.html?a=' + encodeURIComponent(it.artistSlug) + '">' + esc(it.artist) + '</a>';
     } else {
       artistEl.textContent = it.artist ? ('By ' + it.artist) : 'ArtPro Collection';
     }
-    cta.setAttribute('href', 'contact.html?artist=' + encodeURIComponent(it.artist || '') + '&piece=' + encodeURIComponent(it.title || ''));
+    cta.setAttribute('href', 'contact.html?artist=' + encodeURIComponent(it.artist || '') + '&piece=' + encodeURIComponent(it.title || '') + (it.id ? '&id=' + encodeURIComponent(it.id) : ''));
     if (it.payId) { payCta.hidden = false; payCta.setAttribute('href', 'pay.html?piece=' + encodeURIComponent(it.payId)); }
     else { payCta.hidden = true; }
     var multi = items.length > 1;

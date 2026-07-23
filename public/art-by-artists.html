@@ -188,7 +188,7 @@
     host.innerHTML = groups.map(renderGroup).join('');
     var LBITEMS = [];
     groups.forEach(function(g){ g.items.forEach(function(p){
-      LBITEMS.push({ url: p.photo, title: p.desc, meta: p.medium, artist: p.artist, artistSlug: (ARTISTS[(p.artist || '').toLowerCase()] || {}).slug });
+      LBITEMS.push({ url: p.photo, title: p.desc, meta: p.medium, size: p.art, id: p.id, artist: p.artist, artistSlug: (ARTISTS[(p.artist || '').toLowerCase()] || {}).slug });
     }); });
     Array.prototype.forEach.call(host.querySelectorAll('.artwork'), function(el, i){
       el.addEventListener('click', function(e){ e.preventDefault(); if(window.ArtProLightbox){ ArtProLightbox.open(LBITEMS, i); } });
@@ -230,7 +230,8 @@
   function renderWork(p){
     var src = p.photo ? esc(p.photo) : 'assets/images/artists/_placeholder.jpg';
     var sold = /sold/i.test(p.status || '') ? '<span class="artwork__sold">Sold</span>' : '';
-    var metaLine = p.medium ? '<span class="artwork__meta">' + esc(p.medium) + '</span>' : '';
+    var metaBits = []; if(p.medium) metaBits.push(esc(p.medium)); if(p.art) metaBits.push(esc(p.art));
+    var metaLine = metaBits.length ? '<span class="artwork__meta">' + metaBits.join(' · ') + '</span>' : '';
     return '<a class="artwork" href="#" role="button">' +
       '<span class="artwork__img"><img src="' + src + '" alt="' + esc(p.desc) + '" loading="lazy">' + sold + '</span>' +
       '<span class="artwork__title">' + esc(p.desc || 'Untitled') + '</span>' + metaLine +
