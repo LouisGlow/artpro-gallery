@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Add a Piece — ArtPro Gallery</title>
-<meta name="description" content="Staff art catalog — capture a piece (preview).">
+<title>Add a Piece - ArtPro Gallery</title>
+<meta name="description" content="Staff art catalog - capture a piece (preview).">
 <link rel="icon" href="assets/images/favicon.jpg">
 <link rel="stylesheet" href="styles.css">
 <style>
@@ -62,7 +62,7 @@
 
 <header class="site-header">
   <div class="wrap site-header__inner">
-    <a class="brand" href="index.html" aria-label="ArtPro Gallery — home"><img src="assets/images/logo.png" alt="ArtPro Gallery"></a>
+    <a class="brand" href="index.html" aria-label="ArtPro Gallery - home"><img src="assets/images/logo.png" alt="ArtPro Gallery"></a>
     <nav class="nav" id="primary-nav" aria-label="Primary">
       <a href="index.html">Home</a>
       <a href="about.html">About</a>
@@ -188,7 +188,7 @@
     </div>
     <div class="footer-bottom">
       <p>© 2026 ArtPro Gallery · Lee Holloway. All rights reserved.</p>
-      <div class="footer-social"><a href="https://web.facebook.com/ArtProGalleries" target="_blank" rel="noopener">Facebook</a><a href="https://www.instagram.com/artprogallery/" target="_blank" rel="noopener">Instagram</a><a href="https://www.youtube.com/@ArtProGallery" target="_blank" rel="noopener">YouTube</a></div>
+      <div class="footer-social"><a data-cms-href="social.facebook" href="https://web.facebook.com/ArtProGalleries" target="_blank" rel="noopener">Facebook</a><a data-cms-href="social.instagram" href="https://www.instagram.com/artprogallery/" target="_blank" rel="noopener">Instagram</a><a data-cms-href="social.youtube" href="https://www.youtube.com/@ArtProGallery" target="_blank" rel="noopener">YouTube</a></div>
     </div>
   </div>
 </footer>
@@ -276,10 +276,10 @@
     var descSafe = piece.desc.replace(/</g,'&lt;');
     flash('Saving…');
     ArtProStore.create(piece).then(function(){
-      flash('Saved &ldquo;' + descSafe + '&rdquo; — opening the catalog…');
+      flash('Saved &ldquo;' + descSafe + '&rdquo; - opening the catalog…');
       window.location.href = 'catalog.html';   // redirect to the catalog after saving
     }).catch(function(err){
-      flash((err && err.message) ? err.message : 'Could not save — check your connection and try again.');
+      flash((err && err.message) ? err.message : 'Could not save - check your connection and try again.');
       saving = false;
     });
   }

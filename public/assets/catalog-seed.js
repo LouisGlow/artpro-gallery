@@ -1,4 +1,4 @@
-/* Sample catalog pieces — used to populate the catalog on a fresh device (when
+/* Sample catalog pieces - used to populate the catalog on a fresh device (when
  * the store has never been seeded). Once the real database is live this file is
  * no longer needed; the catalog will render whatever the API returns.
  * Shape matches a "piece" in assets/store.js. */

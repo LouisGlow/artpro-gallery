@@ -1,7 +1,7 @@
-/* ArtPro data layer — the single place the catalog reads/writes its pieces.
+/* ArtPro data layer - the single place the catalog reads/writes its pieces.
  *
  * Primary mode: the JSON API served by the Worker (same origin, /api/pieces),
- * backed by the D1 database — shared across all staff and devices.
+ * backed by the D1 database - shared across all staff and devices.
  *
  * Fallback mode: if the API isn't reachable (e.g. previewing the static files
  * without the Worker, or a network blip), it uses this browser's localStorage
@@ -73,7 +73,7 @@
   // Read an <input type=file> image, downscale it (phone photos are huge), and
   // return a JPEG data: URL suitable for upload. Resolves '' for no file.
   function readPhoto(file, maxDim, quality) {
-    maxDim = maxDim || 1600; quality = quality || 0.82;
+    maxDim = maxDim || 1400; quality = quality || 0.82;
     return new Promise(function (resolve, reject) {
       if (!file) { resolve(''); return; }
       var url = URL.createObjectURL(file);

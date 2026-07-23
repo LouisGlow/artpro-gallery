@@ -125,7 +125,7 @@ const DECOR_SERVICES = [
   ['carpets', 'Carpets', 'carpets.html', 'assets/images/services/carpets.jpg'],
   ['lamps',   'Lamps',   'lamps.html',   'assets/images/services/lamps.jpg'],
 ];
-// Build the editable fields for a list of services — a heading + 4 fields each.
+// Build the editable fields for a list of services - a heading + 4 fields each.
 function svcFields(list){
   var out = [];
   list.forEach(function(s){
@@ -150,10 +150,16 @@ function svcFields(list){
 // ---------- editable content structure ----------
 const SCHEMA = [
   { group:'Site-wide', panels:[
-    { id:'contact', title:'Contact details', desc:'Your phone number and email addresses. These appear in the footer of every page and on the Contact page — change them here and they update everywhere.', fields:[
-      { key:'contact.phone',  label:'Phone number', type:'tel',   ph:'+27 82 555 4272' },
-      { key:'contact.email',  label:'Primary email', type:'email', ph:'lee@artprogallery.co.za' },
-      { key:'contact.email2', label:'Second email',  type:'email', ph:'admin@artprogallery.co.za' },
+    { id:'contact', title:'Contact details', desc:'Phone, email, WhatsApp, trading hours and social links. These appear on the Contact page, and the phone/email/social also show in the footer of every page - change them here and they update everywhere.', fields:[
+      { key:'contact.phone',    label:'Phone number', type:'tel',   ph:'+27 82 555 4272' },
+      { key:'contact.email',    label:'Primary email', type:'email', ph:'lee@artprogallery.co.za' },
+      { key:'contact.email2',   label:'Second email',  type:'email', ph:'admin@artprogallery.co.za' },
+      { key:'contact.whatsapp', label:'WhatsApp number', type:'tel', ph:'+27 82 555 4272', hint:'Becomes a tap-to-chat link on the Contact page. Leave empty to show "Number needed".' },
+      { key:'contact.hours',    label:'Trading hours', type:'textarea', ph:'Mon-Fri 9am-5pm\nSat 9am-1pm', hint:'One line per row. Leave empty to show the placeholder.' },
+      { type:'subhead', label:'Social links' },
+      { key:'social.facebook',  label:'Facebook URL', type:'text', ph:'https://web.facebook.com/ArtProGalleries' },
+      { key:'social.instagram', label:'Instagram URL', type:'text', ph:'https://www.instagram.com/artprogallery/' },
+      { key:'social.youtube',   label:'YouTube URL', type:'text', ph:'https://www.youtube.com/@ArtProGallery' },
     ]},
     { id:'footer', title:'Footer', desc:'The short blurb and the newsletter line in the dark footer strip at the bottom of every page.', fields:[
       { key:'footer.blurb',      label:'Footer blurb (under the ArtPro name)', type:'textarea', ph:'South African art across four galleries…' },
@@ -161,34 +167,34 @@ const SCHEMA = [
     ]},
   ]},
   { group:'Home page', panels:[
-    { id:'home-hero', title:'Hero (top banner)', desc:'Homepage — the large banner at the very top: the small kicker line, the big headline, the intro paragraph, and the main image with its caption.', fields:[
+    { id:'home-hero', title:'Hero (top banner)', desc:'Homepage - the large banner at the very top: the small kicker line, the big headline, the intro paragraph, and the main image with its caption.', fields:[
       { key:'home.hero.kicker',   label:'Kicker (small line above the headline)', type:'text' },
       { key:'home.hero.headline', label:'Headline', type:'textarea', hint:'Each new line becomes a line break.' },
       { key:'home.hero.lead',     label:'Lead paragraph', type:'textarea' },
       { key:'home.hero.image',    label:'Hero image', type:'image', media:'home-hero' },
       { key:'home.hero.figcap',   label:'Image caption', type:'text' },
     ]},
-    { id:'home-intro', title:'Intro block', desc:'Homepage — the short introduction block directly below the hero banner.', fields:[
+    { id:'home-intro', title:'Intro block', desc:'Homepage - the short introduction block directly below the hero banner.', fields:[
       { key:'home.intro.eyebrow', label:'Eyebrow (small line above)', type:'text' },
       { key:'home.intro.lead',    label:'Lead paragraph', type:'textarea' },
       { key:'home.intro.muted',   label:'Second paragraph', type:'textarea' },
     ]},
   ]},
   { group:'About page', panels:[
-    { id:'about-intro', title:'Intro', desc:'About page — the title and one-line summary at the very top of the page.', fields:[
+    { id:'about-intro', title:'Intro', desc:'About page - the title and one-line summary at the very top of the page.', fields:[
       { key:'about.headline', label:'Headline', type:'text', ph:'A gallery grown across the city' },
       { key:'about.lead',     label:'Sub-line (under the headline)', type:'textarea', ph:'From a humble start to four galleries…' },
     ]},
-    { id:'about-story', title:'Our story', desc:'About page — the main story text and the photo beside it (the first block under the title).', fields:[
+    { id:'about-story', title:'Our story', desc:'About page - the main story text and the photo beside it (the first block under the title).', fields:[
       { key:'about.story.lead', label:'Opening line (shown larger)', type:'textarea', hint:'Leave empty to keep the current text.' },
       { key:'about.story.body', label:'Story paragraphs', type:'textarea', hint:'Leave a blank line between paragraphs. Leave empty to keep the current text.' },
       { key:'about.image',      label:'Photo', type:'image', media:'about-story', def:'assets/images/img-vintage-carscene.jpg' },
       { key:'about.imagecaption', label:'Photo caption', type:'text' },
     ]},
-    { id:'about-quote', title:'Pull quote', desc:'About page — the large highlighted quote band across the middle of the page.', fields:[
+    { id:'about-quote', title:'Pull quote', desc:'About page - the large highlighted quote band across the middle of the page.', fields:[
       { key:'about.pullquote', label:'Quote', type:'textarea', hint:'Leave empty to keep the current text.' },
     ]},
-    { id:'about-offer', title:'“More than paintings” cards', desc:'About page — the three cards under the “More than paintings” heading.', fields:[
+    { id:'about-offer', title:'“More than paintings” cards', desc:'About page - the three cards under the “More than paintings” heading.', fields:[
       { key:'about.offer.kicker',  label:'Small line above the heading', type:'text', ph:'Under one roof' },
       { key:'about.offer.heading', label:'Section heading', type:'text', ph:'More than paintings' },
       { type:'subhead', label:'Card 1' },
@@ -204,7 +210,7 @@ const SCHEMA = [
       { key:'about.offer.3.name',  label:'Title', type:'text', ph:'Services' },
       { key:'about.offer.3.desc',  label:'Description', type:'textarea' },
     ]},
-    { id:'about-owner', title:'The owner', desc:'About page — the “Who you’ll meet” section at the bottom: the owner’s photo, name, role and biography.', fields:[
+    { id:'about-owner', title:'The owner', desc:'About page - the “Who you’ll meet” section at the bottom: the owner’s photo, name, role and biography.', fields:[
       { key:'about.people.kicker',  label:'Small line above the heading', type:'text', ph:'The people' },
       { key:'about.people.heading', label:'Section heading', type:'text', ph:"Who you'll meet" },
       { type:'subhead', label:'Owner' },
@@ -216,19 +222,19 @@ const SCHEMA = [
     ]},
   ]},
   { group:'Contact page', panels:[
-    { id:'contact-page', title:'Page text', desc:'Contact page — the page title, the intro line, and the short text above the enquiry form. (Phone and emails are under “Contact details”.)', fields:[
+    { id:'contact-page', title:'Page text', desc:'Contact page - the page title, the intro line, and the short text above the enquiry form. (Phone and emails are under “Contact details”.)', fields:[
       { key:'contactpage.headline',  label:'Headline', type:'text' },
       { key:'contactpage.lead',      label:'Sub-line (under the headline)', type:'textarea' },
       { key:'contactpage.formintro', label:'Text above the enquiry form', type:'textarea' },
     ]},
   ]},
   { group:'Services page', panels:[
-    { id:'services-intro', title:'Page intro', desc:'Services page — the title and lead paragraph at the very top.', fields:[
+    { id:'services-intro', title:'Page intro', desc:'Services page - the title and lead paragraph at the very top.', fields:[
       { key:'services.headline', label:'Headline', type:'text' },
       { key:'services.lead',     label:'Lead paragraph', type:'textarea' },
     ]},
-    { id:'services-core', title:'Core services', desc:'Services page — the six “Around your collection” cards, plus the detail page each card links to (framing, commission, etc.).', fields: svcFields(CORE_SERVICES) },
-    { id:'services-decor', title:'Decorative & homeware', desc:'Services page — the three “Also in the gallery” cards (Statues, Carpets, Lamps) and their detail pages.', fields: svcFields(DECOR_SERVICES) },
+    { id:'services-core', title:'Core services', desc:'Services page - the six “Around your collection” cards, plus the detail page each card links to (framing, commission, etc.).', fields: svcFields(CORE_SERVICES) },
+    { id:'services-decor', title:'Decorative & homeware', desc:'Services page - the three “Also in the gallery” cards (Statues, Carpets, Lamps) and their detail pages.', fields: svcFields(DECOR_SERVICES) },
   ]},
   { group:'Galleries', panels: [
     ['sunninghill','Sunninghill Village'], ['prison','Prison Break Market'],
@@ -240,7 +246,7 @@ const SCHEMA = [
       { key:'gallery.'+g[0]+'.address', label:'Address', type:'textarea', hint:'Each new line becomes a line break.' },
       { key:'gallery.'+g[0]+'.tag',     label:'Tag (small badge)', type:'text' },
       { key:'gallery.'+g[0]+'.photos',  label:'Gallery photos', type:'photos', gallery:g[0],
-        hint:'Photos of the physical gallery, shown on its page. Add or remove — the first one is the large hero.' },
+        hint:'Photos of the physical gallery, shown on its page. Add or remove - the first one is the large hero.' },
     ] };
   })},
   { group:'Tools', panels:[
@@ -250,7 +256,7 @@ const SCHEMA = [
 
 const PANELS = {}; SCHEMA.forEach(function(g){ g.panels.forEach(function(p){ PANELS[p.id]=p; }); });
 
-// Starting photo set for each gallery when nothing has been saved yet — the
+// Starting photo set for each gallery when nothing has been saved yet - the
 // files already shipped in assets/images/galleries/<slug>/. Once saved (or
 // edited), the DB list takes over. Keeps existing photos deletable from here.
 const DEFAULT_PHOTOS = {
@@ -338,7 +344,7 @@ function show(id){
     if(inp.type==='file'){
       inp.addEventListener('change', function(){
         var file = inp.files[0]; if(!file) return;
-        readImage(file, 1600, function(dataUrl){
+        readImage(file, 1400, function(dataUrl){
           pendingImages[inp.dataset.media] = { dataUrl:dataUrl, key:inp.dataset.key };
           var prev = $('#prev_'+inp.dataset.media); if(prev) prev.innerHTML = '<img src="'+dataUrl+'">';
           markDirty();
@@ -363,13 +369,13 @@ function initPhotoField(){
     setStatus('Adding photo'+(files.length>1?'s':'')+'…');
     // upload each, in order, appending as they land
     (function nextFile(i){
-      if(i >= files.length){ setStatus('Photo'+(files.length>1?'s':'')+' added — Save to publish'); return; }
-      readImage(files[i], 1600, function(dataUrl){
+      if(i >= files.length){ setStatus('Photo'+(files.length>1?'s':'')+' added - Save to publish'); return; }
+      readImage(files[i], 1400, function(dataUrl){
         var mk = 'gal-' + galPhotos.gallery + '-' + Math.random().toString(36).slice(2,10);
         fetch('/api/media/'+mk, { method:'PUT', headers:{'content-type':'application/json'}, body:JSON.stringify({ photo:dataUrl }) })
           .then(function(r){ return r.json(); })
           .then(function(res){ if(res && res.url){ galPhotos.list.push(res.url); renderPhotoGrid(); markDirty(); } })
-          .catch(function(){ setStatus('Upload failed — check your connection','err'); })
+          .catch(function(){ setStatus('Upload failed - check your connection','err'); })
           .then(function(){ nextFile(i+1); });
       });
     })(0);
@@ -379,7 +385,7 @@ function initPhotoField(){
 function renderPhotoGrid(){
   var wrap = $('#pwrap'); if(!wrap || !galPhotos) return;
   var html = '';
-  if(!galPhotos.list.length){ html += '<div class="pempty">No photos yet — add the first one below.</div>'; }
+  if(!galPhotos.list.length){ html += '<div class="pempty">No photos yet - add the first one below.</div>'; }
   html += '<div class="pgrid">';
   galPhotos.list.forEach(function(url, i){
     html += '<div class="pcell">'
@@ -403,10 +409,10 @@ function renderPhotoGrid(){
 function renderBackup(el){
   el.innerHTML =
     '<div class="note" style="margin-bottom:22px;"><b>Two safety nets protect your data.</b><br>'
-    + '1. <b>Automatic:</b> Cloudflare D1 keeps 30 days of point-in-time history — any change can be rolled back from the Cloudflare dashboard (D1 → your database → Time&nbsp;Travel).<br>'
+    + '1. <b>Automatic:</b> Cloudflare D1 keeps 30 days of point-in-time history - any change can be rolled back from the Cloudflare dashboard (D1 → your database → Time&nbsp;Travel).<br>'
     + '2. <b>Manual:</b> download a full JSON copy of every art piece, artist and content field below and keep it safe.</div>'
     + '<a class="btn2" id="dl" href="/api/admin/export" download="artpro-backup.json">⬇ Download full backup (JSON)</a>'
-    + '<div class="hint" style="margin-top:10px;">Editing site content here never touches your art pieces or artists — it only writes to a separate content table.</div>';
+    + '<div class="hint" style="margin-top:10px;">Editing site content here never touches your art pieces or artists - it only writes to a separate content table.</div>';
   $('#dl').addEventListener('click', function(e){
     e.preventDefault();
     fetch('/api/admin/export').then(function(r){return r.json();}).then(function(data){
@@ -460,7 +466,7 @@ $('#save').addEventListener('click', function(){
         else setStatus((res && res.error) || 'Save failed','err');
         btn.disabled=false;
       });
-  }).catch(function(){ setStatus('Save failed — check your connection','err'); btn.disabled=false; });
+  }).catch(function(){ setStatus('Save failed - check your connection','err'); btn.disabled=false; });
 });
 </script>
 </body>

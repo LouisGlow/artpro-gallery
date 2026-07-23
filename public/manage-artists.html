@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Manage Artists — ArtPro Gallery</title>
-<meta name="description" content="Staff — manage the represented artists (preview).">
+<title>Manage Artists - ArtPro Gallery</title>
+<meta name="description" content="Staff - manage the represented artists (preview).">
 <link rel="icon" href="assets/images/favicon.jpg">
 <link rel="stylesheet" href="styles.css">
 <style>
@@ -61,7 +61,7 @@
 
 <header class="site-header">
   <div class="wrap site-header__inner">
-    <a class="brand" href="index.html" aria-label="ArtPro Gallery — home"><img src="assets/images/logo.png" alt="ArtPro Gallery"></a>
+    <a class="brand" href="index.html" aria-label="ArtPro Gallery - home"><img src="assets/images/logo.png" alt="ArtPro Gallery"></a>
     <nav class="nav" id="primary-nav" aria-label="Primary">
       <a href="index.html">Home</a>
       <a href="about.html">About</a>
@@ -159,7 +159,7 @@
   function msg(t){ var el = g('a-msg'); el.textContent = t; el.style.display = ''; }
 
   function render(artists){
-    if(!artists.length){ tbody.innerHTML = '<tr><td colspan="4" style="color:var(--muted);">No artists yet — add one.</td></tr>'; }
+    if(!artists.length){ tbody.innerHTML = '<tr><td colspan="4" style="color:var(--muted);">No artists yet - add one.</td></tr>'; }
     else {
       tbody.innerHTML = artists.map(function(a){
         var rep = a.represented ? '<span class="apc-pill apc-pill--yes">Represented</span>' : '<span class="apc-pill">Hidden</span>';
@@ -169,7 +169,7 @@
           '<td><img src="' + esc(photo) + '" alt="" loading="lazy"></td>' +
           '<td class="apc-name">' + esc(a.name) + '</td>' +
           '<td>' + rep + '</td>' +
-          '<td><div class="apc-bio">' + esc(bio || '—') + '</div></td></tr>';
+          '<td><div class="apc-bio">' + esc(bio || '-') + '</div></td></tr>';
       }).join('');
     }
     g('a-count').textContent = artists.length;
@@ -182,7 +182,7 @@
       // keep display order, then name
       list.sort(function(x,y){ return (x.sortOrder - y.sortOrder) || x.name.localeCompare(y.name); });
       cache = list; render(list);
-    }).catch(function(){ tbody.innerHTML = '<tr><td colspan="4" style="color:#a5382f;">Couldn’t load artists — is the API up?</td></tr>'; });
+    }).catch(function(){ tbody.innerHTML = '<tr><td colspan="4" style="color:#a5382f;">Couldn’t load artists - is the API up?</td></tr>'; });
   }
 
   function openEditor(artist){
@@ -209,7 +209,7 @@
       represented: g('a-rep-in').checked,
       sortOrder: parseInt(g('a-order').value, 10) || 0
     };
-    // only send photo when a new one was picked (a data URL) — otherwise keep existing
+    // only send photo when a new one was picked (a data URL) - otherwise keep existing
     if(newPhoto){ p.photo = newPhoto; }
     return p;
   }
@@ -222,7 +222,7 @@
     close();
     op.then(function(){ return reload(); })
       .then(function(){ msg('Saved “' + name + '”.'); })
-      .catch(function(){ msg('Could not save “' + name + '” — please try again.'); });
+      .catch(function(){ msg('Could not save “' + name + '” - please try again.'); });
   }
 
   function del(){
@@ -231,7 +231,7 @@
     var slug = current;
     close();
     ArtProArtists.remove(slug).then(function(){ return reload(); }).then(function(){ msg('Artist deleted.'); })
-      .catch(function(){ msg('Could not delete — please try again.'); });
+      .catch(function(){ msg('Could not delete - please try again.'); });
   }
 
   // events

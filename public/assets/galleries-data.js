@@ -1,4 +1,4 @@
-/* ArtPro Gallery — the four physical galleries.
+/* ArtPro Gallery - the four physical galleries.
  * `loc` must match the value stored on a piece (so the gallery page can pull
  * the art currently at that store). Add photo paths as they're shot;
  * assets/images/galleries/<slug>/NN.jpg. */
@@ -30,8 +30,8 @@ window.ARTPRO_GALLERIES = [
   {
     slug: 'maggies-farm', key: 'maggies', name: 'Maggies Farm', loc: 'Maggies Farm',
     area: 'Lanseria', role: 'Farm gallery',
-    address: 'R512 Pelindaba Rd, Lanseria, 1748 — at Maggies, Home of the Chicken Pie',
-    tagline: 'Our farm gallery — South African art among the country air.',
+    address: 'R512 Pelindaba Rd, Lanseria, 1748 - at Maggies, Home of the Chicken Pie',
+    tagline: 'Our farm gallery - South African art among the country air.',
     map: 'https://maps.app.goo.gl/zXuajo1E7r6wETgP6',
     photos: [
       'assets/images/galleries/maggies-farm/01.jpg', 'assets/images/galleries/maggies-farm/02.jpg',

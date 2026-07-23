@@ -1,4 +1,4 @@
-# ArtPro Gallery — robots.txt
+# ArtPro Gallery - robots.txt
 User-agent: *
 Allow: /
 

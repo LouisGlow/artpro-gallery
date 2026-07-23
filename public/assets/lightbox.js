@@ -1,4 +1,4 @@
-/* ArtPro shared lightbox — the same fullscreen "stage" look as the virtual
+/* ArtPro shared lightbox - the same fullscreen "stage" look as the virtual
  * gallery (interactive-gallery.html). Self-contained: injects its own CSS and
  * markup, and exposes window.ArtProLightbox.open(items, startIndex).
  *
@@ -54,9 +54,9 @@
         '<figure class="lb-stage__figure"><img class="lb-stage__img" src="" alt="" decoding="async"></figure>' +
         '<div class="lb-stage__caption">' +
           '<p class="lb-stage__eyebrow"><span class="lb-stage__index">1 / 1</span></p>' +
-          '<h2 class="lb-stage__title">&mdash;</h2>' +
-          '<p class="lb-stage__meta">&mdash;</p>' +
-          '<p class="lb-stage__artist">&mdash;</p>' +
+          '<h2 class="lb-stage__title">-</h2>' +
+          '<p class="lb-stage__meta">-</p>' +
+          '<p class="lb-stage__artist">-</p>' +
           '<a class="lb-stage__cta" href="contact.html">Enquire about this piece</a>' +
         '</div>' +
       '</div>' +

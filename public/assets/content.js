@@ -1,4 +1,4 @@
-/* ArtPro CMS — hydrates public pages from editable site content.
+/* ArtPro CMS - hydrates public pages from editable site content.
  *
  * The page's hardcoded HTML is always the fallback: if the API is unreachable or a
  * key isn't set, nothing changes. When a key IS set in the admin, it replaces the
@@ -54,7 +54,7 @@
         }).join('');
       });
 
-      // Site-wide contact — updates every footer/contact block on the page.
+      // Site-wide contact - updates every footer/contact block on the page.
       if (has('contact.phone')) {
         var phone = v('contact.phone'), tel = 'tel:' + phone.replace(/[^0-9+]/g, '');
         document.querySelectorAll('a[href^="tel:"]').forEach(function (a) {
@@ -68,6 +68,15 @@
           a.setAttribute('href', 'mailto:' + mail); a.textContent = mail;
         });
       });
+
+      // WhatsApp - turn the number into a wa.me chat link, and hide the "needed" placeholder.
+      if (has('contact.whatsapp')) {
+        var wa = v('contact.whatsapp'), waDigits = wa.replace(/[^0-9]/g, '');
+        document.querySelectorAll('[data-cms-wa]').forEach(function (a) {
+          a.setAttribute('href', 'https://wa.me/' + waDigits); a.textContent = wa; a.style.display = '';
+        });
+        document.querySelectorAll('[data-wa-fallback]').forEach(function (el) { el.style.display = 'none'; });
+      }
     })
     .catch(function () {});
 })();

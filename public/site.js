@@ -1,6 +1,6 @@
-// ArtPro Gallery — shared behaviour
+// ArtPro Gallery - shared behaviour
 (function () {
-  // back button — sits to the left of the logo on every page (except home)
+  // back button - sits to the left of the logo on every page (except home)
   var inner = document.querySelector('.site-header__inner');
   var brand = inner && inner.querySelector('.brand');
   var path = location.pathname.replace(/\/+$/, '');

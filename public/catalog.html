@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Catalog — ArtPro Gallery</title>
+<title>Catalog - ArtPro Gallery</title>
 <meta name="description" content="Staff art catalog / BOM (preview).">
 <link rel="icon" href="assets/images/favicon.jpg">
 <link rel="stylesheet" href="styles.css">
@@ -102,7 +102,7 @@
 
 <header class="site-header">
   <div class="wrap site-header__inner">
-    <a class="brand" href="index.html" aria-label="ArtPro Gallery — home"><img src="assets/images/logo.png" alt="ArtPro Gallery"></a>
+    <a class="brand" href="index.html" aria-label="ArtPro Gallery - home"><img src="assets/images/logo.png" alt="ArtPro Gallery"></a>
     <nav class="nav" id="primary-nav" aria-label="Primary">
       <a href="index.html">Home</a>
       <a href="about.html">About</a>
@@ -126,12 +126,12 @@
         <p class="kicker">Staff · Bill of materials</p>
         <h1 class="display display--l" style="max-width:14ch;margin-top:14px;">The gallery catalog</h1>
       </div>
-      <p class="lead" style="max-width:46ch;">A single master record of every artwork across ArtPro's four galleries — capture each piece once with its photo, details and location, find it in seconds, and export the whole list as a bill of materials.</p>
+      <p class="lead" style="max-width:46ch;">A single master record of every artwork across ArtPro's four galleries - capture each piece once with its photo, details and location, find it in seconds, and export the whole list as a bill of materials.</p>
     </div>
     <div class="hero__meta">
       <div><div class="stat__num" id="stat-count">6</div><div class="stat__label">Pieces catalogued</div></div>
-      <div><div class="stat__num" id="stat-artists">—</div><div class="stat__label">Artists represented</div></div>
-      <div><div class="stat__num" id="stat-display">—</div><div class="stat__label">On display now</div></div>
+      <div><div class="stat__num" id="stat-artists">-</div><div class="stat__label">Artists represented</div></div>
+      <div><div class="stat__num" id="stat-display">-</div><div class="stat__label">On display now</div></div>
       <div><div class="stat__num">9</div><div class="stat__label">Details per piece</div></div>
     </div>
   </section>
@@ -169,7 +169,7 @@
       </div>
 
       <p class="apc-note" id="apc-empty-msg" style="display:none;">No pieces to show in this view.</p>
-      <p class="apc-note">Preview with sample data — <b>click any row to edit</b>, open a piece and <b>Archive</b> it, or <b>Import CSV</b> to bulk-add (columns: ID, Description, Artist, Medium, Art size, Frame size, Location, Status, Photo). <b>Export BOM (CSV)</b> downloads the current view. The live catalog fills automatically as staff capture pieces.</p>
+      <p class="apc-note">Preview with sample data - <b>click any row to edit</b>, open a piece and <b>Archive</b> it, or <b>Import CSV</b> to bulk-add (columns: ID, Description, Artist, Medium, Art size, Frame size, Location, Status, Photo). <b>Export BOM (CSV)</b> downloads the current view. The live catalog fills automatically as staff capture pieces.</p>
     </div>
   </section>
 </main>
@@ -184,7 +184,7 @@
     </div>
     <div class="footer-bottom">
       <p>© 2026 ArtPro Gallery · Lee Holloway. All rights reserved.</p>
-      <div class="footer-social"><a href="https://web.facebook.com/ArtProGalleries" target="_blank" rel="noopener">Facebook</a><a href="https://www.instagram.com/artprogallery/" target="_blank" rel="noopener">Instagram</a><a href="https://www.youtube.com/@ArtProGallery" target="_blank" rel="noopener">YouTube</a></div>
+      <div class="footer-social"><a data-cms-href="social.facebook" href="https://web.facebook.com/ArtProGalleries" target="_blank" rel="noopener">Facebook</a><a data-cms-href="social.instagram" href="https://www.instagram.com/artprogallery/" target="_blank" rel="noopener">Instagram</a><a data-cms-href="social.youtube" href="https://www.youtube.com/@ArtProGallery" target="_blank" rel="noopener">YouTube</a></div>
     </div>
   </div>
 </footer>
@@ -290,7 +290,7 @@
       desc:    c[3].textContent.trim(),
       medium:  c[4].textContent.trim(),
       art:     c[5].textContent.trim(),
-      frame:   fr === '—' ? '' : fr,
+      frame:   fr === '-' ? '' : fr,
       loc:     c[7].textContent.trim(),
       status:  c[8].textContent.trim(),
       archived: tr.getAttribute('data-archived') === '1',
@@ -334,7 +334,7 @@
     var isNoFrame = /^no frame$/i.test(fr);
     g('e_no_frame').checked = isNoFrame;
     g('e_frame').disabled = isNoFrame;
-    g('e_frame').value = (isNoFrame || fr === '—') ? '' : fr;
+    g('e_frame').value = (isNoFrame || fr === '-') ? '' : fr;
     setSelect(g('e_location'), c[7].textContent.trim());
     var st = c[8].textContent.toLowerCase();
     g('e_sold').checked    = st.indexOf('sold') !== -1;
@@ -390,7 +390,7 @@
       glass: g('e_glass').checked
     };
     ArtProStore.update(piece.pid, piece).then(function(){ close(); reload(); }).catch(function(err){
-      if(errEl){ errEl.textContent = (err && err.message) || 'Could not save — please try again.'; errEl.style.display = ''; }
+      if(errEl){ errEl.textContent = (err && err.message) || 'Could not save - please try again.'; errEl.style.display = ''; }
     });
   }
 
@@ -423,7 +423,7 @@
     return hay.indexOf(q) !== -1;
   }
 
-  // Gallery filter pills — built from the known galleries plus any other
+  // Gallery filter pills - built from the known galleries plus any other
   // locations present in the data, each with a live count.
   function buildGalleryPills(){
     var wrap = g('apc-gfilter'); if(!wrap){ return; }
@@ -505,7 +505,7 @@
   // live search
   var qEl = g('apc-q');
   if(qEl){ qEl.addEventListener('input', function(){ query = qEl.value; refresh(); }); }
-  // gallery filter pills (delegated — pills are rebuilt on each render)
+  // gallery filter pills (delegated - pills are rebuilt on each render)
   var gf = g('apc-gfilter');
   if(gf){
     gf.addEventListener('click', function(e){
@@ -530,7 +530,7 @@
     Array.prototype.slice.call(tbody.querySelectorAll('tr')).forEach(function(tr){
       if(tr.style.display === 'none'){ return; }
       var c = tr.querySelectorAll('td'), img = c[0].querySelector('img');
-      var fr = c[6].textContent.trim(); if(fr === '—'){ fr = ''; }
+      var fr = c[6].textContent.trim(); if(fr === '-'){ fr = ''; }
       lines.push([ c[1].textContent.trim(), c[3].textContent.trim(), c[2].textContent.trim(),
         c[4].textContent.trim(), c[5].textContent.trim(), fr, c[7].textContent.trim(), c[8].textContent.trim(), img ? img.getAttribute('src') : '' ]);
     });
@@ -569,14 +569,14 @@
     if(t.indexOf('sold') !== -1){ p += pill('sold'); }
     if(t.indexOf('display') !== -1){ p += pill('display'); }
     if(t.indexOf('stock') !== -1){ p += pill('stock'); }
-    return p || '<span style="color:var(--muted);opacity:.7;">—</span>'; }
+    return p || '<span style="color:var(--muted);opacity:.7;">-</span>'; }
   function esc(s){ var d = document.createElement('div'); d.textContent = String(s == null ? '' : s); return d.innerHTML; }
   function addRow(d){
     var photo = (d.photo && d.photo.trim()) ? d.photo.trim() : 'assets/images/artists/_placeholder.jpg';
     var tr = document.createElement('tr');
     tr.innerHTML = '<td><img src="' + esc(photo) + '" alt="" loading="lazy"></td>' +
       '<td class="apc-id">' + esc(d.id) + '</td><td>' + esc(d.artist) + '</td><td>' + esc(d.desc) + '</td><td>' + esc(d.medium) + '</td>' +
-      '<td>' + esc(d.art) + '</td><td>' + (esc(d.frame) || '—') + '</td><td>' + esc(d.loc) + '</td>' +
+      '<td>' + esc(d.art) + '</td><td>' + (esc(d.frame) || '-') + '</td><td>' + esc(d.loc) + '</td>' +
       '<td>' + statusPills(d.status) + '</td>';
     if(d.pid){ tr.setAttribute('data-pid', d.pid); }
     if(d.archived){ tr.setAttribute('data-archived', '1'); }
@@ -607,7 +607,7 @@
       return reload();
     }).then(function(){
       showImport('Imported ' + pieces.length + ' piece' + (pieces.length === 1 ? '' : 's') + ' into the catalog.');
-    }).catch(function(){ showImport('Import failed — please try again.'); });
+    }).catch(function(){ showImport('Import failed - please try again.'); });
   }
 
   g('apc-export-btn').addEventListener('click', function(e){ e.preventDefault(); exportCSV(); });
