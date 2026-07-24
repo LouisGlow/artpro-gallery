@@ -1,0 +1,292 @@
+<!doctype html>
+<html lang="en">
+<head>
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-0P4BWM3VNY"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag("js", new Date());
+  gtag("config", "G-0P4BWM3VNY");
+</script>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>See it on your wall - ArtPro Gallery</title>
+<meta name="description" content="Upload a photo of your room and preview any ArtPro artwork on your wall, to scale, before you buy.">
+<link rel="icon" href="assets/images/favicon.jpg">
+<link rel="stylesheet" href="styles.css">
+<style>
+  .viz { display:grid; grid-template-columns: 300px minmax(0,1fr); gap: clamp(22px,3vw,44px); align-items:start; }
+  @media (max-width:880px){ .viz { grid-template-columns:1fr; } }
+
+  .viz-side { display:flex; flex-direction:column; gap:24px; }
+  .viz-step__label { font-family:var(--font-display); text-transform:uppercase; letter-spacing:.14em; font-size:11px; color:var(--gold-deep); display:flex; align-items:center; gap:9px; margin-bottom:10px; }
+  .viz-step__num { width:22px; height:22px; border-radius:50%; background:var(--ink-deep); color:var(--paper); display:inline-flex; align-items:center; justify-content:center; font-size:11px; flex:0 0 auto; }
+  .viz-upload { display:block; border:1.5px dashed var(--gold); background:var(--surface); padding:18px 14px; text-align:center; cursor:pointer; color:var(--gold-deep); font-family:var(--font-display); text-transform:uppercase; letter-spacing:.08em; font-size:13px; line-height:1.5; }
+  .viz-upload:hover { background:rgba(184,145,47,.08); }
+  .viz-upload input { display:none; }
+  .viz-upload small { display:block; text-transform:none; letter-spacing:0; color:var(--muted); font-family:var(--font-body); font-size:12px; margin-top:6px; }
+  .viz-side select { width:100%; background:var(--surface); border:1px solid var(--border); padding:13px 14px; font:inherit; font-size:15px; color:var(--ink); }
+  .viz-side select:focus { outline:none; border-color:var(--gold); }
+  .viz-ctrl label { font-family:var(--font-display); text-transform:uppercase; letter-spacing:.12em; font-size:11px; color:var(--muted); display:block; margin-bottom:9px; }
+  .viz-frames { display:flex; gap:8px; }
+  .viz-frames button { flex:1; border:1px solid var(--border); background:var(--surface); padding:10px 6px; font:inherit; font-size:12px; cursor:pointer; transition:border-color .15s,background .15s,color .15s; }
+  .viz-frames button:hover { border-color:var(--gold); }
+  .viz-frames button.is-active { border-color:var(--gold); background:var(--gold); color:#1a1712; }
+  .viz-range { width:100%; accent-color:var(--gold); }
+  .viz-size-note { color:var(--muted); font-size:12.5px; margin-top:8px; line-height:1.5; }
+  .viz-actions { display:flex; flex-direction:column; gap:10px; margin-top:2px; }
+  .viz-actions .btn { justify-content:center; }
+  .viz-disabled { opacity:.4; pointer-events:none; }
+
+  .viz-stage { position:relative; display:flex; align-items:center; justify-content:center; min-height:min(72vh,560px); background:linear-gradient(180deg,#efeadf,#e7e1d4); border:1px solid var(--border); overflow:hidden; }
+  .viz-inner { position:relative; display:inline-block; line-height:0; max-width:100%; }
+  .viz-room { display:block; max-width:100%; max-height:72vh; }
+  .viz-empty { color:var(--muted); font-family:var(--font-display); text-transform:uppercase; letter-spacing:.16em; font-size:13px; text-align:center; padding:44px 24px; line-height:1.9; }
+  .viz-painting { position:absolute; cursor:grab; touch-action:none; line-height:0; box-shadow:0 18px 46px rgba(0,0,0,.42), 0 4px 12px rgba(0,0,0,.3); }
+  .viz-painting:active { cursor:grabbing; }
+  .viz-painting img { display:block; width:100%; height:auto; pointer-events:none; -webkit-user-drag:none; user-select:none; }
+  .viz-painting--white { padding:3.2%; background:#fbfaf6; }
+  .viz-painting--dark  { padding:3.2%; background:#241f1a; }
+  .viz-painting--none  { padding:0; background:transparent; }
+  .viz-handle { position:absolute; right:-10px; bottom:-10px; width:22px; height:22px; background:var(--gold); border:2px solid #fff; border-radius:50%; cursor:nwse-resize; touch-action:none; box-shadow:0 2px 8px rgba(0,0,0,.45); }
+  .viz-hint { text-align:center; color:var(--muted); font-size:13px; margin-top:12px; }
+</style>
+</head>
+<body>
+
+<header class="site-header">
+  <div class="wrap site-header__inner">
+    <a class="brand" href="index.html" aria-label="ArtPro Gallery - home"><img src="assets/images/logo.png" alt="ArtPro Gallery"></a>
+    <nav class="nav" id="primary-nav" aria-label="Primary">
+      <a href="index.html">Home</a>
+      <a href="about.html">About</a>
+      <a href="services.html">Services</a>
+      <a href="artists.html">Artists</a>
+      <a href="art-by-artists.html">Art by Artists</a>
+      <a href="art-for-sale.html">Art for Sale</a>
+      <a href="interactive-gallery.html">Virtual Gallery</a>
+      <a href="contact.html">Contact</a>
+    </nav>
+    <a class="btn btn--gold header-cta" href="art-for-sale.html">Browse art <span class="btn__arrow">&#8594;</span></a>
+    <button class="nav-toggle" aria-label="Menu" aria-controls="primary-nav" aria-expanded="false"><span></span></button>
+  </div>
+</header>
+
+<main>
+  <section class="page-hero wrap">
+    <p class="breadcrumb"><a href="index.html">Home</a> / See it on your wall</p>
+    <div class="page-hero__row" style="margin-top:20px;">
+      <h1 class="display display--l" style="max-width:15ch;">See it on your wall</h1>
+      <p class="muted" style="max-width:36ch;">Snap a photo of your room, drop a piece onto the wall, and see how it looks at home before you buy. Your photo stays on your device.</p>
+    </div>
+  </section>
+
+  <section class="section section--tight wrap">
+    <div class="viz">
+      <!-- controls -->
+      <div class="viz-side">
+        <div class="viz-step">
+          <div class="viz-step__label"><span class="viz-step__num">1</span> Your room</div>
+          <label class="viz-upload">
+            Upload / take a photo
+            <small>Tap to choose a photo of your wall</small>
+            <input type="file" id="room-file" accept="image/*" capture="environment">
+          </label>
+        </div>
+
+        <div class="viz-step">
+          <div class="viz-step__label"><span class="viz-step__num">2</span> Choose a piece</div>
+          <select id="paint-select"><option value="">Loading the catalogue…</option></select>
+          <div class="viz-size-note" id="paint-size"></div>
+        </div>
+
+        <div id="viz-tools" class="viz-disabled">
+          <div class="viz-ctrl" style="margin-bottom:22px;">
+            <label for="viz-range">Size</label>
+            <input type="range" id="viz-range" class="viz-range" min="6" max="100" value="28">
+          </div>
+          <div class="viz-ctrl" style="margin-bottom:22px;">
+            <label>Frame</label>
+            <div class="viz-frames" id="viz-frames">
+              <button type="button" data-frame="white" class="is-active">White</button>
+              <button type="button" data-frame="dark">Dark</button>
+              <button type="button" data-frame="none">None</button>
+            </div>
+          </div>
+          <div class="viz-actions">
+            <button type="button" class="btn btn--gold" id="viz-download">Download image <span class="btn__arrow">&#8594;</span></button>
+            <a class="btn btn--ghost" id="viz-enquire" href="contact.html">Enquire about this piece</a>
+          </div>
+        </div>
+      </div>
+
+      <!-- stage -->
+      <div>
+        <div class="viz-stage" id="viz-stage">
+          <div class="viz-empty" id="viz-empty">Upload a photo of your room<br>to begin</div>
+          <div class="viz-inner" id="viz-inner" hidden>
+            <img id="viz-room" class="viz-room" alt="Your room">
+            <div id="viz-painting" class="viz-painting viz-painting--white" hidden>
+              <img id="viz-paint" alt="">
+              <span class="viz-handle" id="viz-handle" aria-hidden="true"></span>
+            </div>
+          </div>
+        </div>
+        <p class="viz-hint">Drag the artwork to move it &middot; drag the gold dot to resize.</p>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer class="site-footer">
+  <div class="wrap wrap--wide">
+    <div class="footer-top">
+      <div class="footer-brand"><div class="footer-brand__word">ArtPro Gallery</div><p data-cms="footer.blurb">South African art across four galleries in and around Johannesburg. Delivered with care.</p></div>
+      <div class="footer-col"><h4>Explore</h4><ul><li><a href="art-for-sale.html">Art for Sale</a></li><li><a href="artists.html">Artists</a></li><li><a href="art-by-artists.html">Art by Artists</a></li><li><a href="services.html">Services</a></li><li><a href="catalog.html">Staff login</a></li></ul></div>
+      <div class="footer-col"><h4>Contact</h4><ul><li><a href="tel:+27825554272">+27 82 555 4272</a></li><li><a data-cms-email="1" href="mailto:lee@artprogallery.co.za">lee@artprogallery.co.za</a></li><li><a data-cms-email="2" href="mailto:admin@artprogallery.co.za">admin@artprogallery.co.za</a></li><li><a href="contact.html">Find a gallery</a></li></ul></div>
+      <div class="footer-col footer-newsletter"><h4>Newsletter</h4><p style="color:color-mix(in oklab,var(--paper) 60%,transparent);font-size:14px;margin:0 0 12px;" data-cms="footer.newsletter">New arrivals and gallery events, occasionally.</p><form onsubmit="return false;"><input type="email" placeholder="Email address" aria-label="Email address"><button class="btn btn--gold" type="submit">Subscribe</button></form></div>
+    </div>
+    <div class="footer-bottom">
+      <p>&#169; 2026 ArtPro Gallery &#183; Lee Holloway. All rights reserved.</p>
+      <div class="footer-social"><a data-cms-href="social.facebook" href="https://web.facebook.com/ArtProGalleries" target="_blank" rel="noopener">Facebook</a><a data-cms-href="social.instagram" href="https://www.instagram.com/artprogallery/" target="_blank" rel="noopener">Instagram</a><a data-cms-href="social.youtube" href="https://www.youtube.com/@ArtProGallery" target="_blank" rel="noopener">YouTube</a></div>
+    </div>
+  </div>
+</footer>
+
+<script src="site.js"></script>
+<script src="assets/content.js"></script>
+<script>
+(function(){
+  var $ = function(id){ return document.getElementById(id); };
+  var params = new URLSearchParams(location.search);
+  var wantPiece = (params.get('piece') || '').toLowerCase();
+
+  var inner = $('viz-inner'), roomImg = $('viz-room'), painting = $('viz-painting'),
+      paintImg = $('viz-paint'), handle = $('viz-handle'), range = $('viz-range');
+  var aspect = 1, placed = false;
+
+  function esc(s){ var d=document.createElement('div'); d.textContent=String(s==null?'':s); return d.innerHTML; }
+  function clamp(v,a,b){ return Math.max(a, Math.min(b, v)); }
+  function toolsOn(on){ $('viz-tools').classList.toggle('viz-disabled', !on); }
+
+  // ---- 1. room upload ----
+  $('room-file').addEventListener('change', function(){
+    var f = this.files && this.files[0]; if(!f) return;
+    var r = new FileReader();
+    r.onload = function(){
+      roomImg.onload = function(){ $('viz-empty').style.display='none'; inner.hidden=false; maybePlace(); };
+      roomImg.src = r.result;
+    };
+    r.readAsDataURL(f);
+  });
+
+  // ---- 2. choose painting ----
+  fetch('/api/public/pieces').then(function(r){ return r.json(); }).then(function(res){
+    var pieces = ((res && res.pieces) || []).filter(function(p){ return p.photo && !/sold/i.test(p.status||''); });
+    var sel = $('paint-select');
+    sel.innerHTML = '<option value="">Select an artwork…</option>';
+    pieces.forEach(function(p){
+      var o = document.createElement('option');
+      o.value = p.id || p.pid || '';
+      o.setAttribute('data-photo', p.photo || '');
+      o.setAttribute('data-desc', p.desc || '');
+      o.setAttribute('data-artist', p.artist || '');
+      o.setAttribute('data-art', p.art || '');
+      o.textContent = (p.desc || 'Untitled') + (p.artist ? ' - ' + p.artist : '') + (p.id ? ' (' + p.id + ')' : '');
+      sel.appendChild(o);
+    });
+    if(wantPiece){
+      Array.prototype.some.call(sel.options, function(o){ if((o.value||'').toLowerCase()===wantPiece){ o.selected=true; return true; } return false; });
+      if(sel.value) selectPiece();
+    }
+  }).catch(function(){ $('paint-select').innerHTML = '<option value="">Couldn’t load the catalogue</option>'; });
+
+  $('paint-select').addEventListener('change', selectPiece);
+  function selectPiece(){
+    var sel = $('paint-select'), opt = sel.options[sel.selectedIndex];
+    var photo = opt ? opt.getAttribute('data-photo') : '';
+    var art = opt ? opt.getAttribute('data-art') : '';
+    $('paint-size').innerHTML = art ? ('Actual size: <b style="color:var(--ink);">' + esc(art) + '</b> - resize by eye to match your wall.') : '';
+    // enquire link for this piece
+    var enq = $('viz-enquire');
+    if(opt && opt.value){
+      enq.href = 'contact.html?artist=' + encodeURIComponent(opt.getAttribute('data-artist')||'') + '&piece=' + encodeURIComponent(opt.getAttribute('data-desc')||'') + '&id=' + encodeURIComponent(opt.value);
+    }
+    if(!photo){ painting.hidden = true; return; }
+    paintImg.onload = function(){ aspect = paintImg.naturalWidth / paintImg.naturalHeight || 1; maybePlace(); };
+    paintImg.src = photo;
+  }
+
+  function maybePlace(){
+    if(!roomImg.src || !paintImg.src){ return; }
+    painting.hidden = false;
+    toolsOn(true);
+    if(!placed){ setWidth(28); painting.style.left='36%'; painting.style.top='28%'; placed = true; }
+  }
+  function setWidth(w){ painting.style.width = w + '%'; range.value = w; }
+
+  // ---- drag + resize (pointer events; mouse + touch) ----
+  var mode=null, sx=0, sy=0, oL=0, oT=0, oW=0, rect=null;
+  painting.addEventListener('pointerdown', function(e){ if(e.target===handle) return; start('move', e); });
+  handle.addEventListener('pointerdown', function(e){ e.stopPropagation(); start('resize', e); });
+  function start(m, e){
+    mode = m; rect = inner.getBoundingClientRect();
+    sx = e.clientX; sy = e.clientY;
+    oL = parseFloat(painting.style.left)||0; oT = parseFloat(painting.style.top)||0; oW = parseFloat(painting.style.width)||28;
+    document.addEventListener('pointermove', onMove);
+    document.addEventListener('pointerup', end);
+    e.preventDefault();
+  }
+  function onMove(e){
+    if(!mode || !rect.width) return;
+    var dx = (e.clientX - sx) / rect.width * 100, dy = (e.clientY - sy) / rect.height * 100;
+    if(mode==='move'){ painting.style.left = clamp(oL+dx, -5, 95) + '%'; painting.style.top = clamp(oT+dy, -5, 95) + '%'; }
+    else { setWidth(clamp(oW+dx, 6, 100)); }
+  }
+  function end(){ mode=null; document.removeEventListener('pointermove', onMove); document.removeEventListener('pointerup', end); }
+
+  range.addEventListener('input', function(){ setWidth(parseFloat(this.value)); });
+
+  // ---- frame ----
+  var frameBtns = Array.prototype.slice.call($('viz-frames').querySelectorAll('button'));
+  frameBtns.forEach(function(b){
+    b.addEventListener('click', function(){
+      painting.className = 'viz-painting viz-painting--' + b.dataset.frame;
+      frameBtns.forEach(function(x){ x.classList.toggle('is-active', x===b); });
+    });
+  });
+
+  // ---- download composite ----
+  $('viz-download').addEventListener('click', function(){
+    if(!roomImg.src || painting.hidden){ return; }
+    var natW = roomImg.naturalWidth, natH = roomImg.naturalHeight;
+    var rRect = roomImg.getBoundingClientRect(); if(!rRect.width) return;
+    var scale = natW / rRect.width;
+    var cv = document.createElement('canvas'); cv.width = natW; cv.height = natH;
+    var ctx = cv.getContext('2d');
+    try {
+      ctx.drawImage(roomImg, 0, 0, natW, natH);
+      var pR = painting.getBoundingClientRect(), iR = paintImg.getBoundingClientRect();
+      var fx=(pR.left-rRect.left)*scale, fy=(pR.top-rRect.top)*scale, fw=pR.width*scale, fh=pR.height*scale;
+      var ix=(iR.left-rRect.left)*scale, iy=(iR.top-rRect.top)*scale, iw=iR.width*scale, ih=iR.height*scale;
+      var bg = getComputedStyle(painting).backgroundColor;
+      var hasFrame = bg && bg !== 'rgba(0, 0, 0, 0)' && bg !== 'transparent';
+      ctx.save();
+      ctx.shadowColor = 'rgba(0,0,0,0.42)'; ctx.shadowBlur = 34*scale; ctx.shadowOffsetY = 16*scale;
+      if(hasFrame){ ctx.fillStyle = bg; ctx.fillRect(fx, fy, fw, fh); }
+      else { ctx.drawImage(paintImg, ix, iy, iw, ih); }
+      ctx.restore();
+      if(hasFrame){ ctx.drawImage(paintImg, ix, iy, iw, ih); }
+      cv.toBlob(function(blob){
+        if(!blob){ return; }
+        var a = document.createElement('a');
+        a.href = URL.createObjectURL(blob); a.download = 'artpro-on-my-wall.png';
+        document.body.appendChild(a); a.click(); a.remove();
+      }, 'image/png');
+    } catch(err){ alert('Sorry, the image could not be saved on this device. You can still screenshot the preview.'); }
+  });
+})();
+</script>
+</body>
+</html>

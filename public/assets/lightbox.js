@@ -26,7 +26,8 @@
     '.lb-stage__cta{display:block;text-align:center;font-family:"Barlow Condensed","Oswald",sans-serif;font-weight:600;letter-spacing:.14em;text-transform:uppercase;font-size:13px;text-decoration:none;padding:13px 24px;background:#b8912f;color:#14110d;border-radius:2px;border:1px solid #b8912f;transition:background .2s;}' +
     '.lb-stage__cta:hover{background:#cda43a;}' +
     '.lb-stage__cta[hidden]{display:none;}' +
-    '.lb-stage__cta--pay{background:transparent;color:#f4efe6;border:1px solid rgba(255,255,255,.4);margin-top:2px;}' +
+    '.lb-stage__cta--pay,.lb-stage__cta--wall{background:transparent;color:#f4efe6;border:1px solid rgba(255,255,255,.4);margin-top:2px;}' +
+    '.lb-stage__cta--pay:hover,.lb-stage__cta--wall:hover{background:rgba(255,255,255,.12);}' +
     '.lb-stage__cta--pay:hover{background:rgba(255,255,255,.12);}' +
     '.lb-stage__btn{position:absolute;z-index:2;cursor:pointer;background:rgba(255,255,255,.1);color:#f4efe6;border:1px solid rgba(255,255,255,.35);-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);transition:background .2s,color .2s;}' +
     '.lb-stage__btn:hover{background:#b8912f;color:#211d18;border-color:#b8912f;}' +
@@ -36,7 +37,7 @@
     '.lb-stage__nav[hidden]{display:none;}' +
     '@media(max-width:1024px){.lb-stage__inner{grid-template-columns:1fr;gap:18px;text-align:center;}.lb-stage__img{max-height:56vh;}.lb-stage__nav{width:44px;height:44px;font-size:24px;}.lb-stage__prev{left:10px;}.lb-stage__next{right:10px;}}';
 
-  var stage, img, indexEl, titleEl, metaEl, sizeEl, artistEl, cta, payCta, prevBtn, nextBtn;
+  var stage, img, indexEl, titleEl, metaEl, sizeEl, artistEl, cta, payCta, wallCta, prevBtn, nextBtn;
   var items = [], idx = 0;
 
   function esc(s) { var d = document.createElement('div'); d.textContent = String(s == null ? '' : s); return d.innerHTML; }
@@ -66,6 +67,7 @@
           '<p class="lb-stage__artist">-</p>' +
           '<a class="lb-stage__cta" href="contact.html">Enquire about this piece</a>' +
           '<a class="lb-stage__cta lb-stage__cta--pay" href="pay.html" hidden>Pay for this piece</a>' +
+          '<a class="lb-stage__cta lb-stage__cta--wall" href="visualise.html" hidden>See it on your wall</a>' +
         '</div>' +
       '</div>' +
       '<button class="lb-stage__btn lb-stage__close" type="button" aria-label="Close viewer" data-lb="close">&#10005;</button>' +
@@ -79,8 +81,9 @@
     metaEl   = stage.querySelector('.lb-stage__meta');
     sizeEl   = stage.querySelector('.lb-stage__size');
     artistEl = stage.querySelector('.lb-stage__artist');
-    cta      = stage.querySelector('.lb-stage__cta');
+    cta      = stage.querySelector('.lb-stage__cta:not(.lb-stage__cta--pay):not(.lb-stage__cta--wall)');
     payCta   = stage.querySelector('.lb-stage__cta--pay');
+    wallCta  = stage.querySelector('.lb-stage__cta--wall');
     prevBtn  = stage.querySelector('.lb-stage__prev');
     nextBtn  = stage.querySelector('.lb-stage__next');
 
@@ -116,8 +119,10 @@
       artistEl.textContent = it.artist ? ('By ' + it.artist) : 'ArtPro Collection';
     }
     cta.setAttribute('href', 'contact.html?artist=' + encodeURIComponent(it.artist || '') + '&piece=' + encodeURIComponent(it.title || '') + (it.id ? '&id=' + encodeURIComponent(it.id) : ''));
-    if (it.payId) { payCta.hidden = false; payCta.setAttribute('href', 'pay.html?piece=' + encodeURIComponent(it.payId)); }
-    else { payCta.hidden = true; }
+    if (it.payId) {
+      payCta.hidden = false; payCta.setAttribute('href', 'pay.html?piece=' + encodeURIComponent(it.payId));
+      wallCta.hidden = false; wallCta.setAttribute('href', 'visualise.html?piece=' + encodeURIComponent(it.payId));
+    } else { payCta.hidden = true; wallCta.hidden = true; }
     var multi = items.length > 1;
     prevBtn.hidden = !multi;
     nextBtn.hidden = !multi;
